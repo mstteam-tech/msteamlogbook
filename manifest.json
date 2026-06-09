@@ -1,12 +1,13 @@
 {
-  "name": "Team M.S — Logbook",
-  "short_name": "Team M.S",
-  "description": "Seu logbook de musculação",
-  "start_url": "./index.html",
+  "name": "MS Team Logbook",
+  "short_name": "MSTeam",
+  "description": "Logbook de treinos MS Team",
+  "start_url": "/msteamlogbook/",
+  "scope": "/msteamlogbook/",
   "display": "standalone",
-  "background_color": "#0c0c0c",
-  "theme_color": "#0c0c0c",
   "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#c0392b",
   "icons": [
     {
       "src": "icon-192.png",
