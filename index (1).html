@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Team M.S">
+  <meta name="theme-color" content="#0c0c0c">
+  <meta name="description" content="Seu logbook de musculação — Team M.S">
+  <title>Team M.S</title>
+  <link rel="manifest" href="manifest.json">
+  <!-- Ícone para iOS (splash / homescreen) -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Firebase SDK -->
+  <script>window.__fbLoadErrors=0;</script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" onerror="window.__fbLoadErrors++"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" onerror="window.__fbLoadErrors++"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" onerror="window.__fbLoadErrors++"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    :root{
+      --bg:#0c0c0c;--surface:#141414;--card:#1c1c1c;
+      --border:#282828;--border-l:#333;
+      --accent:#e11d48;--accent-dim:rgba(225,29,72,.12);
+      --text:#efefef;--text-muted:#5a5a5a;--text-dim:#888;
+      --danger:#ef4444;--success:#22c55e;--warn:#f59e0b;
+      --radius:14px;--radius-sm:8px;
+    }
+    html{height:100%;}
+    body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',system-ui,sans-serif;font-size:15px;line-height:1.5;overscroll-behavior:none;-webkit-font-smoothing:antialiased;}
+    #app{max-width:480px;margin:0 auto;min-height:100vh;}
+
+    /* SCREENS */
+    .screen{display:none;min-height:100vh;padding-bottom:100px;}
+    .screen.active{display:block;animation:fadeSlide .22s ease;}
+    @keyframes fadeSlide{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* LOADING */
+    #screen-loading{display:none;min-height:100vh;}#screen-loading.active{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+    .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+    .loading-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:1px;}
+
+    /* HEADER */
+    .header{position:sticky;top:0;z-index:30;background:rgba(12,12,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;gap:10px;}
+    .header-title{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:21px;letter-spacing:.5px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .header-title .accent{color:var(--accent);}
+    .btn-icon{background:var(--card);border:1px solid var(--border);color:var(--text-dim);width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;flex-shrink:0;transition:background .13s;}
+    .btn-icon:active{background:var(--border);}
+    .btn-icon.ghost{background:transparent;border:none;}
+
+    /* CONTENT */
+    .content{padding:16px 18px;}
+
+    /* AUTH SCREEN */
+    #screen-auth{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px 20px;}
+    #screen-auth.active{display:flex;flex-direction:column;}
+    .auth-logo{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:900;font-size:52px;line-height:.95;letter-spacing:-2px;text-align:center;margin-bottom:6px;}
+    .auth-logo .dim{color:var(--text-muted);}
+    .auth-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:2px;text-align:center;margin-bottom:32px;}
+    .auth-card{background:var(--card);border:1px solid var(--border-l);border-radius:var(--radius);padding:20px;width:100%;max-width:400px;}
+    .auth-tabs{display:flex;gap:6px;margin-bottom:20px;}
+    .auth-tab{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);border-radius:var(--radius-sm);padding:9px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;cursor:pointer;transition:all .13s;text-align:center;}
+    .auth-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+    .auth-panel{display:none;}
+    .auth-panel.active{display:block;}
+    .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
+    .auth-divider span{font-size:12px;color:var(--text-muted);white-space:nowrap;}
+    .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+    .btn-offline{width:100%;background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius-sm);padding:11px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;font-size:14px;letter-spacing:.5px;cursor:pointer;transition:background .13s;}
+    .btn-offline:active{background:var(--border);}
+    .auth-error{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:6px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:none;}
+    .auth-error.show{display:block;}
+
+    /* HERO */
+    .home-hero{padding:24px 18px 8px;}
+    .home-hero-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:4px;}
+    .home-hero-title{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:900;font-size:44px;line-height:.95;letter-spacing:-1px;}
+    .home-hero-title .dim{color:var(--text-muted);}
+
+    /* STATS */
+    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 18px 0;}
+    .stat-cell{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 8px;text-align:center;}
+    .stat-cell .num{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:28px;font-weight:900;color:var(--accent);line-height:1;}
+    .stat-cell .lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:2px;letter-spacing:.8px;}
+
+    /* FEEDBACK BANNER */
+    .feedback-banner{background:var(--accent-dim);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:12px 14px;margin:14px 18px 0;position:relative;}
+    .feedback-banner-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
+    .feedback-banner-text{font-size:14px;color:var(--text);line-height:1.4;}
+    .feedback-banner-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:2px;}
+
+    /* SECTION HEADER */
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:6px;}
+    .section-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;}
+
+    /* WORKOUT CARD */
+    .workout-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s,transform .12s;position:relative;overflow:hidden;user-select:none;}
+    .workout-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--wcard-color,var(--accent));border-radius:4px 0 0 4px;}
+    .workout-card:active{transform:scale(.98);}
+    .workout-card-info{flex:1;min-width:0;}
+    .workout-card-name{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:19px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .workout-card-meta{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:3px;}
+    .workout-card-actions{display:flex;gap:4px;flex-shrink:0;}
+
+    /* EXERCISE ROW */
+    .exercise-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;cursor:pointer;transition:border-color .15s;gap:10px;user-select:none;}
+    .exercise-row:active{background:#222;}
+    .exercise-row-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;opacity:.6;}
+    .exercise-row-info{flex:1;min-width:0;}
+    .exercise-row-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .exercise-row-last{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .exercise-row-arrow{color:var(--text-muted);font-size:18px;flex-shrink:0;}
+
+    /* SESSION BLOCK */
+    .session-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;}
+    .session-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .session-date-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);background:var(--accent-dim);padding:3px 8px;border-radius:4px;}
+    .session-vol{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);}
+    .sets-table{width:100%;border-collapse:collapse;}
+    .sets-table thead tr th{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;text-align:center;padding-bottom:6px;border-bottom:1px solid var(--border);}
+    .sets-table thead tr th:first-child{text-align:left;width:28px;}
+    .sets-table tbody tr td{text-align:center;padding:5px 4px;border-bottom:1px solid var(--border);}
+    .sets-table tbody tr:last-child td{border-bottom:none;}
+    .sets-table tbody tr td:first-child{text-align:left;}
+    .set-idx{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);}
+    .set-chip{display:inline-block;background:var(--surface);border-radius:5px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:13px;min-width:52px;}
+
+    /* CHART */
+    .chart-container{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px;}
+    .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .chart-title-text{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:13px;font-weight:700;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;}
+    .chart-toggle{display:flex;gap:4px;flex-wrap:wrap;}
+    .chart-toggle button{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);border-radius:5px;padding:4px 8px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;cursor:pointer;transition:all .13s;}
+    .chart-toggle button.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+    .chart-wrap{position:relative;width:100%;}
+    #progressChart{display:block;width:100%;cursor:crosshair;}
+    .chart-empty-msg{text-align:center;padding:28px 0;font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
+
+    /* TRAINER DASHBOARD */
+    .trainer-header-info{padding:20px 18px 0;}
+    .trainer-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:4px;}
+    .trainer-title{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:900;font-size:40px;line-height:.95;}
+    .trainer-title .dim{color:var(--text-muted);}
+
+    .student-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+    .student-avatar{width:42px;height:42px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--accent);flex-shrink:0;}
+    .student-info{flex:1;min-width:0;}
+    .student-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .student-meta{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .student-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+
+    .badge{display:inline-flex;align-items:center;gap:4px;border-radius:4px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.5px;}
+    .badge-active{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.3);}
+    .badge-inactive{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
+
+    .toggle-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:6px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.5px;transition:all .13s;white-space:nowrap;}
+    .toggle-btn.deactivate:hover{border-color:var(--danger);color:var(--danger);}
+    .toggle-btn.activate:hover{border-color:var(--success);color:var(--success);}
+
+    .btn-view-student{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.5px;transition:opacity .13s;}
+    .btn-view-student:active{opacity:.75;}
+
+    /* READONLY BANNER */
+    .readonly-banner{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);padding:10px 14px;margin:14px 18px 0;font-size:13px;color:#fcd34d;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.3px;}
+
+    /* FAB */
+    .fab-wrap{position:fixed;bottom:0;left:0;right:0;pointer-events:none;display:flex;justify-content:center;padding-bottom:28px;z-index:20;}
+    .fab{pointer-events:all;background:var(--accent);color:#fff;border:none;border-radius:50px;padding:13px 26px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:15px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 6px 24px rgba(225,29,72,.4),0 2px 8px rgba(0,0,0,.4);transition:transform .12s,box-shadow .12s;}
+    .fab:active{transform:scale(.95);box-shadow:0 3px 12px rgba(225,29,72,.3);}
+    .fab-icon{font-size:18px;line-height:1;}
+
+    /* MODAL */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+    .modal-backdrop.open{display:flex;}
+    .modal-backdrop.center{align-items:center;padding:20px;}
+    .modal-sheet{background:var(--surface);border:1px solid var(--border-l);border-radius:20px 20px 0 0;padding:20px 18px 32px;width:100%;max-width:480px;animation:slideUp .24s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;}
+    .modal-dialog{background:var(--surface);border:1px solid var(--border-l);border-radius:18px;padding:22px 18px;width:100%;max-width:360px;animation:popIn .2s ease;}
+    .modal-handle{width:36px;height:4px;background:var(--border-l);border-radius:2px;margin:0 auto 18px;}
+    .modal-title{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:20px;font-weight:700;margin-bottom:16px;}
+
+    /* FORM */
+    .form-group{margin-bottom:14px;}
+    .form-label{display:block;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+    .form-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:10px 12px;font-size:15px;font-family:'Barlow',system-ui,sans-serif;outline:none;transition:border-color .13s;appearance:none;}
+    .form-input:focus{border-color:var(--accent);}
+    .form-input::placeholder{color:var(--text-muted);}
+    input[type="date"].form-input{color-scheme:dark;}
+    .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:12px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:16px;letter-spacing:1px;cursor:pointer;margin-top:6px;transition:opacity .13s;}
+    .btn-primary:active{opacity:.85;}
+    .btn-ghost{width:100%;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;font-size:15px;cursor:pointer;margin-top:8px;transition:background .13s;}
+    .btn-ghost:active{background:var(--border);}
+    .btn-danger-solid{flex:1;background:var(--danger);color:#fff;border:none;border-radius:var(--radius-sm);padding:11px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:16px;cursor:pointer;}
+    .btn-cancel{flex:1;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;font-size:15px;cursor:pointer;}
+    .confirm-row{display:flex;gap:10px;}
+
+    /* COLOR PICKER */
+    .color-row{display:flex;gap:8px;flex-wrap:wrap;}
+    .color-swatch{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .13s,transform .12s;flex-shrink:0;}
+    .color-swatch.active{border-color:#fff;transform:scale(1.18);}
+
+    /* SETS EDITOR */
+    .sets-cols-header{display:grid;grid-template-columns:22px 1fr 1fr 1fr 28px;gap:6px;margin-bottom:4px;}
+    .sets-col-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);text-align:center;letter-spacing:.5px;text-transform:uppercase;}
+    .set-edit-row{display:grid;grid-template-columns:22px 1fr 1fr 1fr 28px;gap:6px;align-items:center;margin-bottom:6px;}
+    .set-edit-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);text-align:center;}
+    .set-edit-input{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 4px;font-family:'DM Mono',monospace;font-size:14px;text-align:center;width:100%;outline:none;-moz-appearance:textfield;}
+    .set-edit-input::-webkit-inner-spin-button,.set-edit-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+    .set-edit-input:focus{border-color:var(--accent);}
+    .set-edit-input::placeholder{color:var(--border-l);font-size:11px;}
+    .set-edit-input.readonly{background:var(--surface);color:var(--text-muted);cursor:default;}
+    .btn-rm-set{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:color .13s;}
+    .btn-rm-set:hover{color:var(--danger);}
+    .btn-add-set{width:100%;background:transparent;border:1px dashed var(--border-l);color:var(--text-muted);border-radius:6px;padding:8px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:13px;letter-spacing:1px;cursor:pointer;margin:4px 0 12px;transition:border-color .13s,color .13s;}
+    .btn-add-set:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* EMPTY */
+    .empty-state{text-align:center;padding:50px 16px;}
+    .empty-icon{font-size:44px;opacity:.3;margin-bottom:12px;}
+    .empty-label{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:18px;color:var(--text-muted);font-weight:700;}
+    .empty-hint{font-size:13px;color:var(--text-muted);margin-top:4px;opacity:.6;}
+
+    /* MISC */
+    ::-webkit-scrollbar{width:3px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+    .no-data-inline{text-align:center;padding:20px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);}
+    .user-chip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:50px;padding:5px 10px 5px 6px;cursor:pointer;transition:background .13s;}
+    .user-chip:active{background:var(--border);}
+    .user-chip-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+    .user-chip-name{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOADING -->
+  <div id="screen-loading" class="screen active" style="padding-bottom:0">
+    <div class="spinner"></div>
+    <div class="loading-label">carregando...</div>
+  </div>
+
+  <!-- AUTH -->
+  <div id="screen-auth" class="screen" style="padding-bottom:0">
+    <div class="auth-logo">TEAM <span class="dim">M.S</span></div>
+    <div class="auth-sub">// logbook de treinos</div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="authTab('login')">ENTRAR</div>
+        <div class="auth-tab" id="tab-register" onclick="authTab('register')">CADASTRAR</div>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="auth-panel active" id="panel-login">
+        <div class="auth-error" id="login-error"></div>
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input class="form-input" id="login-email" type="email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input class="form-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" id="btn-login" onclick="doLogin()">ENTRAR</button>
+        <div class="auth-divider"><span>ou</span></div>
+        <button class="btn-offline" onclick="goOffline()">📱 Usar sem conta (offline)</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="auth-panel" id="panel-register">
+        <div class="auth-error" id="reg-error"></div>
+        <div class="form-group">
+          <label class="form-label">Nome completo</label>
+          <input class="form-input" id="reg-name" type="text" placeholder="Seu nome" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input class="form-input" id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha (mín. 6 caracteres)</label>
+          <input class="form-input" id="reg-pass" type="password" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Código de acesso <span style="color:var(--accent)">*obrigatório</span></label>
+          <input class="form-input" id="reg-code" type="text" placeholder="Peça o código ao seu treinador">
+        </div>
+        <button class="btn-primary" id="btn-register" onclick="doRegister()">CRIAR CONTA</button>
+        <div class="auth-divider"><span>ou</span></div>
+        <button class="btn-offline" onclick="goOffline()">📱 Usar sem conta (offline)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME (aluno) -->
+  <div id="screen-home" class="screen">
+    <div id="debug-bar" style="display:none;font-size:11px;text-align:center;padding:4px 8px;background:#111;font-family:monospace;border-bottom:1px solid #222;"></div>
+    <div class="header">
+      <div class="header-title">TEAM <span class="accent">M.S</span></div>
+      <div class="user-chip" id="user-chip" onclick="handleChipTap()">
+        <div class="user-chip-dot"></div>
+        <span class="user-chip-name" id="user-chip-name">offline</span>
+      </div>
+    </div>
+    <div id="inactive-banner" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;margin:10px 18px 0;font-family:'DM Mono',monospace;font-size:11px;color:#fca5a5;letter-spacing:.3px;">
+      ⏸ Consultoria pausada — visualização somente leitura. Seus dados estão preservados.
+    </div>
+    <div id="feedback-banner" style="display:none" class="feedback-banner">
+      <div class="feedback-banner-label">💬 mensagem do treinador</div>
+      <div class="feedback-banner-text" id="feedback-banner-text"></div>
+      <button class="feedback-banner-close" onclick="dismissFeedback()">✕</button>
+    </div>
+    <div class="home-hero">
+      <div class="home-hero-eyebrow" id="hero-eyebrow">// modo offline</div>
+      <div class="home-hero-title">SEUS<br><span class="dim">TREINOS</span></div>
+    </div>
+    <div class="stats-grid" id="home-stats"></div>
+    <div class="content">
+      <div class="section-header"><span class="section-label">Treinos cadastrados</span></div>
+      <div id="workout-list"></div>
+      <div id="workout-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">🏋️</div>
+        <div class="empty-label">Nenhum treino ainda</div>
+        <div class="empty-hint">Toque em + NOVO TREINO para começar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKOUT DETAIL -->
+  <div id="screen-workout" class="screen">
+    <div class="header">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <div class="header-title" id="workout-screen-title">TREINO</div>
+    </div>
+    <div class="content">
+      <div class="section-header"><span class="section-label">Exercícios</span></div>
+      <div id="exercise-list"></div>
+      <div id="exercise-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">💪</div>
+        <div class="empty-label">Nenhum exercício</div>
+        <div class="empty-hint">Adicione o primeiro exercício</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISE DETAIL -->
+  <div id="screen-exercise" class="screen">
+    <div class="header">
+      <button class="btn-icon" onclick="goWorkout()">←</button>
+      <div class="header-title" id="exercise-screen-title">EXERCÍCIO</div>
+      <button class="btn-icon ghost" id="btn-del-exercise" onclick="deleteCurrentExercise()" title="Excluir">🗑</button>
+    </div>
+    <div class="content">
+      <div class="chart-container">
+        <div class="chart-header">
+          <span class="chart-title-text">📈 Evolução</span>
+          <div class="chart-toggle">
+            <button id="btn-weight" class="active" onclick="switchChart('weight')">CARGA</button>
+            <button id="btn-reps"   onclick="switchChart('reps')">REPS</button>
+            <button id="btn-volume" onclick="switchChart('volume')">SÉRIES</button>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="progressChart"></canvas></div>
+        <div id="chart-empty-msg" class="chart-empty-msg" style="display:none">Registre sessões para ver o gráfico</div>
+      </div>
+      <div class="section-header"><span class="section-label">Sessões registradas</span></div>
+      <div id="sessions-list"></div>
+    </div>
+  </div>
+
+  <!-- TRAINER DASHBOARD -->
+  <div id="screen-trainer" class="screen">
+    <div class="header">
+      <div class="header-title">TEAM <span class="accent">M.S</span></div>
+      <div class="user-chip" onclick="confirmLogout()">
+        <div class="user-chip-dot"></div>
+        <span class="user-chip-name" id="trainer-chip-name">treinador</span>
+      </div>
+    </div>
+    <div class="trainer-header-info">
+      <div class="trainer-eyebrow">// painel do treinador</div>
+      <div class="trainer-title">SEUS<br><span class="dim">ALUNOS</span></div>
+    </div>
+    <div class="stats-grid" id="trainer-stats"></div>
+    <div class="content">
+      <div class="section-header"><span class="section-label">Alunos cadastrados</span></div>
+      <div id="student-list"></div>
+      <div id="student-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">👥</div>
+        <div class="empty-label">Nenhum aluno ainda</div>
+        <div class="empty-hint">Alunos aparecem aqui ao se cadastrar com seu código</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINER VIEWING STUDENT -->
+  <div id="screen-trainer-student" class="screen">
+    <div class="header">
+      <button class="btn-icon" onclick="goTrainer()">←</button>
+      <div class="header-title" id="ts-title">ALUNO</div>
+      <button class="btn-icon ghost" onclick="openFeedbackModal()" title="Enviar feedback">💬</button>
+    </div>
+    <div class="readonly-banner">👁 Visualização somente leitura</div>
+    <div class="content" style="padding-top:12px">
+      <div class="section-header"><span class="section-label">Treinos do aluno</span></div>
+      <div id="ts-workout-list"></div>
+      <div id="ts-workout-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">📋</div>
+        <div class="empty-label">Aluno sem treinos</div>
+        <div class="empty-hint">O aluno ainda não cadastrou nenhum treino</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINER VIEWING STUDENT WORKOUT -->
+  <div id="screen-ts-workout" class="screen">
+    <div class="header">
+      <button class="btn-icon" onclick="goTrainerStudent()">←</button>
+      <div class="header-title" id="ts-workout-title">TREINO</div>
+    </div>
+    <div class="readonly-banner">👁 Visualização somente leitura</div>
+    <div class="content" style="padding-top:12px">
+      <div class="section-header"><span class="section-label">Exercícios</span></div>
+      <div id="ts-exercise-list"></div>
+    </div>
+  </div>
+
+  <!-- TRAINER VIEWING STUDENT EXERCISE -->
+  <div id="screen-ts-exercise" class="screen">
+    <div class="header">
+      <button class="btn-icon" onclick="goTsWorkout()">←</button>
+      <div class="header-title" id="ts-exercise-title">EXERCÍCIO</div>
+    </div>
+    <div class="readonly-banner">👁 Visualização somente leitura</div>
+    <div class="content" style="padding-top:12px">
+      <div class="chart-container">
+        <div class="chart-header">
+          <span class="chart-title-text">📈 Evolução</span>
+          <div class="chart-toggle">
+            <button id="ts-btn-weight" class="active" onclick="switchTsChart('weight')">CARGA</button>
+            <button id="ts-btn-reps"   onclick="switchTsChart('reps')">REPS</button>
+            <button id="ts-btn-volume" onclick="switchTsChart('volume')">SÉRIES</button>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="tsProgressChart"></canvas></div>
+        <div id="ts-chart-empty" class="chart-empty-msg" style="display:none">Sem sessões registradas</div>
+      </div>
+      <div class="section-header"><span class="section-label">Sessões</span></div>
+      <div id="ts-sessions-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FABs -->
+<div class="fab-wrap" id="fab-home"><button class="fab" onclick="openAddWorkoutModal()"><span class="fab-icon">+</span> NOVO TREINO</button></div>
+<div class="fab-wrap" id="fab-workout" style="display:none"><button class="fab" onclick="openAddExerciseModal()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
+<div class="fab-wrap" id="fab-exercise" style="display:none"><button class="fab" onclick="openLogSessionModal()"><span class="fab-icon">+</span> REGISTRAR</button></div>
+
+<!-- MODAL: Workout -->
+<div class="modal-backdrop" id="modal-workout">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-workout-title">Novo Treino</div>
+    <div class="form-group"><label class="form-label">Nome do Treino</label><input class="form-input" id="input-workout-name" placeholder="Ex: Treino A — Peito / Ombro" maxlength="60"></div>
+    <div class="form-group"><label class="form-label">Cor</label><div class="color-row" id="color-picker-row"></div></div>
+    <button class="btn-primary" onclick="saveWorkout()">SALVAR</button>
+    <button class="btn-ghost" onclick="closeModal('modal-workout')">CANCELAR</button>
+  </div>
+</div>
+
+<!-- MODAL: Exercise -->
+<div class="modal-backdrop" id="modal-exercise">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Novo Exercício</div>
+    <div class="form-group"><label class="form-label">Nome do Exercício</label><input class="form-input" id="input-exercise-name" placeholder="Ex: Supino Reto com Barra" maxlength="70"></div>
+    <button class="btn-primary" onclick="saveExercise()">ADICIONAR</button>
+    <button class="btn-ghost" onclick="closeModal('modal-exercise')">CANCELAR</button>
+  </div>
+</div>
+
+<!-- MODAL: Session -->
+<div class="modal-backdrop" id="modal-session">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar Sessão</div>
+    <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="input-session-date"></div>
+    <div class="form-group">
+      <label class="form-label">Séries</label>
+      <div class="sets-cols-header"><span></span><span class="sets-col-lbl">Série</span><span class="sets-col-lbl">Carga (kg)</span><span class="sets-col-lbl">Reps</span><span></span></div>
+      <div id="sets-editor"></div>
+      <button class="btn-add-set" onclick="addSetRow()">+ ADICIONAR SÉRIE</button>
+    </div>
+    <button class="btn-primary" onclick="saveSession()">SALVAR SESSÃO</button>
+    <button class="btn-ghost" onclick="closeModal('modal-session')">CANCELAR</button>
+  </div>
+</div>
+
+<!-- MODAL: Feedback -->
+<div class="modal-backdrop" id="modal-feedback">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Enviar Feedback</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">O aluno verá essa mensagem como um banner na tela inicial.</p>
+    <div class="form-group"><label class="form-label">Mensagem</label><textarea class="form-input" id="input-feedback" rows="4" placeholder="Ex: Parabéns pela evolução! Aumenta a carga no supino." style="resize:vertical;min-height:90px"></textarea></div>
+    <button class="btn-primary" onclick="sendFeedback()">ENVIAR</button>
+    <button class="btn-ghost" onclick="closeModal('modal-feedback')">CANCELAR</button>
+  </div>
+</div>
+
+<!-- MODAL: Edit Session -->
+<div class="modal-backdrop" id="modal-edit-session">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar Sessão</div>
+    <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="edit-session-date"></div>
+    <div class="form-group">
+      <label class="form-label">Séries</label>
+      <div class="sets-cols-header"><span></span><span class="sets-col-lbl">Série</span><span class="sets-col-lbl">Carga (kg)</span><span class="sets-col-lbl">Reps</span><span></span></div>
+      <div id="edit-sets-editor"></div>
+      <button class="btn-add-set" onclick="addEditSetRow()">+ ADICIONAR SÉRIE</button>
+    </div>
+    <button class="btn-primary" onclick="saveEditSession()">SALVAR ALTERAÇÕES</button>
+    <button class="btn-ghost" onclick="closeModal('modal-edit-session')">CANCELAR</button>
+  </div>
+</div>
+
+<!-- MODAL: Confirm -->
+<div class="modal-backdrop center" id="modal-confirm">
+  <div class="modal-dialog">
+    <div class="modal-title" id="confirm-title">Confirmar</div>
+    <p id="confirm-text" style="font-size:14px;color:var(--text-dim);margin-bottom:20px;line-height:1.5"></p>
+    <div class="confirm-row">
+      <button class="btn-cancel" onclick="closeModal('modal-confirm')">CANCELAR</button>
+      <button class="btn-danger-solid" id="confirm-ok-btn">CONFIRMAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CONFIGURAÇÃO — preencha com seus dados do Firebase
+══════════════════════════════════════════════════ */
+const CFG = {
+  trainerCode: 'MURILO2611',   // código para se cadastrar como treinador
+  studentCode:  'AlunoMSTEAM', // código obrigatório para alunos se cadastrarem
+  firebase: {
+    apiKey: "AIzaSyAdaKNItJ66v0Po_VpQue9huFf_psLmV54",
+    authDomain: "teamms-app.firebaseapp.com",
+    projectId: "teamms-app",
+    storageBucket: "teamms-app.firebasestorage.app",
+    messagingSenderId: "57870273303",
+    appId: "1:57870273303:web:1de3016167b9a69dfd4552"
+  }
+};
+
+/* ══════════════════════════════════════════════════
+   MINI CHART
+══════════════════════════════════════════════════ */
+class MiniChart {
+  constructor(canvas){ this.cv=canvas;this.labels=[];this.data=[];this.unit='';this._tip={on:false,idx:-1};this._bind(); }
+  render(labels,data,unit){ this.labels=labels;this.data=data;this.unit=unit;this._draw(); }
+  _draw(){
+    const cv=this.cv,dpr=window.devicePixelRatio||1,W=cv.parentElement.clientWidth,H=160;
+    cv.style.width=W+'px';cv.style.height=H+'px';cv.width=W*dpr;cv.height=H*dpr;
+    const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+    const D=this.data,n=D.length;if(!n)return;
+    const pad={t:14,r:14,b:40,l:46},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+    const mn=Math.min(...D),mx=Math.max(...D),rng=mx-mn||1;
+    const minV=mn-rng*.1,maxV=mx+rng*.1,span=maxV-minV;
+    const xp=i=>pad.l+(n>1?(i/(n-1))*cw:cw/2);
+    const yp=v=>pad.t+ch-((v-minV)/span)*ch;
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<=4;i++){
+      const gy=pad.t+(i/4)*ch,val=maxV-(i/4)*(maxV-minV);
+      ctx.strokeStyle='#222';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(pad.l,gy);ctx.lineTo(pad.l+cw,gy);ctx.stroke();
+      ctx.fillStyle='#5a5a5a';ctx.font="10px 'DM Mono',monospace";ctx.textAlign='right';
+      ctx.fillText(Math.round(val),pad.l-5,gy+4);
+    }
+    ctx.beginPath();ctx.moveTo(xp(0),yp(D[0]));
+    for(let i=1;i<n;i++){const px=xp(i-1),py=yp(D[i-1]),cx2=xp(i),cy2=yp(D[i]),mpx=(px+cx2)/2;ctx.bezierCurveTo(mpx,py,mpx,cy2,cx2,cy2);}
+    ctx.lineTo(xp(n-1),H-pad.b);ctx.lineTo(xp(0),H-pad.b);ctx.closePath();
+    const g=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+    g.addColorStop(0,'rgba(225,29,72,.22)');g.addColorStop(1,'rgba(225,29,72,0)');
+    ctx.fillStyle=g;ctx.fill();
+    ctx.beginPath();ctx.moveTo(xp(0),yp(D[0]));
+    for(let i=1;i<n;i++){const px=xp(i-1),py=yp(D[i-1]),cx2=xp(i),cy2=yp(D[i]),mpx=(px+cx2)/2;ctx.bezierCurveTo(mpx,py,mpx,cy2,cx2,cy2);}
+    ctx.strokeStyle='#e11d48';ctx.lineWidth=2;ctx.stroke();
+    for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(xp(i),yp(D[i]),4.5,0,Math.PI*2);ctx.fillStyle='#e11d48';ctx.fill();ctx.strokeStyle='#0c0c0c';ctx.lineWidth=2;ctx.stroke();}
+    ctx.fillStyle='#5a5a5a';ctx.font="9px 'DM Mono',monospace";ctx.textAlign='center';
+    const step=Math.max(1,Math.ceil(n/6));const shown=new Set();
+    for(let i=0;i<n;i+=step){this._xl(ctx,this.labels[i],xp(i),H-pad.b+8);shown.add(i);}
+    if(!shown.has(n-1))this._xl(ctx,this.labels[n-1],xp(n-1),H-pad.b+8);
+    if(this._tip.on&&this._tip.idx>=0&&this._tip.idx<n){
+      const ti=this._tip.idx,tx=xp(ti),ty=yp(D[ti]),txt=D[ti]+' '+this.unit;
+      ctx.font="bold 11px 'DM Mono',monospace";const tw=ctx.measureText(txt).width+18;
+      const bx=Math.max(4,Math.min(W-tw-4,tx-tw/2)),by=Math.max(4,ty-34);
+      ctx.fillStyle='#1c1c1c';ctx.strokeStyle='#333';ctx.lineWidth=1;
+      this._rr(ctx,bx,by,tw,22,5);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e11d48';ctx.textAlign='left';ctx.fillText(txt,bx+9,by+15);
+      ctx.strokeStyle='rgba(225,29,72,.3)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(tx,pad.t);ctx.lineTo(tx,H-pad.b);ctx.stroke();ctx.setLineDash([]);
+    }
+  }
+  _xl(ctx,lbl,x,y){ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/7);ctx.fillText(lbl,0,0);ctx.restore();}
+  _rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
+  _gi(cx){const n=this.data.length;if(!n)return -1;const rect=this.cv.getBoundingClientRect(),x=cx-rect.left,W=rect.width,cw=W-60,idx=Math.round(((x-46)/cw)*(n-1));return Math.max(0,Math.min(n-1,idx));}
+  _bind(){
+    const cv=this.cv;
+    cv.addEventListener('mousemove',e=>{this._tip={on:true,idx:this._gi(e.clientX)};this._draw();});
+    cv.addEventListener('mouseleave',()=>{this._tip={on:false,idx:-1};this._draw();});
+    cv.addEventListener('touchstart',e=>{e.preventDefault();this._tip={on:true,idx:this._gi(e.touches[0].clientX)};this._draw();},{passive:false});
+    cv.addEventListener('touchend',()=>{setTimeout(()=>{this._tip={on:false,idx:-1};this._draw();},1800);});
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+const PALETTE=['#e11d48','#3b82f6','#22c55e','#a855f7','#ec4899','#14b8a6','#f59e0b','#ef4444','#64748b'];
+let MODE='local';           // 'local' | 'cloud'
+let CURRENT_USER=null;      // { uid, name, email, role, status }
+let VIEW_STUDENT=null;      // { uid, name } when trainer viewing student
+let VIEW_STUDENT_WORKOUT=null;
+let VIEW_STUDENT_EXERCISE=null;
+
+// Student nav state
+let CUR_WORKOUT=null;
+let CUR_EX=null;
+let EDIT_W=null;
+let SEL_COLOR=PALETTE[0];
+let SET_COUNT=0;
+let CHART_MODE='weight';
+let TS_CHART_MODE='weight';
+let CONFIRM_CB=null;
+let miniChart=null;
+let tsMiniChart=null;
+
+// ═══════════════════════════════════════════════════════
+//  ARMAZENAMENTO LOCAL — versão blindada
+// ═══════════════════════════════════════════════════════
+const STORAGE_KEY = 'teamms_v1';
+
+// Verifica suporte a localStorage
+function lsAvailable(){
+  try{ localStorage.setItem('__test','1'); localStorage.removeItem('__test'); return true; }
+  catch(e){ return false; }
+}
+
+// LOCAL_DB: fonte única de verdade para modo offline
+let LOCAL_DB = {workouts:[]};
+let MIGRATION_RUNNING = false; // trava — impede migração dupla
+let INACTIVE_NAME = '';           // nome do aluno inativo (CURRENT_USER=null)
+
+// Carga inicial — executa ANTES de qualquer outro código
+(function loadInitial(){
+  if(!lsAvailable()) return;
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ LOCAL_DB = JSON.parse(raw); }
+  }catch(e){ LOCAL_DB = {workouts:[]}; }
+}());
+
+// Salva LOCAL_DB no localStorage e atualiza o contador debug
+function localSave(){
+  if(MODE !== 'local') return; // nunca salva local em modo cloud
+  try{
+    const json = JSON.stringify(LOCAL_DB);
+    localStorage.setItem(STORAGE_KEY, json);
+    updateDebugBar();
+  }catch(e){
+    console.warn('localSave error:', e);
+  }
+}
+
+// Releitura explícita (usar com cuidado — só quando necessário)
+function localLoad(){
+  if(!lsAvailable()) return;
+  try{ const r=localStorage.getItem(STORAGE_KEY); if(r) LOCAL_DB=JSON.parse(r); }
+  catch(e){ LOCAL_DB={workouts:[]}; }
+}
+
+// Barra de debug — mostra status do armazenamento em modo offline
+function updateDebugBar(){
+  const bar = document.getElementById('debug-bar');
+  if(!bar) return;
+  const eyebrow = document.getElementById('hero-eyebrow');
+  if(MODE !== 'local'){ bar.style.display='none'; return; }
+  bar.style.display = 'block';
+  let nW, nE, nS, lsOk, label;
+  nW = LOCAL_DB.workouts.length;
+  nE = LOCAL_DB.workouts.reduce((a,w)=>a+(w.exercises||[]).length,0);
+  nS = LOCAL_DB.workouts.reduce((a,w)=>(w.exercises||[]).reduce((acc2,e)=>acc2+(e.sessions||[]).length,0),0);
+  lsOk = !!localStorage.getItem(STORAGE_KEY);
+  label = INACTIVE_NAME ? 'consultoria pausada' : (lsOk ? 'OK' : 'VAZIO');
+  bar.textContent = `💾 localStorage: ${label} · ${nW} treinos · ${nE} exercícios · ${nS} sessões`;
+  bar.style.color = lsOk ? '#22c55e' : '#e11d48';
+}
+
+function showToast(msg,isError){
+  let t=document.getElementById('toast-msg');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast-msg';
+    t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e1e1e;color:#22c55e;padding:10px 20px;border-radius:8px;font-size:13px;font-family:monospace;z-index:9999;pointer-events:none;border:1px solid #22c55e;transition:opacity .3s;opacity:0;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.borderColor=isError?'#e11d48':'#22c55e';
+  t.style.color=isError?'#e11d48':'#22c55e';
+  t.style.opacity='1';
+  clearTimeout(t._hide);
+  t._hide=setTimeout(()=>{t.style.opacity='0';},2000);
+}
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ══════════════════════════════════════════════════
+   MIGRAÇÃO OFFLINE → CLOUD
+   Chamada ao logar se houver dados locais (teamms_v1)
+   Escrita item a item (sem batch) para máxima compatibilidade
+══════════════════════════════════════════════════ */
+async function migrateLocalToCloud(userId){
+  // ── TRAVA DUPLA: memória + localStorage ──────────────────────
+  if(MIGRATION_RUNNING) return;                        // já rodando nesta sessão
+  if(localStorage.getItem('teamms_migrating')==='1') return; // rodou em outra aba/sessão recente
+  // ─────────────────────────────────────────────────────────────
+
+  localLoad();
+  const workouts = LOCAL_DB.workouts;
+  if(!workouts || workouts.length === 0) return; // nada para migrar
+
+  // Ativa a trava
+  MIGRATION_RUNNING = true;
+  localStorage.setItem('teamms_migrating', '1');
+
+  const loadingLabel = document.getElementById('screen-loading').querySelector('.loading-label');
+  loadingLabel.textContent = 'sincronizando dados offline...';
+  showScreen('screen-loading');
+
+  try{
+    // Checa quais treinos já existem no cloud (por nome) para não duplicar
+    const existing = await db.collection('workouts').where('userId','==',userId).get();
+    const cloudNames = new Set(existing.docs.map(d=>d.data().name));
+
+    // Mapa: nome do treino → id do documento no cloud
+    const cloudIdMap = {};
+    existing.docs.forEach(d=>{ cloudIdMap[d.data().name] = d.id; });
+
+    // 1. Sobe treinos inteiramente novos
+    const toUpload = workouts.filter(w => !cloudNames.has(w.name));
+    // 2. Atualiza treinos que já existem no cloud (novas sessões/exercícios)
+    const toUpdate = workouts.filter(w => cloudNames.has(w.name));
+
+    // ── Treinos novos ──────────────────────────────────────────
+    let totalSessions = 0;
+    for(const w of toUpload){
+      loadingLabel.textContent = 'subindo: ' + w.name + '...';
+      const wRef = await db.collection('workouts').add({
+        userId, name: w.name, color: w.color,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      for(const e of (w.exercises||[])){
+        const eRef = await db.collection('exercises').add({
+          userId, workoutId: wRef.id, name: e.name,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        for(const s of (e.sessions||[])){
+          await db.collection('sessions').add({
+            userId, workoutId: wRef.id, exerciseId: eRef.id,
+            date: s.date, sets: s.sets,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          totalSessions++;
+        }
+      }
+    }
+
+    // ── Treinos existentes: sobe exercícios/sessões novos ──────
+    for(const w of toUpdate){
+      const cloudWId = cloudIdMap[w.name];
+      loadingLabel.textContent = 'atualizando: ' + w.name + '...';
+      // Busca exercícios que já existem no cloud para esse treino
+      const exSnap = await db.collection('exercises').where('workoutId','==',cloudWId).get();
+      const cloudExNames = new Set(exSnap.docs.map(d=>d.data().name));
+      const cloudExMap = {};
+      exSnap.docs.forEach(d=>{ cloudExMap[d.data().name]=d.id; });
+
+      for(const e of (w.exercises||[])){
+        let eId;
+        if(!cloudExNames.has(e.name)){
+          // Exercício novo — cria
+          const eRef = await db.collection('exercises').add({
+            userId, workoutId: cloudWId, name: e.name,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          eId = eRef.id;
+        } else {
+          eId = cloudExMap[e.name];
+        }
+        // Busca sessões já existentes no cloud (por data+exercícioId)
+        const sSnap = await db.collection('sessions').where('exerciseId','==',eId).get();
+        const cloudDates = new Set(sSnap.docs.map(d=>d.data().date));
+        for(const s of (e.sessions||[])){
+          if(!cloudDates.has(s.date)){
+            await db.collection('sessions').add({
+              userId, workoutId: cloudWId, exerciseId: eId,
+              date: s.date, sets: s.sets,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            totalSessions++;
+          }
+        }
+      }
+    }
+
+    // Sucesso — limpa local
+    localStorage.removeItem('teamms_v1');
+    localStorage.removeItem('teamms_migration_pending');
+    localStorage.removeItem('teamms_migrating');
+    LOCAL_DB = {workouts:[]};
+    MIGRATION_RUNNING = false;
+
+    loadingLabel.textContent = 'dados sincronizados ✓';
+    await new Promise(r => setTimeout(r, 800));
+
+  }catch(err){
+    console.error('Migração falhou:', err.code, err.message);
+    // Mantém teamms_v1 intacto. Remove apenas a trava temporária
+    // para permitir retry na próxima sessão
+    localStorage.removeItem('teamms_migrating');
+    MIGRATION_RUNNING = false;
+    loadingLabel.textContent = 'erro na sincronização (dados preservados)';
+    await new Promise(r => setTimeout(r, 1500));
+  }
+}
+
+// Utilitário: limpa treinos duplicados de um usuário (chame do console)
+// Uso: await cleanDuplicates()
+async function cleanDuplicates(){
+  if(!CURRENT_USER || !db){ alert('Faça login primeiro'); return; }
+  const uid = CURRENT_USER.uid;
+  const snap = await db.collection('workouts').where('userId','==',uid).get();
+  // Agrupa por nome e mantém só o mais recente
+  const seen = {};
+  const toDelete = [];
+  snap.docs.forEach(d => {
+    const name = d.data().name;
+    if(seen[name]){
+      toDelete.push(d.id); // duplicata
+    } else {
+      seen[name] = d.id;
+    }
+  });
+  if(toDelete.length === 0){ alert('Nenhum duplicado encontrado!'); return; }
+  for(const wid of toDelete){
+    // Remove exercícios e sessões do treino duplicado
+    const exs = await db.collection('exercises').where('workoutId','==',wid).get();
+    for(const ex of exs.docs){
+      const sess = await db.collection('sessions').where('exerciseId','==',ex.id).get();
+      for(const s of sess.docs) await s.ref.delete();
+      await ex.ref.delete();
+    }
+    await db.collection('workouts').doc(wid).delete();
+  }
+  alert(toDelete.length + ' treino(s) duplicado(s) removidos!');
+  await loadCloudHome();
+  showScreen('screen-home');
+}
+
+
+// Cloud backup — salva cópia local dos dados do aluno logado
+// Salva em dois lugares: chave por uid (para restaurar ao relogar)
+// e teamms_v1 (para estar disponível em modo offline sem conta)
+function saveCloudBackup(){
+  if(!CURRENT_USER)return;
+  try{
+    localStorage.setItem('teamms_cloud_'+CURRENT_USER.uid, JSON.stringify(CLOUD_WORKOUTS));
+    // Espelho bidirecional: teamms_v1 sempre reflete o estado cloud
+    mergeIntoLocal(CLOUD_WORKOUTS);
+  }catch(e){}
+}
+function loadCloudBackup(uid){
+  try{const r=localStorage.getItem('teamms_cloud_'+uid);return r?JSON.parse(r):[];}
+  catch(e){return [];}
+}
+
+// ── mergeIntoLocal(workouts) ────────────────────────────────────
+// Mescla lista de treinos no teamms_v1 sem duplicar por nome.
+// Treinos locais com mesmo nome são substituídos pela versão mais
+// completa (maior número de sessões). Treinos exclusivamente locais
+// são preservados.
+function mergeIntoLocal(incoming){
+  if(!incoming || !incoming.length) return;
+  try{
+    localLoad();
+    const local = LOCAL_DB.workouts || [];
+    const merged = [...local];
+    for(const inW of incoming){
+      const idx = merged.findIndex(lw => lw.name === inW.name);
+      if(idx === -1){
+        // Novo treino — adiciona
+        merged.push(inW);
+      } else {
+        // Mesmo nome — mantém o que tiver mais sessões no total
+        const localSess  = merged[idx].exercises.reduce((a,e)=>a+(e.sessions||[]).length,0);
+        const incomSess  = (inW.exercises||[]).reduce((a,e)=>a+(e.sessions||[]).length,0);
+        if(incomSess >= localSess) merged[idx] = inW; // cloud mais atualizado
+      }
+    }
+    LOCAL_DB.workouts = merged;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+  }catch(e){ console.warn('mergeIntoLocal error:', e); }
+}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const today=()=>new Date().toISOString().slice(0,10);
+const fmt=iso=>{const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;};
+
+/* ══════════════════════════════════════════════════
+   FIREBASE
+══════════════════════════════════════════════════ */
+let db=null,auth=null;
+function initFirebase(){
+  if(auth && db) return true; // já inicializado, não inicializa de novo
+  try{
+    // Se já existe um app Firebase, usa o existente
+    if(firebase.apps && firebase.apps.length > 0){
+      auth = firebase.auth();
+      db   = firebase.firestore();
+    } else {
+      firebase.initializeApp(CFG.firebase);
+      auth = firebase.auth();
+      db   = firebase.firestore();
+    }
+    return true;
+  }catch(e){console.warn('Firebase init failed',e);return false;}
+}
+
+/* ══════════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════════ */
+function authTab(tab){
+  document.getElementById('tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('tab-register').classList.toggle('active',tab==='register');
+  document.getElementById('panel-login').classList.toggle('active',tab==='login');
+  document.getElementById('panel-register').classList.toggle('active',tab==='register');
+}
+
+function showAuthError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('show');}
+function clearAuthError(id){document.getElementById(id).classList.remove('show');}
+
+async function doLogin(){
+  clearAuthError('login-error');
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!email||!pass){showAuthError('login-error','Preencha e-mail e senha.');return;}
+  const btn=document.getElementById('btn-login');
+  btn.disabled=true;btn.textContent='ENTRANDO...';
+  try{
+    AUTH_HANDLED = false; // reseta para que o listener processe o login
+    await auth.signInWithEmailAndPassword(email,pass);
+    btn.disabled=false;btn.textContent='ENTRAR';
+  }catch(e){
+    btn.disabled=false;btn.textContent='ENTRAR';
+    const msgs={'auth/user-not-found':'Conta não encontrada.','auth/wrong-password':'Senha incorreta.','auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde.'};
+    showAuthError('login-error',msgs[e.code]||('Erro: '+e.code));
+  }
+}
+
+async function doRegister(){
+  clearAuthError('reg-error');
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  const code=document.getElementById('reg-code').value.trim();
+  if(!name||!email||!pass){showAuthError('reg-error','Preencha todos os campos.');return;}
+  if(pass.length<6){showAuthError('reg-error','Senha deve ter ao menos 6 caracteres.');return;}
+  if(code!==CFG.trainerCode&&code!==CFG.studentCode){
+    showAuthError('reg-error','Código inválido. Peça o código ao seu treinador.');return;
+  }
+  const role=code===CFG.trainerCode?'trainer':'student';
+  const btn=document.getElementById('btn-register');
+  btn.disabled=true;btn.textContent='CRIANDO...';
+  try{
+    AUTH_HANDLED = false; // reseta para que o listener processe o cadastro
+    const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    const userData={name,email,role,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+    if(role==='student') userData.status='active';
+    await db.collection('users').doc(cred.user.uid).set(userData);
+  }catch(e){
+    btn.disabled=false;btn.textContent='CRIAR CONTA';
+    const msgs={'auth/email-already-in-use':'E-mail já cadastrado.','auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.'};
+    showAuthError('reg-error',msgs[e.code]||('Erro: '+e.code+' — '+e.message));
+  }
+}
+
+function goOffline(){
+  MODE='local';
+  CURRENT_USER=null;
+  localStorage.setItem('teamms_offline_pref','1');
+  // LOCAL_DB já carregado na inicialização — não chama localLoad() de novo
+  document.getElementById('hero-eyebrow').textContent='// modo offline';
+  document.getElementById('user-chip-name').textContent='offline';
+  // Mostra barra de debug em modo offline
+  renderHome();
+  showScreen('screen-home');
+}
+
+function handleChipTap(){
+  if(MODE==='local'){
+    showConfirm('Entrar com conta','Deseja fazer login para sincronizar seus dados na nuvem?',()=>{
+      localStorage.removeItem('teamms_offline_pref');
+      if(!auth || !db) initFirebase();
+      AUTH_HANDLED = false; // permite que o listener rode após login
+      const safetyTimer = setTimeout(()=>{
+        if(document.getElementById('screen-loading').classList.contains('active')){
+          showScreen('screen-auth');
+        }
+      }, 5000);
+      startAuthListener(safetyTimer);
+      showScreen('screen-auth');
+    });
+  }else{
+    confirmLogout();
+  }
+}
+
+async function confirmLogout(){
+  showConfirm('Sair','Deseja sair da sua conta?',async()=>{
+    // ── Antes de deslogar: copia dados cloud → teamms_v1 (offline) ──
+    // Garante que o aluno tenha acesso aos dados mesmo sem conta
+    if(CLOUD_WORKOUTS && CLOUD_WORKOUTS.length > 0){
+      try{
+        // Mescla com dados locais existentes sem duplicar (por nome do treino)
+        localLoad();
+        const localNames = new Set((LOCAL_DB.workouts||[]).map(w=>w.name));
+        const toMerge = CLOUD_WORKOUTS.filter(w=>!localNames.has(w.name));
+        if(toMerge.length > 0){
+          LOCAL_DB.workouts = [...(LOCAL_DB.workouts||[]), ...toMerge];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+        } else if((LOCAL_DB.workouts||[]).length === 0){
+          // Sem dados locais — copia tudo
+          LOCAL_DB.workouts = [...CLOUD_WORKOUTS];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+        }
+      }catch(e){ console.warn('Erro ao copiar dados cloud para offline:', e); }
+    }
+    try{
+      if(auth) await auth.signOut();
+    }catch(e){}
+    localStorage.removeItem('teamms_offline_pref');
+    localStorage.removeItem('teamms_migrating');
+    MIGRATION_RUNNING = false;
+    AUTH_HANDLED = false;
+    MODE='local';
+    CURRENT_USER=null;
+    INACTIVE_NAME='';
+    CLOUD_WORKOUTS=[];
+    CUR_WORKOUT=null;
+    CUR_EX=null;
+    const btn=document.getElementById('btn-login');
+    if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+    const btn2=document.getElementById('btn-register');
+    if(btn2){btn2.disabled=false;btn2.textContent='CRIAR CONTA';}
+    showScreen('screen-auth');
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   AUTH STATE LISTENER
+══════════════════════════════════════════════════ */
+let AUTH_HANDLED = false; // garante execução única por sessão de login
+let AUTH_UNSUBSCRIBE = null;
+
+function startAuthListener(safetyTimer){
+  if(AUTH_UNSUBSCRIBE){ AUTH_UNSUBSCRIBE(); AUTH_UNSUBSCRIBE=null; }
+  AUTH_UNSUBSCRIBE = auth.onAuthStateChanged(async user=>{
+    if(AUTH_HANDLED) return; // Firebase dispara várias vezes — ignora depois da 1ª
+    AUTH_HANDLED = true;
+    if(safetyTimer) clearTimeout(safetyTimer);
+
+    // ── Sem usuário logado ────────────────────────────────────────
+    if(!user){ showScreen('screen-auth'); return; }
+
+    // ── Usuário logado ────────────────────────────────────────────
+    try{
+      const snap = await db.collection('users').doc(user.uid).get();
+      if(!snap.exists){ await auth.signOut(); showScreen('screen-auth'); return; }
+      CURRENT_USER = {uid: user.uid, ...snap.data()};
+
+      // Treinador
+      if(CURRENT_USER.role === 'trainer'){
+        MODE = 'cloud';
+        renderTrainer();
+        showScreen('screen-trainer');
+        return;
+      }
+
+      // Aluno INATIVO — entra em modo local (pode editar; dados sobem ao reativar)
+      if(CURRENT_USER.status === 'inactive'){
+        const uname  = CURRENT_USER.name || 'aluno';
+        const ownUid = user.uid;
+        try{
+          // Busca dados do Firebase e mescla no teamms_v1 (sem sobrescrever edições locais)
+          const wSnaps = await db.collection('workouts').where('userId','==',ownUid).get();
+          const fresh  = [];
+          for(const wd of wSnaps.docs){
+            const w = {id:wd.id,...wd.data(),exercises:[]};
+            const eSnaps = await db.collection('exercises').where('workoutId','==',wd.id).get();
+            for(const ed of eSnaps.docs){
+              const e = {id:ed.id,...ed.data(),sessions:[]};
+              const sSnaps = await db.collection('sessions').where('exerciseId','==',ed.id).get();
+              e.sessions = sSnaps.docs.map(sd=>({id:sd.id,...sd.data()}));
+              e.sessions.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+              w.exercises.push(e);
+            }
+            fresh.push(w);
+          }
+          // Salva backup por uid (para quando reativar a conta)
+          if(fresh.length > 0) localStorage.setItem('teamms_cloud_'+ownUid, JSON.stringify(fresh));
+          // Mescla no teamms_v1 para acesso offline sem login
+          mergeIntoLocal(fresh);
+        }catch(err){ console.warn('Backup inativo falhou:', err.message); }
+
+        await auth.signOut();
+        CURRENT_USER = null;
+        // ⬇ MODE='local' — pode editar normalmente
+        MODE = 'local';
+        INACTIVE_NAME = uname;
+        // Recarrega LOCAL_DB com dados frescos
+        localLoad();
+        document.getElementById('hero-eyebrow').textContent = '// consultoria pausada';
+        document.getElementById('user-chip-name').textContent = uname;
+        // Mostra banner informativo mas SEM bloquear edição
+        const ib = document.getElementById('inactive-banner');
+        if(ib) ib.innerHTML = '⏸ Consultoria pausada — seus dados ficam salvos aqui. Ao reativar, tudo sobe para a nuvem automaticamente.';
+        renderHome();
+        showScreen('screen-home');
+        return;
+      }
+
+      // Aluno ATIVO
+      MODE = 'cloud';
+      localStorage.removeItem('teamms_offline_pref');
+      document.getElementById('hero-eyebrow').textContent  = '// consultoria ativa';
+      document.getElementById('user-chip-name').textContent = CURRENT_USER.name || 'aluno';
+
+      // Migração: sempre tenta subir dados offline para cloud ao logar
+      const hasOffline = !!localStorage.getItem('teamms_v1');
+      if(hasOffline){
+        await migrateLocalToCloud(user.uid);
+      }
+      await loadCloudHome();
+      showScreen('screen-home');
+
+    }catch(e){ console.error('Auth handler error:', e); showScreen('screen-auth'); }
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SCREENS
+══════════════════════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'instant'});
+  // FABs visíveis em local e cloud; ocultos apenas para treinador vendo aluno
+  const isReadonly = (CURRENT_USER?.role==='trainer' && VIEW_STUDENT!==null);
+  document.getElementById('fab-home').style.display=id==='screen-home'&&!isReadonly?'flex':'none';
+  document.getElementById('fab-workout').style.display=id==='screen-workout'&&!isReadonly?'flex':'none';
+  document.getElementById('fab-exercise').style.display=id==='screen-exercise'&&!isReadonly?'flex':'none';
+  if(id==='screen-exercise'||id==='screen-ts-exercise') document.getElementById('btn-del-exercise').style.display=id==='screen-exercise'&&!isReadonly&&CURRENT_USER?.role!=='trainer'?'flex':'none';
+}
+
+function goHome(){CUR_WORKOUT=null;CUR_EX=null;if(MODE==='local'){renderHome();}else{loadCloudHome();}showScreen('screen-home');}
+function goWorkout(){renderWorkout();showScreen('screen-workout');}
+function goTrainer(){VIEW_STUDENT=null;renderTrainer();showScreen('screen-trainer');}
+function goTrainerStudent(){renderTrainerStudent(VIEW_STUDENT);showScreen('screen-trainer-student');}
+function goTsWorkout(){renderTsWorkout(VIEW_STUDENT_WORKOUT);showScreen('screen-ts-workout');}
+
+/* ══════════════════════════════════════════════════
+   LOCAL HOME
+══════════════════════════════════════════════════ */
+function renderHome(){
+  document.getElementById('user-chip-name').textContent=CURRENT_USER?CURRENT_USER.name:(INACTIVE_NAME||'offline');
+  const inactiveBanner=document.getElementById('inactive-banner');
+  if(inactiveBanner) inactiveBanner.style.display=INACTIVE_NAME?'block':'none';
+  updateDebugBar();
+  const ws=MODE==='local'?LOCAL_DB.workouts:CLOUD_WORKOUTS;
+  const list=document.getElementById('workout-list');
+  const empty=document.getElementById('workout-empty');
+  const stats=document.getElementById('home-stats');
+  const nW=ws.length,nE=ws.reduce((a,w)=>a+w.exercises.length,0),nS=ws.reduce((a,w)=>a+w.exercises.reduce((acc2,e)=>acc2+e.sessions.length,0),0);
+  stats.innerHTML=`<div class="stat-cell"><div class="num">${nW}</div><div class="lbl">Treinos</div></div><div class="stat-cell"><div class="num">${nE}</div><div class="lbl">Exercícios</div></div><div class="stat-cell"><div class="num">${nS}</div><div class="lbl">Sessões</div></div>`;
+  if(!nW){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=ws.map(w=>{
+    const last=lastDate(w);
+    const meta=last?'Último: '+fmt(last):w.exercises.length+' exercício(s)';
+    const wid=esc(w.id),wn=esc(w.name);
+    return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openWorkout('${wid}')">
+      <div class="workout-card-info"><div class="workout-card-name">${wn}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
+      <div class="workout-card-actions">
+        <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout('${wid}')" title="Editar">✏️</button>
+        <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir Treino','Excluir este treino e todos seus dados?',function(){deleteWorkout('${wid}');})" title="Excluir">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+  loadFeedbackBanner();
+}
+
+function lastDate(w){let b=null;w.exercises.forEach(e=>e.sessions.forEach(s=>{if(!b||s.date>b)b=s.date;}));return b;}
+
+/* ══════════════════════════════════════════════════
+   CLOUD DATA (in-memory cache for student)
+══════════════════════════════════════════════════ */
+let CLOUD_WORKOUTS=[];
+
+async function loadCloudHome(){
+  if(!CURRENT_USER)return;
+  try{
+    const snaps=await db.collection('workouts').where('userId','==',CURRENT_USER.uid).get();
+    CLOUD_WORKOUTS=[];
+    console.log('Workouts encontrados:', snaps.docs.length);
+    for(const doc of snaps.docs){
+      const w={id:doc.id,...doc.data(),exercises:[]};
+      const exSnaps=await db.collection('exercises').where('workoutId','==',doc.id).get();
+      for(const ed of exSnaps.docs){
+        const e={id:ed.id,...ed.data(),sessions:[]};
+        const sSnaps=await db.collection('sessions').where('exerciseId','==',ed.id).get();
+        e.sessions=sSnaps.docs.map(sd=>({id:sd.id,...sd.data()}));
+        e.sessions.sort((a,b)=>a.date.localeCompare(b.date));
+        w.exercises.push(e);
+      }
+      CLOUD_WORKOUTS.push(w);
+    }
+    saveCloudBackup(); // ← atualiza backup offline com dados mais recentes do Firebase
+    renderHome();
+    checkFeedback();
+  }catch(e){
+    console.error('loadCloudHome error:',e.code, e.message);
+    // Show user something went wrong but keep app usable
+    renderHome();
+  }
+}
+
+async function checkFeedback(){
+  if(!CURRENT_USER||CURRENT_USER.role==='trainer')return;
+  try{
+    const snap=await db.collection('feedback').where('studentId','==',CURRENT_USER.uid).limit(5).get();
+    if(!snap.empty){
+      // Sort client-side by createdAt desc
+      const sorted=snap.docs.sort((a,b)=>{
+        const ta=a.data().createdAt?.seconds||0;
+        const tb=b.data().createdAt?.seconds||0;
+        return tb-ta;
+      });
+      const doc=sorted[0];
+      const f=doc.data();
+      if(!f.read) showFeedbackBanner(doc.id,f.message);
+    }
+  }catch(e){}
+}
+
+function showFeedbackBanner(fid,msg){
+  const b=document.getElementById('feedback-banner');
+  document.getElementById('feedback-banner-text').textContent=msg;
+  b.dataset.fid=fid;
+  b.style.display='block';
+}
+async function dismissFeedback(){
+  const b=document.getElementById('feedback-banner');
+  const fid=b.dataset.fid;
+  b.style.display='none';
+  if(fid&&db) try{await db.collection('feedback').doc(fid).update({read:true});}catch(e){}
+}
+function loadFeedbackBanner(){if(MODE==='cloud')checkFeedback();}
+
+/* ══════════════════════════════════════════════════
+   WORKOUT NAVIGATION
+══════════════════════════════════════════════════ */
+function getWorkouts(){return (MODE==='local')?LOCAL_DB.workouts:CLOUD_WORKOUTS;}
+function getW(id){return getWorkouts().find(w=>w.id===id);}
+function getE(wid,eid){const w=getW(wid);return w?w.exercises.find(e=>e.id===eid):null;}
+
+function openWorkout(id){CUR_WORKOUT=id;renderWorkout();showScreen('screen-workout');}
+function renderWorkout(){
+  const w=getW(CUR_WORKOUT);if(!w)return goHome();
+  document.getElementById('workout-screen-title').textContent=w.name;
+  const list=document.getElementById('exercise-list'),empty=document.getElementById('exercise-empty');
+  if(!w.exercises.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=w.exercises.map(e=>{
+    const last=e.sessions.length?e.sessions[e.sessions.length-1]:null;
+    const info=last?'Último: '+fmt(last.date)+' · '+Math.max(...last.sets.map(s=>s.weight))+' kg':'— sem registros';
+    return`<div class="exercise-row" onclick="openExercise('${esc(e.id)}')">
+      <div class="exercise-row-dot"></div>
+      <div class="exercise-row-info"><div class="exercise-row-name">${esc(e.name)}</div><div class="exercise-row-last">${info}</div></div>
+      <div class="exercise-row-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+function openExercise(eid){
+  CUR_EX=eid;miniChart=null;tsMiniChart=null;CHART_MODE='weight';
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
+  document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
+  buildSessions(e,'sessions-list',false);
+  showScreen('screen-exercise');
+  // Render chart AFTER screen is visible so canvas has correct dimensions
+  requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
+}
+function renderExercise(){
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
+  document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
+  buildSessions(e,'sessions-list',false);
+  requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
+}
+
+/* ══════════════════════════════════════════════════
+   SESSIONS RENDER
+══════════════════════════════════════════════════ */
+function buildSessions(e,elId,readonly){
+  const el=document.getElementById(elId);
+  if(!e.sessions.length){el.innerHTML='<div class="no-data-inline">Nenhuma sessão registrada.</div>';return;}
+  const sorted=[...e.sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  el.innerHTML=sorted.map(sess=>{
+    const vol=sess.sets.reduce((a,s)=>a+s.weight*s.reps,0);
+    const rows=sess.sets.map((s,i)=>`<tr><td><span class="set-idx">${i+1}</span></td><td><span class="set-chip">${i+1}ª</span></td><td><span class="set-chip">${s.weight} kg</span></td><td><span class="set-chip">${s.reps}×</span></td></tr>`).join('');
+    const del=readonly?'':
+      `<button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px;margin-right:2px"
+        onclick="openEditSession('${esc(sess.id)}')">✏️</button>
+       <button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px"
+        onclick="showConfirm('Excluir Sessão','Apagar este registro?',function(){deleteSession('${esc(sess.id)}');})">🗑</button>`;
+    return`<div class="session-block">
+      <div class="session-header">
+        <span class="session-date-badge">📅 ${fmt(sess.date)}</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="session-vol">Vol: ${vol} kg</span>${del}</div>
+      </div>
+      <table class="sets-table"><thead><tr><th>#</th><th>Série</th><th>Carga</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   CHART
+══════════════════════════════════════════════════ */
+function buildChart(e,canvasId,mode,chartRef){
+  const cv=document.getElementById(canvasId);
+  const empty=document.getElementById(canvasId==='progressChart'?'chart-empty-msg':'ts-chart-empty');
+  if(!e.sessions.length){cv.style.display='none';empty.style.display='block';return;}
+  cv.style.display='block';empty.style.display='none';
+  const sorted=[...e.sessions].sort((a,b)=>a.date.localeCompare(b.date));
+  const labels=sorted.map(s=>fmt(s.date));
+  const data=mode==='weight'?sorted.map(s=>Math.max(...s.sets.map(st=>st.weight))):
+    mode==='volume'?sorted.map(s=>s.sets.length):
+    sorted.map(s=>Math.max(...s.sets.map(st=>st.reps)));
+  const unit=mode==='weight'?'kg (máx)':mode==='volume'?'séries':'reps (máx)';
+  if(canvasId==='progressChart'){if(!miniChart)miniChart=new MiniChart(cv);miniChart.render(labels,data,unit);}
+  else{if(!tsMiniChart)tsMiniChart=new MiniChart(cv);tsMiniChart.render(labels,data,unit);}
+}
+
+function switchChart(mode){
+  CHART_MODE=mode;
+  ['weight','reps','volume'].forEach(m=>document.getElementById('btn-'+m).classList.toggle('active',m===mode));
+  const e=getE(CUR_WORKOUT,CUR_EX);if(e)buildChart(e,'progressChart',mode,null);
+}
+function switchTsChart(mode){
+  TS_CHART_MODE=mode;
+  ['weight','reps','volume'].forEach(m=>document.getElementById('ts-btn-'+m).classList.toggle('active',m===mode));
+  if(VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',mode,null);
+}
+
+/* ══════════════════════════════════════════════════
+   CRUD — LOCAL
+══════════════════════════════════════════════════ */
+function lw(id){return LOCAL_DB.workouts.find(w=>w.id===id);}
+function le(wid,eid){const w=lw(wid);return w?w.exercises.find(e=>e.id===eid):null;}
+
+function deleteWorkout(id){
+  if(MODE==='local'){LOCAL_DB.workouts=LOCAL_DB.workouts.filter(w=>w.id!==id);localSave();renderHome();}
+  else cloudDeleteWorkout(id);
+}
+function deleteSession(sid){
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
+  if(MODE==='local'){e.sessions=e.sessions.filter(s=>s.id!==sid);localSave();}
+  else{db.collection('sessions').doc(sid).delete().then(()=>{e.sessions=e.sessions.filter(s=>s.id!==sid);saveCloudBackup();renderExercise();});}
+  renderExercise();
+}
+function deleteCurrentExercise(){
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
+  showConfirm('Excluir Exercício','Excluir "'+e.name+'"? Todo o histórico será apagado.',async()=>{
+    if(MODE==='local'){const w=lw(CUR_WORKOUT);w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);localSave();}
+    else{
+      const sess=await db.collection('sessions').where('exerciseId','==',CUR_EX).get();
+      const batch=db.batch();sess.docs.forEach(d=>batch.delete(d.ref));
+      batch.delete(db.collection('exercises').doc(CUR_EX));
+      await batch.commit();
+      const w=getW(CUR_WORKOUT);w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);
+      saveCloudBackup(); // ← atualiza backup offline
+    }
+    CUR_EX=null;goWorkout();
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   CLOUD CRUD
+══════════════════════════════════════════════════ */
+async function cloudDeleteWorkout(id){
+  const batch=db.batch();
+  const exs=await db.collection('exercises').where('workoutId','==',id).get();
+  for(const ex of exs.docs){
+    const sess=await db.collection('sessions').where('exerciseId','==',ex.id).get();
+    sess.docs.forEach(s=>batch.delete(s.ref));
+    batch.delete(ex.ref);
+  }
+  batch.delete(db.collection('workouts').doc(id));
+  await batch.commit();
+  CLOUD_WORKOUTS=CLOUD_WORKOUTS.filter(w=>w.id!==id);
+  saveCloudBackup(); // ← atualiza backup offline
+  renderHome();
+}
+
+/* ══════════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════════ */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// Workout
+function buildColorPicker(){
+  document.getElementById('color-picker-row').innerHTML=PALETTE.map(c=>
+    `<div class="color-swatch ${c===SEL_COLOR?'active':''}" style="background:${c}" data-color="${c}" onclick="pickColor('${c}')"></div>`
+  ).join('');
+}
+function pickColor(c){SEL_COLOR=c;document.querySelectorAll('.color-swatch').forEach(d=>d.classList.toggle('active',d.dataset.color===c));}
+function openAddWorkoutModal(){EDIT_W=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo Treino';document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
+function openEditWorkout(id){const w=getW(id);if(!w)return;EDIT_W=id;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar Treino';document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
+
+async function saveWorkout(){
+  const name=document.getElementById('input-workout-name').value.trim();
+  if(!name){alert('Digite o nome do treino!');return;}
+  if(MODE==='local'){
+    if(EDIT_W){const w=lw(EDIT_W);w.name=name;w.color=SEL_COLOR;}
+    else LOCAL_DB.workouts.push({id:uid(),name,color:SEL_COLOR,exercises:[]});
+    localSave();showToast('✓ Treino salvo offline');closeModal('modal-workout');renderHome();
+  }else{
+    try{
+      if(EDIT_W){
+        await db.collection('workouts').doc(EDIT_W).update({name,color:SEL_COLOR});
+        const w=getW(EDIT_W);w.name=name;w.color=SEL_COLOR;
+      }else{
+        const ref=await db.collection('workouts').add({userId:CURRENT_USER.uid,name,color:SEL_COLOR,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        CLOUD_WORKOUTS.push({id:ref.id,userId:CURRENT_USER.uid,name,color:SEL_COLOR,exercises:[]});
+      }
+      saveCloudBackup();
+      closeModal('modal-workout');renderHome();
+    }catch(e){
+      alert('Erro ao salvar treino: '+e.code+' — '+e.message);
+      console.error(e);
+    }
+  }
+}
+
+// Exercise
+function openAddExerciseModal(){document.getElementById('input-exercise-name').value='';openModal('modal-exercise');setTimeout(()=>document.getElementById('input-exercise-name').focus(),300);}
+async function saveExercise(){
+  const name=document.getElementById('input-exercise-name').value.trim();
+  if(!name){alert('Digite o nome do exercício!');return;}
+  if(MODE==='local'){
+    const w=lw(CUR_WORKOUT);if(!w)return;
+    w.exercises.push({id:uid(),name,sessions:[]});
+    localSave();showToast('✓ Exercício salvo offline');closeModal('modal-exercise');renderWorkout();
+  }else{
+    try{
+      const ref=await db.collection('exercises').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const w=getW(CUR_WORKOUT);w.exercises.push({id:ref.id,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[]});
+      saveCloudBackup();
+      closeModal('modal-exercise');renderWorkout();
+    }catch(e){
+      alert('Erro ao salvar exercício: '+e.code+' — '+e.message);
+      console.error(e);
+    }
+  }
+}
+
+// Session
+function openLogSessionModal(){document.getElementById('input-session-date').value=today();SET_COUNT=0;document.getElementById('sets-editor').innerHTML='';addSetRow();addSetRow();addSetRow();openModal('modal-session');}
+function addSetRow(){SET_COUNT++;const el=document.getElementById('sets-editor');const d=document.createElement('div');d.className='set-edit-row';d.innerHTML=`<span class="set-edit-num">${SET_COUNT}</span><input class="set-edit-input readonly" value="${SET_COUNT}ª" readonly><input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w"><input class="set-edit-input" type="number" placeholder="0" min="0" step="1" data-f="r"><button class="btn-rm-set" onclick="removeSet(this)">✕</button>`;el.appendChild(d);}
+function removeSet(btn){btn.closest('.set-edit-row').remove();document.querySelectorAll('.set-edit-row').forEach((r,i)=>{r.querySelector('.set-edit-num').textContent=i+1;r.querySelector('.readonly').value=(i+1)+'ª';});}
+
+async function saveSession(){
+  const date=document.getElementById('input-session-date').value;
+  if(!date){alert('Selecione a data!');return;}
+  const rows=[...document.querySelectorAll('.set-edit-row')];const sets=[];
+  for(const row of rows){
+    const w=parseFloat(row.querySelector('[data-f="w"]').value);
+    const r=parseInt(row.querySelector('[data-f="r"]').value);
+    if(isNaN(w)||isNaN(r)||w<0||r<0){alert('Preencha carga e reps em todas as séries!');return;}
+    sets.push({weight:w,reps:r});
+  }
+  if(!sets.length){alert('Adicione ao menos 1 série!');return;}
+  if(MODE==='local'){
+    const e=le(CUR_WORKOUT,CUR_EX);if(!e){alert('Erro: exercício não encontrado. Reabra o exercício.');return;}
+    e.sessions.push({id:uid(),date,sets});
+    localSave();
+    // Confirma que salvou
+    const verify=localStorage.getItem('teamms_v1');
+    if(verify) showToast('✓ Sessão salva offline');
+    else showToast('Erro ao salvar!',true);
+  }else{
+    try{
+      const ref=await db.collection('sessions').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,exerciseId:CUR_EX,date,sets,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const e=getE(CUR_WORKOUT,CUR_EX);e.sessions.push({id:ref.id,date,sets});
+      saveCloudBackup(); // ← atualiza backup offline
+    }catch(e){
+      alert('Erro ao salvar sessão: '+e.code+' — '+e.message);
+      console.error(e);
+      return;
+    }
+  }
+  closeModal('modal-session');renderExercise();
+}
+
+/* ══════════════════════════════════════════════════
+   TRAINER DASHBOARD
+══════════════════════════════════════════════════ */
+async function renderTrainer(){
+  document.getElementById('trainer-chip-name').textContent=CURRENT_USER?.name||'treinador';
+  try{
+    const snap=await db.collection('users').where('role','==','student').get();
+    const students=snap.docs.map(d=>({uid:d.id,...d.data()}));
+    const active=students.filter(s=>s.status==='active').length;
+    const inactive=students.filter(s=>s.status==='inactive').length;
+    document.getElementById('trainer-stats').innerHTML=
+      `<div class="stat-cell"><div class="num">${students.length}</div><div class="lbl">Total</div></div>`+
+      `<div class="stat-cell"><div class="num" style="color:var(--success)">${active}</div><div class="lbl">Ativos</div></div>`+
+      `<div class="stat-cell"><div class="num" style="color:var(--text-muted)">${inactive}</div><div class="lbl">Inativos</div></div>`;
+    const list=document.getElementById('student-list');
+    const empty=document.getElementById('student-empty');
+    if(!students.length){list.innerHTML='';empty.style.display='block';return;}
+    empty.style.display='none';
+    list.innerHTML=students.map(s=>{
+      const initials=(s.name||'?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+      const isActive=s.status==='active';
+      const toggleLabel=isActive?'PAUSAR':'ATIVAR';
+      const toggleClass=isActive?'deactivate':'activate';
+      return`<div class="student-card">
+        <div class="student-avatar">${esc(initials)}</div>
+        <div class="student-info">
+          <div class="student-name">${esc(s.name||'Sem nome')}</div>
+          <div class="student-meta">${esc(s.email||'')} <span class="badge ${isActive?'badge-active':'badge-inactive'}">${isActive?'● ativo':'○ inativo'}</span></div>
+        </div>
+        <div class="student-actions">
+          <button class="btn-view-student" onclick="viewStudent('${esc(s.uid)}','${esc(s.name||'Aluno')}')">VER</button>
+          <button class="toggle-btn ${toggleClass}" onclick="toggleStudent('${esc(s.uid)}',${isActive})">${toggleLabel}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){console.error('renderTrainer',e);}
+}
+
+async function toggleStudent(suid,isActive){
+  const newStatus=isActive?'inactive':'active';
+  const msg=isActive?'Pausar acesso online deste aluno?':'Reativar acesso online deste aluno?';
+  showConfirm(isActive?'Pausar Aluno':'Reativar Aluno',msg,async()=>{
+    await db.collection('users').doc(suid).update({status:newStatus});
+    renderTrainer();
+  });
+}
+
+async function viewStudent(suid,sname){
+  VIEW_STUDENT={uid:suid,name:sname};
+  await renderTrainerStudent(VIEW_STUDENT);
+  showScreen('screen-trainer-student');
+}
+
+async function renderTrainerStudent(s){
+  document.getElementById('ts-title').textContent=s.name.toUpperCase();
+  try{
+    const wSnaps=await db.collection('workouts').where('userId','==',s.uid).get();
+    const workouts=[];
+    for(const wd of wSnaps.docs){
+      const w={id:wd.id,...wd.data(),exercises:[]};
+      const eSnaps=await db.collection('exercises').where('workoutId','==',wd.id).get();
+      for(const ed of eSnaps.docs){
+        const ex={id:ed.id,...ed.data(),sessions:[]};
+        const sSnaps=await db.collection('sessions').where('exerciseId','==',ed.id).get();
+        ex.sessions=sSnaps.docs.map(sd=>({id:sd.id,...sd.data()}));
+        w.exercises.push(ex);
+      }
+      workouts.push(w);
+    }
+    VIEW_STUDENT.workouts=workouts;
+    const list=document.getElementById('ts-workout-list');
+    const empty=document.getElementById('ts-workout-empty');
+    if(!workouts.length){list.innerHTML='';empty.style.display='block';return;}
+    empty.style.display='none';
+    list.innerHTML=workouts.map(w=>{
+      const last=lastDate(w);
+      const meta=last?'Último: '+fmt(last):w.exercises.length+' exercício(s)';
+      return`<div class="workout-card" style="--wcard-color:${w.color};cursor:pointer" onclick="openTsWorkout('${esc(w.id)}')">
+        <div class="workout-card-info"><div class="workout-card-name">${esc(w.name)}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
+        <div class="exercise-row-arrow" style="padding-right:4px">›</div>
+      </div>`;
+    }).join('');
+  }catch(e){console.error('renderTrainerStudent',e);}
+}
+
+function openTsWorkout(wid){
+  const w=VIEW_STUDENT.workouts.find(x=>x.id===wid);
+  if(!w)return;VIEW_STUDENT_WORKOUT=w;
+  renderTsWorkout(w);showScreen('screen-ts-workout');
+}
+function renderTsWorkout(w){
+  document.getElementById('ts-workout-title').textContent=w.name;
+  const list=document.getElementById('ts-exercise-list');
+  if(!w.exercises.length){list.innerHTML='<div class="no-data-inline">Sem exercícios neste treino.</div>';return;}
+  list.innerHTML=w.exercises.map(e=>{
+    const last=e.sessions.length?e.sessions[e.sessions.length-1]:null;
+    const info=last?'Último: '+fmt(last.date)+' · '+Math.max(...last.sets.map(s=>s.weight))+' kg':'— sem registros';
+    return`<div class="exercise-row" onclick="openTsExercise('${esc(e.id)}')">
+      <div class="exercise-row-dot"></div>
+      <div class="exercise-row-info"><div class="exercise-row-name">${esc(e.name)}</div><div class="exercise-row-last">${info}</div></div>
+      <div class="exercise-row-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+function openTsExercise(eid){
+  const e=VIEW_STUDENT_WORKOUT.exercises.find(x=>x.id===eid);
+  if(!e)return;VIEW_STUDENT_EXERCISE=e;
+  document.getElementById('ts-exercise-title').textContent=e.name.toUpperCase();
+  tsMiniChart=null;
+  buildSessions(e,'ts-sessions-list',true);
+  showScreen('screen-ts-exercise');
+  requestAnimationFrame(()=>{ buildChart(e,'tsProgressChart',TS_CHART_MODE,null); });
+}
+
+/* ══════════════════════════════════════════════════
+   FEEDBACK
+══════════════════════════════════════════════════ */
+function openFeedbackModal(){document.getElementById('input-feedback').value='';openModal('modal-feedback');}
+async function sendFeedback(){
+  const msg=document.getElementById('input-feedback').value.trim();
+  if(!msg){alert('Digite uma mensagem!');return;}
+  if(!VIEW_STUDENT){return;}
+  try{
+    await db.collection('feedback').add({studentId:VIEW_STUDENT.uid,trainerId:CURRENT_USER.uid,message:msg,createdAt:firebase.firestore.FieldValue.serverTimestamp(),read:false});
+    closeModal('modal-feedback');
+    alert('Feedback enviado! O aluno verá na próxima vez que abrir o app.');
+  }catch(e){alert('Erro ao enviar feedback.');}
+}
+
+/* ══════════════════════════════════════════════════
+   EDIT SESSION
+══════════════════════════════════════════════════ */
+let EDIT_SESSION_ID = null;
+let EDIT_SET_COUNT  = 0;
+
+function openEditSession(sid){
+  const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
+  const sess = e.sessions.find(s => s.id === sid); if(!sess) return;
+  EDIT_SESSION_ID = sid;
+  document.getElementById('edit-session-date').value = sess.date;
+  EDIT_SET_COUNT = 0;
+  const editor = document.getElementById('edit-sets-editor');
+  editor.innerHTML = '';
+  sess.sets.forEach(s => { addEditSetRow(s.weight, s.reps); });
+  openModal('modal-edit-session');
+}
+
+function addEditSetRow(weight='', reps=''){
+  EDIT_SET_COUNT++;
+  const el = document.getElementById('edit-sets-editor');
+  const d  = document.createElement('div');
+  d.className = 'set-edit-row';
+  d.innerHTML = `
+    <span class="set-edit-num">${EDIT_SET_COUNT}</span>
+    <input class="set-edit-input readonly" value="${EDIT_SET_COUNT}ª" readonly>
+    <input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w" value="${weight}">
+    <input class="set-edit-input" type="number" placeholder="0" min="0" step="1"   data-f="r" value="${reps}">
+    <button class="btn-rm-set" onclick="removeEditSet(this)">✕</button>`;
+  el.appendChild(d);
+}
+
+function removeEditSet(btn){
+  btn.closest('.set-edit-row').remove();
+  document.querySelectorAll('#edit-sets-editor .set-edit-row').forEach((r,i)=>{
+    r.querySelector('.set-edit-num').textContent = i+1;
+    r.querySelector('.readonly').value = (i+1)+'ª';
+  });
+}
+
+async function saveEditSession(){
+  const date = document.getElementById('edit-session-date').value;
+  if(!date){ alert('Selecione a data!'); return; }
+  const rows = [...document.querySelectorAll('#edit-sets-editor .set-edit-row')];
+  const sets = [];
+  for(const row of rows){
+    const w = parseFloat(row.querySelector('[data-f="w"]').value);
+    const r = parseInt(row.querySelector('[data-f="r"]').value);
+    if(isNaN(w)||isNaN(r)||w<0||r<0){ alert('Preencha carga e reps em todas as séries!'); return; }
+    sets.push({weight:w, reps:r});
+  }
+  if(!sets.length){ alert('Adicione ao menos 1 série!'); return; }
+  const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
+  const idx = e.sessions.findIndex(s => s.id === EDIT_SESSION_ID);
+  if(idx === -1) return;
+  if(MODE==='local'){
+    e.sessions[idx].date = date;
+    e.sessions[idx].sets = sets;
+    localSave();
+  }else{
+    try{
+      await db.collection('sessions').doc(EDIT_SESSION_ID).update({date, sets});
+      e.sessions[idx].date = date;
+      e.sessions[idx].sets = sets;
+      saveCloudBackup(); // ← atualiza backup offline
+    }catch(err){
+      alert('Erro ao editar: '+err.message);
+      return;
+    }
+  }
+  closeModal('modal-edit-session');
+  renderExercise();
+}
+
+/* ══════════════════════════════════════════════════
+   CONFIRM
+══════════════════════════════════════════════════ */
+function showConfirm(title,text,cb){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-text').textContent=text;
+  document.getElementById('confirm-ok-btn').onclick=function(){cb();closeModal('modal-confirm');};
+  openModal('modal-confirm');
+}
+
+document.querySelectorAll('.modal-backdrop').forEach(bd=>{
+  bd.addEventListener('click',e=>{if(e.target===bd)bd.classList.remove('open');});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));
+  if(e.key==='Enter'){
+    if(document.getElementById('modal-workout').classList.contains('open'))saveWorkout();
+    if(document.getElementById('modal-exercise').classList.contains('open'))saveExercise();
+    if(document.getElementById('panel-login').classList.contains('active')&&document.getElementById('screen-auth').classList.contains('active'))doLogin();
+  }
+});
+window.addEventListener('resize',()=>{
+  if(miniChart&&CUR_EX){const e=getE(CUR_WORKOUT,CUR_EX);if(e)buildChart(e,'progressChart',CHART_MODE,null);}
+  if(tsMiniChart&&VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',TS_CHART_MODE,null);
+});
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+(function(){
+  // ── MODO OFFLINE PURO ──────────────────────────────────────────
+  if(localStorage.getItem('teamms_offline_pref')==='1'){
+    MODE='local';
+    // Tenta mesclar dados de qualquer backup por uid que exista no dispositivo
+    // Assim, se o aluno já logou antes, seus dados aparecem aqui também
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        if(k && k.startsWith('teamms_cloud_')){
+          const backup=JSON.parse(localStorage.getItem(k)||'null');
+          if(backup && Array.isArray(backup)) mergeIntoLocal(backup);
+        }
+      }
+      localLoad(); // Recarrega LOCAL_DB com dados mesclados
+    }catch(e){}
+    document.getElementById('hero-eyebrow').textContent='// modo offline';
+    document.getElementById('user-chip-name').textContent='offline';
+    const bar=document.getElementById('debug-bar');
+    if(bar) bar.style.display='block';
+    updateDebugBar();
+    renderHome();
+    showScreen('screen-home');
+    return;
+  }
+
+  // ── Detecta se scripts do Firebase falharam ao carregar ────────
+  function fbScriptsFailed(){
+    return (window.__fbLoadErrors > 0) || (typeof firebase === 'undefined');
+  }
+
+  function fallbackOfflineMode(){
+    console.warn('Firebase indisponível — modo offline');
+    MODE='local';
+    document.getElementById('hero-eyebrow').textContent='// modo offline';
+    document.getElementById('user-chip-name').textContent='offline';
+    renderHome();
+    showScreen('screen-home');
+  }
+
+  // ── MODO CLOUD ─────────────────────────────────────────────────
+  if(fbScriptsFailed()){
+    fallbackOfflineMode();
+    return;
+  }
+
+  const firebaseOK = initFirebase();
+  if(firebaseOK && CFG.firebase.apiKey !== 'COLE_AQUI'){
+    // Timeout reduzido para 8s; se loading ainda ativo vai para auth
+    const safetyTimer = setTimeout(()=>{
+      if(document.getElementById('screen-loading').classList.contains('active')){
+        console.warn('Firebase timeout — indo para auth');
+        AUTH_HANDLED = false;
+        showScreen('screen-auth');
+      }
+    }, 8000);
+    try{ startAuthListener(safetyTimer); }
+    catch(e){ clearTimeout(safetyTimer); showScreen('screen-auth'); }
+  }else{
+    fallbackOfflineMode();
+  }
+})();
+
+// ── Registra o Service Worker (PWA / cache offline) ──────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(r=>console.log('SW registrado:', r.scope))
+      .catch(e=>console.warn('SW falhou:', e));
+  });
+}
+</script>
+</body>
+</html>
