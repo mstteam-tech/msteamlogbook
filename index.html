@@ -634,6 +634,8 @@ let VIEW_STUDENT_EXERCISE=null;
 // Student nav state
 let CUR_WORKOUT=null;
 let CUR_EX=null;
+let SESSION_WID=null;   // ID do treino travado no momento que o modal de sessão abre
+let SESSION_EID=null;   // ID do exercício travado no momento que o modal de sessão abre
 let EDIT_W=null;
 let SEL_COLOR=PALETTE[0];
 let SET_COUNT=0;
@@ -1492,14 +1494,25 @@ async function saveExercise(){
 }
 
 // Session
-function openLogSessionModal(){document.getElementById('input-session-date').value=today();SET_COUNT=0;document.getElementById('sets-editor').innerHTML='';addSetRow();addSetRow();addSetRow();openModal('modal-session');}
+function openLogSessionModal(){
+  SESSION_WID=CUR_WORKOUT;   // trava o ID do treino no momento do clique
+  SESSION_EID=CUR_EX;        // trava o ID do exercício no momento do clique
+  document.getElementById('input-session-date').value=today();
+  SET_COUNT=0;document.getElementById('sets-editor').innerHTML='';
+  addSetRow();addSetRow();addSetRow();
+  openModal('modal-session');
+}
 function addSetRow(){SET_COUNT++;const el=document.getElementById('sets-editor');const d=document.createElement('div');d.className='set-edit-row';d.innerHTML=`<span class="set-edit-num">${SET_COUNT}</span><input class="set-edit-input readonly" value="${SET_COUNT}ª" readonly><input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w"><input class="set-edit-input" type="number" placeholder="0" min="0" step="1" data-f="r"><button class="btn-rm-set" onclick="removeSet(this)">✕</button>`;el.appendChild(d);}
 function removeSet(btn){btn.closest('.set-edit-row').remove();document.querySelectorAll('.set-edit-row').forEach((r,i)=>{r.querySelector('.set-edit-num').textContent=i+1;r.querySelector('.readonly').value=(i+1)+'ª';});}
 
 async function saveSession(){
+  // Usa IDs travados no momento que o modal abriu — imune a navegação durante o preenchimento
+  const wid = SESSION_WID || CUR_WORKOUT;
+  const eid = SESSION_EID || CUR_EX;
   const date=document.getElementById('input-session-date').value;
   if(!date){alert('Selecione a data!');return;}
-  const rows=[...document.querySelectorAll('.set-edit-row')];const sets=[];
+  // Seletor restrito ao modal de nova sessão — não pega rows do modal de edição
+  const rows=[...document.querySelectorAll('#sets-editor .set-edit-row')];const sets=[];
   for(const row of rows){
     const w=parseFloat(row.querySelector('[data-f="w"]').value);
     const r=parseInt(row.querySelector('[data-f="r"]').value);
@@ -1508,25 +1521,26 @@ async function saveSession(){
   }
   if(!sets.length){alert('Adicione ao menos 1 série!');return;}
   if(MODE==='local'){
-    const e=le(CUR_WORKOUT,CUR_EX);if(!e){alert('Erro: exercício não encontrado. Reabra o exercício.');return;}
+    const e=le(wid,eid);if(!e){alert('Erro: exercício não encontrado. Reabra o exercício.');return;}
     e.sessions.push({id:uid(),date,sets});
     localSave();
-    // Confirma que salvou
     const verify=localStorage.getItem('teamms_v1');
     if(verify) showToast('✓ Sessão salva offline');
     else showToast('Erro ao salvar!',true);
   }else{
     try{
-      const ref=await db.collection('sessions').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,exerciseId:CUR_EX,date,sets,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      const e=getE(CUR_WORKOUT,CUR_EX);e.sessions.push({id:ref.id,date,sets});
-      saveCloudBackup(); // ← atualiza backup offline
+      const ref=await db.collection('sessions').add({userId:CURRENT_USER.uid,workoutId:wid,exerciseId:eid,date,sets,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const e=getE(wid,eid);e.sessions.push({id:ref.id,date,sets});
+      saveCloudBackup();
     }catch(e){
       alert('Erro ao salvar sessão: '+e.code+' — '+e.message);
       console.error(e);
       return;
     }
   }
-  closeModal('modal-session');renderExercise();
+  closeModal('modal-session');
+  // Só re-renderiza se ainda estiver no mesmo exercício
+  if(CUR_WORKOUT===wid && CUR_EX===eid) renderExercise();
 }
 
 /* ══════════════════════════════════════════════════
