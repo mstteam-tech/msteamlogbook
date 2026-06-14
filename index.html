@@ -5,13 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Team M.S">
   <meta name="theme-color" content="#0c0c0c">
+  <meta name="description" content="Seu logbook de musculação — Team M.S">
   <title>Team M.S</title>
+  <link rel="manifest" href="manifest.json">
+  <!-- Ícone para iOS (splash / homescreen) -->
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script>window.__fbLoadErrors=0;</script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" onerror="window.__fbLoadErrors++"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" onerror="window.__fbLoadErrors++"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" onerror="window.__fbLoadErrors++"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     :root{
@@ -280,8 +287,8 @@
           <input class="form-input" id="reg-pass" type="password" placeholder="••••••••" autocomplete="new-password">
         </div>
         <div class="form-group">
-          <label class="form-label">Código do treinador <span style="color:var(--text-muted)">(só treinadores preenchem)</span></label>
-          <input class="form-input" id="reg-code" type="text" placeholder="Preencha apenas se for treinador">
+          <label class="form-label">Código de acesso <span style="color:var(--accent)">*obrigatório</span></label>
+          <input class="form-input" id="reg-code" type="text" placeholder="Peça o código ao seu treinador">
         </div>
         <button class="btn-primary" id="btn-register" onclick="doRegister()">CRIAR CONTA</button>
         <div class="auth-divider"><span>ou</span></div>
@@ -292,12 +299,16 @@
 
   <!-- HOME (aluno) -->
   <div id="screen-home" class="screen">
+    <div id="debug-bar" style="display:none;font-size:11px;text-align:center;padding:4px 8px;background:#111;font-family:monospace;border-bottom:1px solid #222;"></div>
     <div class="header">
       <div class="header-title">TEAM <span class="accent">M.S</span></div>
-      <div class="user-chip" id="user-chip" onclick="confirmLogout()">
+      <div class="user-chip" id="user-chip" onclick="handleChipTap()">
         <div class="user-chip-dot"></div>
         <span class="user-chip-name" id="user-chip-name">offline</span>
       </div>
+    </div>
+    <div id="inactive-banner" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;margin:10px 18px 0;font-family:'DM Mono',monospace;font-size:11px;color:#fca5a5;letter-spacing:.3px;">
+      ⏸ Consultoria pausada — visualização somente leitura. Seus dados estão preservados.
     </div>
     <div id="feedback-banner" style="display:none" class="feedback-banner">
       <div class="feedback-banner-label">💬 mensagem do treinador</div>
@@ -350,8 +361,8 @@
           <span class="chart-title-text">📈 Evolução</span>
           <div class="chart-toggle">
             <button id="btn-weight" class="active" onclick="switchChart('weight')">CARGA</button>
-            <button id="btn-volume" onclick="switchChart('volume')">VOLUME</button>
             <button id="btn-reps"   onclick="switchChart('reps')">REPS</button>
+            <button id="btn-volume" onclick="switchChart('volume')">SÉRIES</button>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="progressChart"></canvas></div>
@@ -432,8 +443,8 @@
           <span class="chart-title-text">📈 Evolução</span>
           <div class="chart-toggle">
             <button id="ts-btn-weight" class="active" onclick="switchTsChart('weight')">CARGA</button>
-            <button id="ts-btn-volume" onclick="switchTsChart('volume')">VOLUME</button>
             <button id="ts-btn-reps"   onclick="switchTsChart('reps')">REPS</button>
+            <button id="ts-btn-volume" onclick="switchTsChart('volume')">SÉRIES</button>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="tsProgressChart"></canvas></div>
@@ -537,14 +548,15 @@
    CONFIGURAÇÃO — preencha com seus dados do Firebase
 ══════════════════════════════════════════════════ */
 const CFG = {
-  trainerCode: 'TEAMMS2024',   // <-- mude para seu código secreto de treinador
+  trainerCode: 'MURILO2611',   // código para se cadastrar como treinador
+  studentCode:  'AlunoMSTEAM', // código obrigatório para alunos se cadastrarem
   firebase: {
-    apiKey:            "COLE_AQUI",
-    authDomain:        "COLE_AQUI.firebaseapp.com",
-    projectId:         "COLE_AQUI",
-    storageBucket:     "COLE_AQUI.appspot.com",
-    messagingSenderId: "COLE_AQUI",
-    appId:             "COLE_AQUI"
+    apiKey: "AIzaSyAdaKNItJ66v0Po_VpQue9huFf_psLmV54",
+    authDomain: "teamms-app.firebaseapp.com",
+    projectId: "teamms-app",
+    storageBucket: "teamms-app.firebasestorage.app",
+    messagingSenderId: "57870273303",
+    appId: "1:57870273303:web:1de3016167b9a69dfd4552"
   }
 };
 
@@ -630,18 +642,283 @@ let TS_CHART_MODE='weight';
 let CONFIRM_CB=null;
 let miniChart=null;
 let tsMiniChart=null;
-let SESSION_WID=null;   // workout ID travado no momento que o modal abre
-let SESSION_EID=null;   // exercise ID travado no momento que o modal abre
-let EDIT_SESSION_ID=null;
-let EDIT_SET_COUNT=0;
-let AUTH_HANDLED=false;  // impede que o listener do Firebase dispare múltiplas vezes
 
-// Local DB
-let LOCAL_DB={workouts:[]};
-function localSave(){try{localStorage.setItem('teamms_local',JSON.stringify(LOCAL_DB));}catch(e){}}
-function localLoad(){try{const r=localStorage.getItem('teamms_local');if(r)LOCAL_DB=JSON.parse(r);}catch(e){LOCAL_DB={workouts:[]};}}
+// ═══════════════════════════════════════════════════════
+//  ARMAZENAMENTO LOCAL — versão blindada
+// ═══════════════════════════════════════════════════════
+const STORAGE_KEY = 'teamms_v1';
+
+// Verifica suporte a localStorage
+function lsAvailable(){
+  try{ localStorage.setItem('__test','1'); localStorage.removeItem('__test'); return true; }
+  catch(e){ return false; }
+}
+
+// LOCAL_DB: fonte única de verdade para modo offline
+let LOCAL_DB = {workouts:[]};
+let MIGRATION_RUNNING = false; // trava — impede migração dupla
+let INACTIVE_NAME = '';           // nome do aluno inativo (CURRENT_USER=null)
+
+// Carga inicial — executa ANTES de qualquer outro código
+(function loadInitial(){
+  if(!lsAvailable()) return;
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ LOCAL_DB = JSON.parse(raw); }
+  }catch(e){ LOCAL_DB = {workouts:[]}; }
+}());
+
+// Salva LOCAL_DB no localStorage e atualiza o contador debug
+function localSave(){
+  if(MODE !== 'local') return; // nunca salva local em modo cloud
+  try{
+    const json = JSON.stringify(LOCAL_DB);
+    localStorage.setItem(STORAGE_KEY, json);
+    updateDebugBar();
+  }catch(e){
+    console.warn('localSave error:', e);
+  }
+}
+
+// Releitura explícita (usar com cuidado — só quando necessário)
+function localLoad(){
+  if(!lsAvailable()) return;
+  try{ const r=localStorage.getItem(STORAGE_KEY); if(r) LOCAL_DB=JSON.parse(r); }
+  catch(e){ LOCAL_DB={workouts:[]}; }
+}
+
+// Barra de debug — mostra status do armazenamento em modo offline
+function updateDebugBar(){
+  const bar = document.getElementById('debug-bar');
+  if(!bar) return;
+  const eyebrow = document.getElementById('hero-eyebrow');
+  if(MODE !== 'local'){ bar.style.display='none'; return; }
+  bar.style.display = 'block';
+  let nW, nE, nS, lsOk, label;
+  nW = LOCAL_DB.workouts.length;
+  nE = LOCAL_DB.workouts.reduce((a,w)=>a+(w.exercises||[]).length,0);
+  nS = LOCAL_DB.workouts.reduce((a,w)=>(w.exercises||[]).reduce((acc2,e)=>acc2+(e.sessions||[]).length,0),0);
+  lsOk = !!localStorage.getItem(STORAGE_KEY);
+  label = INACTIVE_NAME ? 'consultoria pausada' : (lsOk ? 'OK' : 'VAZIO');
+  bar.textContent = `💾 localStorage: ${label} · ${nW} treinos · ${nE} exercícios · ${nS} sessões`;
+  bar.style.color = lsOk ? '#22c55e' : '#e11d48';
+}
+
+function showToast(msg,isError){
+  let t=document.getElementById('toast-msg');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast-msg';
+    t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e1e1e;color:#22c55e;padding:10px 20px;border-radius:8px;font-size:13px;font-family:monospace;z-index:9999;pointer-events:none;border:1px solid #22c55e;transition:opacity .3s;opacity:0;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.borderColor=isError?'#e11d48':'#22c55e';
+  t.style.color=isError?'#e11d48':'#22c55e';
+  t.style.opacity='1';
+  clearTimeout(t._hide);
+  t._hide=setTimeout(()=>{t.style.opacity='0';},2000);
+}
 
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ══════════════════════════════════════════════════
+   MIGRAÇÃO OFFLINE → CLOUD
+   Chamada ao logar se houver dados locais (teamms_v1)
+   Escrita item a item (sem batch) para máxima compatibilidade
+══════════════════════════════════════════════════ */
+async function migrateLocalToCloud(userId){
+  // ── TRAVA DUPLA: memória + localStorage ──────────────────────
+  if(MIGRATION_RUNNING) return;                        // já rodando nesta sessão
+  if(localStorage.getItem('teamms_migrating')==='1') return; // rodou em outra aba/sessão recente
+  // ─────────────────────────────────────────────────────────────
+
+  localLoad();
+  const workouts = LOCAL_DB.workouts;
+  if(!workouts || workouts.length === 0) return; // nada para migrar
+
+  // Ativa a trava
+  MIGRATION_RUNNING = true;
+  localStorage.setItem('teamms_migrating', '1');
+
+  const loadingLabel = document.getElementById('screen-loading').querySelector('.loading-label');
+  loadingLabel.textContent = 'sincronizando dados offline...';
+  showScreen('screen-loading');
+
+  try{
+    // Checa quais treinos já existem no cloud (por nome) para não duplicar
+    const existing = await db.collection('workouts').where('userId','==',userId).get();
+    const cloudNames = new Set(existing.docs.map(d=>d.data().name));
+
+    // Mapa: nome do treino → id do documento no cloud
+    const cloudIdMap = {};
+    existing.docs.forEach(d=>{ cloudIdMap[d.data().name] = d.id; });
+
+    // 1. Sobe treinos inteiramente novos
+    const toUpload = workouts.filter(w => !cloudNames.has(w.name));
+    // 2. Atualiza treinos que já existem no cloud (novas sessões/exercícios)
+    const toUpdate = workouts.filter(w => cloudNames.has(w.name));
+
+    // ── Treinos novos ──────────────────────────────────────────
+    let totalSessions = 0;
+    for(const w of toUpload){
+      loadingLabel.textContent = 'subindo: ' + w.name + '...';
+      const wRef = await db.collection('workouts').add({
+        userId, name: w.name, color: w.color,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      for(const e of (w.exercises||[])){
+        const eRef = await db.collection('exercises').add({
+          userId, workoutId: wRef.id, name: e.name,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        for(const s of (e.sessions||[])){
+          await db.collection('sessions').add({
+            userId, workoutId: wRef.id, exerciseId: eRef.id,
+            date: s.date, sets: s.sets,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          totalSessions++;
+        }
+      }
+    }
+
+    // ── Treinos existentes: sobe exercícios/sessões novos ──────
+    for(const w of toUpdate){
+      const cloudWId = cloudIdMap[w.name];
+      loadingLabel.textContent = 'atualizando: ' + w.name + '...';
+      // Busca exercícios que já existem no cloud para esse treino
+      const exSnap = await db.collection('exercises').where('workoutId','==',cloudWId).get();
+      const cloudExNames = new Set(exSnap.docs.map(d=>d.data().name));
+      const cloudExMap = {};
+      exSnap.docs.forEach(d=>{ cloudExMap[d.data().name]=d.id; });
+
+      for(const e of (w.exercises||[])){
+        let eId;
+        if(!cloudExNames.has(e.name)){
+          // Exercício novo — cria
+          const eRef = await db.collection('exercises').add({
+            userId, workoutId: cloudWId, name: e.name,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          eId = eRef.id;
+        } else {
+          eId = cloudExMap[e.name];
+        }
+        // Busca sessões já existentes no cloud (por data+exercícioId)
+        const sSnap = await db.collection('sessions').where('exerciseId','==',eId).get();
+        const cloudDates = new Set(sSnap.docs.map(d=>d.data().date));
+        for(const s of (e.sessions||[])){
+          if(!cloudDates.has(s.date)){
+            await db.collection('sessions').add({
+              userId, workoutId: cloudWId, exerciseId: eId,
+              date: s.date, sets: s.sets,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            totalSessions++;
+          }
+        }
+      }
+    }
+
+    // Sucesso — limpa local
+    localStorage.removeItem('teamms_v1');
+    localStorage.removeItem('teamms_migration_pending');
+    localStorage.removeItem('teamms_migrating');
+    LOCAL_DB = {workouts:[]};
+    MIGRATION_RUNNING = false;
+
+    loadingLabel.textContent = 'dados sincronizados ✓';
+    await new Promise(r => setTimeout(r, 800));
+
+  }catch(err){
+    console.error('Migração falhou:', err.code, err.message);
+    // Mantém teamms_v1 intacto. Remove apenas a trava temporária
+    // para permitir retry na próxima sessão
+    localStorage.removeItem('teamms_migrating');
+    MIGRATION_RUNNING = false;
+    loadingLabel.textContent = 'erro na sincronização (dados preservados)';
+    await new Promise(r => setTimeout(r, 1500));
+  }
+}
+
+// Utilitário: limpa treinos duplicados de um usuário (chame do console)
+// Uso: await cleanDuplicates()
+async function cleanDuplicates(){
+  if(!CURRENT_USER || !db){ alert('Faça login primeiro'); return; }
+  const uid = CURRENT_USER.uid;
+  const snap = await db.collection('workouts').where('userId','==',uid).get();
+  // Agrupa por nome e mantém só o mais recente
+  const seen = {};
+  const toDelete = [];
+  snap.docs.forEach(d => {
+    const name = d.data().name;
+    if(seen[name]){
+      toDelete.push(d.id); // duplicata
+    } else {
+      seen[name] = d.id;
+    }
+  });
+  if(toDelete.length === 0){ alert('Nenhum duplicado encontrado!'); return; }
+  for(const wid of toDelete){
+    // Remove exercícios e sessões do treino duplicado
+    const exs = await db.collection('exercises').where('workoutId','==',wid).get();
+    for(const ex of exs.docs){
+      const sess = await db.collection('sessions').where('exerciseId','==',ex.id).get();
+      for(const s of sess.docs) await s.ref.delete();
+      await ex.ref.delete();
+    }
+    await db.collection('workouts').doc(wid).delete();
+  }
+  alert(toDelete.length + ' treino(s) duplicado(s) removidos!');
+  await loadCloudHome();
+  showScreen('screen-home');
+}
+
+
+// Cloud backup — salva cópia local dos dados do aluno logado
+// Salva em dois lugares: chave por uid (para restaurar ao relogar)
+// e teamms_v1 (para estar disponível em modo offline sem conta)
+function saveCloudBackup(){
+  if(!CURRENT_USER)return;
+  try{
+    localStorage.setItem('teamms_cloud_'+CURRENT_USER.uid, JSON.stringify(CLOUD_WORKOUTS));
+    // Espelho bidirecional: teamms_v1 sempre reflete o estado cloud
+    mergeIntoLocal(CLOUD_WORKOUTS);
+  }catch(e){}
+}
+function loadCloudBackup(uid){
+  try{const r=localStorage.getItem('teamms_cloud_'+uid);return r?JSON.parse(r):[];}
+  catch(e){return [];}
+}
+
+// ── mergeIntoLocal(workouts) ────────────────────────────────────
+// Mescla lista de treinos no teamms_v1 sem duplicar por nome.
+// Treinos locais com mesmo nome são substituídos pela versão mais
+// completa (maior número de sessões). Treinos exclusivamente locais
+// são preservados.
+function mergeIntoLocal(incoming){
+  if(!incoming || !incoming.length) return;
+  try{
+    localLoad();
+    const local = LOCAL_DB.workouts || [];
+    const merged = [...local];
+    for(const inW of incoming){
+      const idx = merged.findIndex(lw => lw.name === inW.name);
+      if(idx === -1){
+        // Novo treino — adiciona
+        merged.push(inW);
+      } else {
+        // Mesmo nome — mantém o que tiver mais sessões no total
+        const localSess  = merged[idx].exercises.reduce((a,e)=>a+(e.sessions||[]).length,0);
+        const incomSess  = (inW.exercises||[]).reduce((a,e)=>a+(e.sessions||[]).length,0);
+        if(incomSess >= localSess) merged[idx] = inW; // cloud mais atualizado
+      }
+    }
+    LOCAL_DB.workouts = merged;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+  }catch(e){ console.warn('mergeIntoLocal error:', e); }
+}
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const today=()=>new Date().toISOString().slice(0,10);
 const fmt=iso=>{const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;};
@@ -651,11 +928,17 @@ const fmt=iso=>{const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;};
 ══════════════════════════════════════════════════ */
 let db=null,auth=null;
 function initFirebase(){
+  if(auth && db) return true; // já inicializado, não inicializa de novo
   try{
-    firebase.initializeApp(CFG.firebase);
-    auth=firebase.auth();
-    db=firebase.firestore();
-    db.enablePersistence().catch(()=>{});
+    // Se já existe um app Firebase, usa o existente
+    if(firebase.apps && firebase.apps.length > 0){
+      auth = firebase.auth();
+      db   = firebase.firestore();
+    } else {
+      firebase.initializeApp(CFG.firebase);
+      auth = firebase.auth();
+      db   = firebase.firestore();
+    }
     return true;
   }catch(e){console.warn('Firebase init failed',e);return false;}
 }
@@ -674,7 +957,6 @@ function showAuthError(id,msg){const el=document.getElementById(id);el.textConte
 function clearAuthError(id){document.getElementById(id).classList.remove('show');}
 
 async function doLogin(){
-  AUTH_HANDLED=false; // reseta para que o listener processe o login
   clearAuthError('login-error');
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
@@ -682,7 +964,9 @@ async function doLogin(){
   const btn=document.getElementById('btn-login');
   btn.disabled=true;btn.textContent='ENTRANDO...';
   try{
+    AUTH_HANDLED = false; // reseta para que o listener processe o login
     await auth.signInWithEmailAndPassword(email,pass);
+    btn.disabled=false;btn.textContent='ENTRAR';
   }catch(e){
     btn.disabled=false;btn.textContent='ENTRAR';
     const msgs={'auth/user-not-found':'Conta não encontrada.','auth/wrong-password':'Senha incorreta.','auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde.'};
@@ -691,7 +975,6 @@ async function doLogin(){
 }
 
 async function doRegister(){
-  AUTH_HANDLED=false; // reseta para que o listener processe o cadastro
   clearAuthError('reg-error');
   const name=document.getElementById('reg-name').value.trim();
   const email=document.getElementById('reg-email').value.trim();
@@ -699,10 +982,14 @@ async function doRegister(){
   const code=document.getElementById('reg-code').value.trim();
   if(!name||!email||!pass){showAuthError('reg-error','Preencha todos os campos.');return;}
   if(pass.length<6){showAuthError('reg-error','Senha deve ter ao menos 6 caracteres.');return;}
+  if(code!==CFG.trainerCode&&code!==CFG.studentCode){
+    showAuthError('reg-error','Código inválido. Peça o código ao seu treinador.');return;
+  }
   const role=code===CFG.trainerCode?'trainer':'student';
   const btn=document.getElementById('btn-register');
   btn.disabled=true;btn.textContent='CRIANDO...';
   try{
+    AUTH_HANDLED = false; // reseta para que o listener processe o cadastro
     const cred=await auth.createUserWithEmailAndPassword(email,pass);
     const userData={name,email,role,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
     if(role==='student') userData.status='active';
@@ -717,56 +1004,163 @@ async function doRegister(){
 function goOffline(){
   MODE='local';
   CURRENT_USER=null;
-  localLoad();
+  localStorage.setItem('teamms_offline_pref','1');
+  // LOCAL_DB já carregado na inicialização — não chama localLoad() de novo
+  document.getElementById('hero-eyebrow').textContent='// modo offline';
+  document.getElementById('user-chip-name').textContent='offline';
+  // Mostra barra de debug em modo offline
   renderHome();
   showScreen('screen-home');
 }
 
+function handleChipTap(){
+  if(MODE==='local'){
+    showConfirm('Entrar com conta','Deseja fazer login para sincronizar seus dados na nuvem?',()=>{
+      localStorage.removeItem('teamms_offline_pref');
+      if(!auth || !db) initFirebase();
+      AUTH_HANDLED = false; // permite que o listener rode após login
+      const safetyTimer = setTimeout(()=>{
+        if(document.getElementById('screen-loading').classList.contains('active')){
+          showScreen('screen-auth');
+        }
+      }, 5000);
+      startAuthListener(safetyTimer);
+      showScreen('screen-auth');
+    });
+  }else{
+    confirmLogout();
+  }
+}
+
 async function confirmLogout(){
   showConfirm('Sair','Deseja sair da sua conta?',async()=>{
-    try{if(auth) await auth.signOut();}catch(e){}
-    AUTH_HANDLED=false; // permite novo login
-    MODE='local';CURRENT_USER=null;
+    // ── Antes de deslogar: copia dados cloud → teamms_v1 (offline) ──
+    // Garante que o aluno tenha acesso aos dados mesmo sem conta
+    if(CLOUD_WORKOUTS && CLOUD_WORKOUTS.length > 0){
+      try{
+        // Mescla com dados locais existentes sem duplicar (por nome do treino)
+        localLoad();
+        const localNames = new Set((LOCAL_DB.workouts||[]).map(w=>w.name));
+        const toMerge = CLOUD_WORKOUTS.filter(w=>!localNames.has(w.name));
+        if(toMerge.length > 0){
+          LOCAL_DB.workouts = [...(LOCAL_DB.workouts||[]), ...toMerge];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+        } else if((LOCAL_DB.workouts||[]).length === 0){
+          // Sem dados locais — copia tudo
+          LOCAL_DB.workouts = [...CLOUD_WORKOUTS];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+        }
+      }catch(e){ console.warn('Erro ao copiar dados cloud para offline:', e); }
+    }
+    try{
+      if(auth) await auth.signOut();
+    }catch(e){}
+    localStorage.removeItem('teamms_offline_pref');
+    localStorage.removeItem('teamms_migrating');
+    MIGRATION_RUNNING = false;
+    AUTH_HANDLED = false;
+    MODE='local';
+    CURRENT_USER=null;
+    INACTIVE_NAME='';
+    CLOUD_WORKOUTS=[];
+    CUR_WORKOUT=null;
+    CUR_EX=null;
     const btn=document.getElementById('btn-login');
     if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
-    renderHome();showScreen('screen-auth');
+    const btn2=document.getElementById('btn-register');
+    if(btn2){btn2.disabled=false;btn2.textContent='CRIAR CONTA';}
+    showScreen('screen-auth');
   });
 }
 
 /* ══════════════════════════════════════════════════
    AUTH STATE LISTENER
 ══════════════════════════════════════════════════ */
+let AUTH_HANDLED = false; // garante execução única por sessão de login
+let AUTH_UNSUBSCRIBE = null;
+
 function startAuthListener(safetyTimer){
-  auth.onAuthStateChanged(async user=>{
+  if(AUTH_UNSUBSCRIBE){ AUTH_UNSUBSCRIBE(); AUTH_UNSUBSCRIBE=null; }
+  AUTH_UNSUBSCRIBE = auth.onAuthStateChanged(async user=>{
+    if(AUTH_HANDLED) return; // Firebase dispara várias vezes — ignora depois da 1ª
+    AUTH_HANDLED = true;
     if(safetyTimer) clearTimeout(safetyTimer);
-    if(AUTH_HANDLED){return;} // Firebase dispara o listener várias vezes — ignora repetições
-    AUTH_HANDLED=true;
-    if(!user){AUTH_HANDLED=false;showScreen('screen-auth');return;}
+
+    // ── Sem usuário logado ────────────────────────────────────────
+    if(!user){ showScreen('screen-auth'); return; }
+
+    // ── Usuário logado ────────────────────────────────────────────
     try{
-      const snap=await db.collection('users').doc(user.uid).get();
-      if(!snap.exists){await auth.signOut();showScreen('screen-auth');return;}
-      CURRENT_USER={uid:user.uid,...snap.data()};
-      if(CURRENT_USER.role==='trainer'){
-        MODE='cloud';
+      const snap = await db.collection('users').doc(user.uid).get();
+      if(!snap.exists){ await auth.signOut(); showScreen('screen-auth'); return; }
+      CURRENT_USER = {uid: user.uid, ...snap.data()};
+
+      // Treinador
+      if(CURRENT_USER.role === 'trainer'){
+        MODE = 'cloud';
         renderTrainer();
         showScreen('screen-trainer');
-      } else {
-        if(CURRENT_USER.status==='inactive'){
-          MODE='local';
-          localLoad();
-          document.getElementById('hero-eyebrow').textContent='// consultoria pausada';
-          document.getElementById('user-chip-name').textContent=CURRENT_USER.name||'aluno';
-          renderHome();
-          showScreen('screen-home');
-        } else {
-          MODE='cloud';
-          document.getElementById('hero-eyebrow').textContent='// consultoria ativa';
-          document.getElementById('user-chip-name').textContent=CURRENT_USER.name||'aluno';
-          await loadCloudHome();
-          showScreen('screen-home');
-        }
+        return;
       }
-    }catch(e){console.error(e);showScreen('screen-auth');}
+
+      // Aluno INATIVO — entra em modo local (pode editar; dados sobem ao reativar)
+      if(CURRENT_USER.status === 'inactive'){
+        const uname  = CURRENT_USER.name || 'aluno';
+        const ownUid = user.uid;
+        try{
+          // Busca dados do Firebase e mescla no teamms_v1 (sem sobrescrever edições locais)
+          const wSnaps = await db.collection('workouts').where('userId','==',ownUid).get();
+          const fresh  = [];
+          for(const wd of wSnaps.docs){
+            const w = {id:wd.id,...wd.data(),exercises:[]};
+            const eSnaps = await db.collection('exercises').where('workoutId','==',wd.id).get();
+            for(const ed of eSnaps.docs){
+              const e = {id:ed.id,...ed.data(),sessions:[]};
+              const sSnaps = await db.collection('sessions').where('exerciseId','==',ed.id).get();
+              e.sessions = sSnaps.docs.map(sd=>({id:sd.id,...sd.data()}));
+              e.sessions.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+              w.exercises.push(e);
+            }
+            fresh.push(w);
+          }
+          // Salva backup por uid (para quando reativar a conta)
+          if(fresh.length > 0) localStorage.setItem('teamms_cloud_'+ownUid, JSON.stringify(fresh));
+          // Mescla no teamms_v1 para acesso offline sem login
+          mergeIntoLocal(fresh);
+        }catch(err){ console.warn('Backup inativo falhou:', err.message); }
+
+        await auth.signOut();
+        CURRENT_USER = null;
+        // ⬇ MODE='local' — pode editar normalmente
+        MODE = 'local';
+        INACTIVE_NAME = uname;
+        // Recarrega LOCAL_DB com dados frescos
+        localLoad();
+        document.getElementById('hero-eyebrow').textContent = '// consultoria pausada';
+        document.getElementById('user-chip-name').textContent = uname;
+        // Mostra banner informativo mas SEM bloquear edição
+        const ib = document.getElementById('inactive-banner');
+        if(ib) ib.innerHTML = '⏸ Consultoria pausada — seus dados ficam salvos aqui. Ao reativar, tudo sobe para a nuvem automaticamente.';
+        renderHome();
+        showScreen('screen-home');
+        return;
+      }
+
+      // Aluno ATIVO
+      MODE = 'cloud';
+      localStorage.removeItem('teamms_offline_pref');
+      document.getElementById('hero-eyebrow').textContent  = '// consultoria ativa';
+      document.getElementById('user-chip-name').textContent = CURRENT_USER.name || 'aluno';
+
+      // Migração: sempre tenta subir dados offline para cloud ao logar
+      const hasOffline = !!localStorage.getItem('teamms_v1');
+      if(hasOffline){
+        await migrateLocalToCloud(user.uid);
+      }
+      await loadCloudHome();
+      showScreen('screen-home');
+
+    }catch(e){ console.error('Auth handler error:', e); showScreen('screen-auth'); }
   });
 }
 
@@ -777,10 +1171,12 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo({top:0,behavior:'instant'});
-  document.getElementById('fab-home').style.display=['screen-home'].includes(id)?'flex':'none';
-  document.getElementById('fab-workout').style.display=id==='screen-workout'?'flex':'none';
-  document.getElementById('fab-exercise').style.display=id==='screen-exercise'&&MODE!=='cloud-readonly'?'flex':'none';
-  if(id==='screen-exercise'||id==='screen-ts-exercise') document.getElementById('btn-del-exercise').style.display=id==='screen-exercise'&&CURRENT_USER?.role!=='trainer'?'flex':'none';
+  // FABs visíveis em local e cloud; ocultos apenas para treinador vendo aluno
+  const isReadonly = (CURRENT_USER?.role==='trainer' && VIEW_STUDENT!==null);
+  document.getElementById('fab-home').style.display=id==='screen-home'&&!isReadonly?'flex':'none';
+  document.getElementById('fab-workout').style.display=id==='screen-workout'&&!isReadonly?'flex':'none';
+  document.getElementById('fab-exercise').style.display=id==='screen-exercise'&&!isReadonly?'flex':'none';
+  if(id==='screen-exercise'||id==='screen-ts-exercise') document.getElementById('btn-del-exercise').style.display=id==='screen-exercise'&&!isReadonly&&CURRENT_USER?.role!=='trainer'?'flex':'none';
 }
 
 function goHome(){CUR_WORKOUT=null;CUR_EX=null;if(MODE==='local'){renderHome();}else{loadCloudHome();}showScreen('screen-home');}
@@ -793,12 +1189,15 @@ function goTsWorkout(){renderTsWorkout(VIEW_STUDENT_WORKOUT);showScreen('screen-
    LOCAL HOME
 ══════════════════════════════════════════════════ */
 function renderHome(){
-  document.getElementById('user-chip-name').textContent=CURRENT_USER?CURRENT_USER.name:'offline';
+  document.getElementById('user-chip-name').textContent=CURRENT_USER?CURRENT_USER.name:(INACTIVE_NAME||'offline');
+  const inactiveBanner=document.getElementById('inactive-banner');
+  if(inactiveBanner) inactiveBanner.style.display=INACTIVE_NAME?'block':'none';
+  updateDebugBar();
   const ws=MODE==='local'?LOCAL_DB.workouts:CLOUD_WORKOUTS;
   const list=document.getElementById('workout-list');
   const empty=document.getElementById('workout-empty');
   const stats=document.getElementById('home-stats');
-  const nW=ws.length,nE=ws.reduce((a,w)=>a+w.exercises.length,0),nS=ws.reduce((a,w)=>a+w.exercises.reduce((b,e)=>b+e.sessions.length,0),0);
+  const nW=ws.length,nE=ws.reduce((a,w)=>a+w.exercises.length,0),nS=ws.reduce((a,w)=>a+w.exercises.reduce((acc2,e)=>acc2+e.sessions.length,0),0);
   stats.innerHTML=`<div class="stat-cell"><div class="num">${nW}</div><div class="lbl">Treinos</div></div><div class="stat-cell"><div class="num">${nE}</div><div class="lbl">Exercícios</div></div><div class="stat-cell"><div class="num">${nS}</div><div class="lbl">Sessões</div></div>`;
   if(!nW){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
@@ -827,31 +1226,45 @@ let CLOUD_WORKOUTS=[];
 async function loadCloudHome(){
   if(!CURRENT_USER)return;
   try{
-    const snaps=await db.collection('workouts').where('userId','==',CURRENT_USER.uid).orderBy('createdAt').get();
+    const snaps=await db.collection('workouts').where('userId','==',CURRENT_USER.uid).get();
     CLOUD_WORKOUTS=[];
+    console.log('Workouts encontrados:', snaps.docs.length);
     for(const doc of snaps.docs){
       const w={id:doc.id,...doc.data(),exercises:[]};
-      const exSnaps=await db.collection('exercises').where('workoutId','==',doc.id).orderBy('createdAt').get();
+      const exSnaps=await db.collection('exercises').where('workoutId','==',doc.id).get();
       for(const ed of exSnaps.docs){
         const e={id:ed.id,...ed.data(),sessions:[]};
-        const sSnaps=await db.collection('sessions').where('exerciseId','==',ed.id).orderBy('date').get();
+        const sSnaps=await db.collection('sessions').where('exerciseId','==',ed.id).get();
         e.sessions=sSnaps.docs.map(sd=>({id:sd.id,...sd.data()}));
+        e.sessions.sort((a,b)=>a.date.localeCompare(b.date));
         w.exercises.push(e);
       }
       CLOUD_WORKOUTS.push(w);
     }
+    saveCloudBackup(); // ← atualiza backup offline com dados mais recentes do Firebase
     renderHome();
     checkFeedback();
-  }catch(e){console.error('loadCloudHome',e);renderHome();}
+  }catch(e){
+    console.error('loadCloudHome error:',e.code, e.message);
+    // Show user something went wrong but keep app usable
+    renderHome();
+  }
 }
 
 async function checkFeedback(){
   if(!CURRENT_USER||CURRENT_USER.role==='trainer')return;
   try{
-    const snap=await db.collection('feedback').where('studentId','==',CURRENT_USER.uid).orderBy('createdAt','desc').limit(1).get();
+    const snap=await db.collection('feedback').where('studentId','==',CURRENT_USER.uid).limit(5).get();
     if(!snap.empty){
-      const f=snap.docs[0].data();
-      if(!f.read) showFeedbackBanner(snap.docs[0].id,f.message);
+      // Sort client-side by createdAt desc
+      const sorted=snap.docs.sort((a,b)=>{
+        const ta=a.data().createdAt?.seconds||0;
+        const tb=b.data().createdAt?.seconds||0;
+        return tb-ta;
+      });
+      const doc=sorted[0];
+      const f=doc.data();
+      if(!f.read) showFeedbackBanner(doc.id,f.message);
     }
   }catch(e){}
 }
@@ -873,7 +1286,7 @@ function loadFeedbackBanner(){if(MODE==='cloud')checkFeedback();}
 /* ══════════════════════════════════════════════════
    WORKOUT NAVIGATION
 ══════════════════════════════════════════════════ */
-function getWorkouts(){return MODE==='local'?LOCAL_DB.workouts:CLOUD_WORKOUTS;}
+function getWorkouts(){return (MODE==='local')?LOCAL_DB.workouts:CLOUD_WORKOUTS;}
 function getW(id){return getWorkouts().find(w=>w.id===id);}
 function getE(wid,eid){const w=getW(wid);return w?w.exercises.find(e=>e.id===eid):null;}
 
@@ -896,18 +1309,19 @@ function renderWorkout(){
 }
 
 function openExercise(eid){
-  CUR_EX=eid;miniChart=null;CHART_MODE='weight';
+  CUR_EX=eid;miniChart=null;tsMiniChart=null;CHART_MODE='weight';
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
   document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
   buildSessions(e,'sessions-list',false);
   showScreen('screen-exercise');
-  requestAnimationFrame(()=>buildChart(e,'progressChart',CHART_MODE,null));
+  // Render chart AFTER screen is visible so canvas has correct dimensions
+  requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
 }
 function renderExercise(){
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
   document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
   buildSessions(e,'sessions-list',false);
-  requestAnimationFrame(()=>buildChart(e,'progressChart',CHART_MODE,null));
+  requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
 }
 
 /* ══════════════════════════════════════════════════
@@ -946,21 +1360,21 @@ function buildChart(e,canvasId,mode,chartRef){
   const sorted=[...e.sessions].sort((a,b)=>a.date.localeCompare(b.date));
   const labels=sorted.map(s=>fmt(s.date));
   const data=mode==='weight'?sorted.map(s=>Math.max(...s.sets.map(st=>st.weight))):
-    mode==='volume'?sorted.map(s=>s.sets.reduce((a,st)=>a+st.weight*st.reps,0)):
+    mode==='volume'?sorted.map(s=>s.sets.length):
     sorted.map(s=>Math.max(...s.sets.map(st=>st.reps)));
-  const unit=mode==='weight'?'kg (máx)':mode==='volume'?'kg (vol)':'reps (máx)';
+  const unit=mode==='weight'?'kg (máx)':mode==='volume'?'séries':'reps (máx)';
   if(canvasId==='progressChart'){if(!miniChart)miniChart=new MiniChart(cv);miniChart.render(labels,data,unit);}
   else{if(!tsMiniChart)tsMiniChart=new MiniChart(cv);tsMiniChart.render(labels,data,unit);}
 }
 
 function switchChart(mode){
   CHART_MODE=mode;
-  ['weight','volume','reps'].forEach(m=>document.getElementById('btn-'+m).classList.toggle('active',m===mode));
+  ['weight','reps','volume'].forEach(m=>document.getElementById('btn-'+m).classList.toggle('active',m===mode));
   const e=getE(CUR_WORKOUT,CUR_EX);if(e)buildChart(e,'progressChart',mode,null);
 }
 function switchTsChart(mode){
   TS_CHART_MODE=mode;
-  ['weight','volume','reps'].forEach(m=>document.getElementById('ts-btn-'+m).classList.toggle('active',m===mode));
+  ['weight','reps','volume'].forEach(m=>document.getElementById('ts-btn-'+m).classList.toggle('active',m===mode));
   if(VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',mode,null);
 }
 
@@ -977,7 +1391,7 @@ function deleteWorkout(id){
 function deleteSession(sid){
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
   if(MODE==='local'){e.sessions=e.sessions.filter(s=>s.id!==sid);localSave();}
-  else{db.collection('sessions').doc(sid).delete().then(()=>{e.sessions=e.sessions.filter(s=>s.id!==sid);renderExercise();});}
+  else{db.collection('sessions').doc(sid).delete().then(()=>{e.sessions=e.sessions.filter(s=>s.id!==sid);saveCloudBackup();renderExercise();});}
   renderExercise();
 }
 function deleteCurrentExercise(){
@@ -990,6 +1404,7 @@ function deleteCurrentExercise(){
       batch.delete(db.collection('exercises').doc(CUR_EX));
       await batch.commit();
       const w=getW(CUR_WORKOUT);w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);
+      saveCloudBackup(); // ← atualiza backup offline
     }
     CUR_EX=null;goWorkout();
   });
@@ -1009,6 +1424,7 @@ async function cloudDeleteWorkout(id){
   batch.delete(db.collection('workouts').doc(id));
   await batch.commit();
   CLOUD_WORKOUTS=CLOUD_WORKOUTS.filter(w=>w.id!==id);
+  saveCloudBackup(); // ← atualiza backup offline
   renderHome();
 }
 
@@ -1034,16 +1450,22 @@ async function saveWorkout(){
   if(MODE==='local'){
     if(EDIT_W){const w=lw(EDIT_W);w.name=name;w.color=SEL_COLOR;}
     else LOCAL_DB.workouts.push({id:uid(),name,color:SEL_COLOR,exercises:[]});
-    localSave();closeModal('modal-workout');renderHome();
+    localSave();showToast('✓ Treino salvo offline');closeModal('modal-workout');renderHome();
   }else{
-    if(EDIT_W){
-      await db.collection('workouts').doc(EDIT_W).update({name,color:SEL_COLOR});
-      const w=getW(EDIT_W);w.name=name;w.color=SEL_COLOR;
-    }else{
-      const ref=await db.collection('workouts').add({userId:CURRENT_USER.uid,name,color:SEL_COLOR,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      CLOUD_WORKOUTS.push({id:ref.id,userId:CURRENT_USER.uid,name,color:SEL_COLOR,exercises:[]});
+    try{
+      if(EDIT_W){
+        await db.collection('workouts').doc(EDIT_W).update({name,color:SEL_COLOR});
+        const w=getW(EDIT_W);w.name=name;w.color=SEL_COLOR;
+      }else{
+        const ref=await db.collection('workouts').add({userId:CURRENT_USER.uid,name,color:SEL_COLOR,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        CLOUD_WORKOUTS.push({id:ref.id,userId:CURRENT_USER.uid,name,color:SEL_COLOR,exercises:[]});
+      }
+      saveCloudBackup();
+      closeModal('modal-workout');renderHome();
+    }catch(e){
+      alert('Erro ao salvar treino: '+e.code+' — '+e.message);
+      console.error(e);
     }
-    closeModal('modal-workout');renderHome();
   }
 }
 
@@ -1055,32 +1477,29 @@ async function saveExercise(){
   if(MODE==='local'){
     const w=lw(CUR_WORKOUT);if(!w)return;
     w.exercises.push({id:uid(),name,sessions:[]});
-    localSave();closeModal('modal-exercise');renderWorkout();
+    localSave();showToast('✓ Exercício salvo offline');closeModal('modal-exercise');renderWorkout();
   }else{
-    const ref=await db.collection('exercises').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    const w=getW(CUR_WORKOUT);w.exercises.push({id:ref.id,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[]});
-    closeModal('modal-exercise');renderWorkout();
+    try{
+      const ref=await db.collection('exercises').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const w=getW(CUR_WORKOUT);w.exercises.push({id:ref.id,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[]});
+      saveCloudBackup();
+      closeModal('modal-exercise');renderWorkout();
+    }catch(e){
+      alert('Erro ao salvar exercício: '+e.code+' — '+e.message);
+      console.error(e);
+    }
   }
 }
 
 // Session
-function openLogSessionModal(){
-  SESSION_WID=CUR_WORKOUT;   // trava ID no momento do clique
-  SESSION_EID=CUR_EX;        // trava ID no momento do clique
-  document.getElementById('input-session-date').value=today();
-  SET_COUNT=0;document.getElementById('sets-editor').innerHTML='';
-  addSetRow();addSetRow();addSetRow();
-  openModal('modal-session');
-}
+function openLogSessionModal(){document.getElementById('input-session-date').value=today();SET_COUNT=0;document.getElementById('sets-editor').innerHTML='';addSetRow();addSetRow();addSetRow();openModal('modal-session');}
 function addSetRow(){SET_COUNT++;const el=document.getElementById('sets-editor');const d=document.createElement('div');d.className='set-edit-row';d.innerHTML=`<span class="set-edit-num">${SET_COUNT}</span><input class="set-edit-input readonly" value="${SET_COUNT}ª" readonly><input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w"><input class="set-edit-input" type="number" placeholder="0" min="0" step="1" data-f="r"><button class="btn-rm-set" onclick="removeSet(this)">✕</button>`;el.appendChild(d);}
 function removeSet(btn){btn.closest('.set-edit-row').remove();document.querySelectorAll('.set-edit-row').forEach((r,i)=>{r.querySelector('.set-edit-num').textContent=i+1;r.querySelector('.readonly').value=(i+1)+'ª';});}
 
 async function saveSession(){
-  const wid=SESSION_WID||CUR_WORKOUT;  // usa ID travado no momento do clique
-  const eid=SESSION_EID||CUR_EX;
   const date=document.getElementById('input-session-date').value;
   if(!date){alert('Selecione a data!');return;}
-  const rows=[...document.querySelectorAll('#sets-editor .set-edit-row')];const sets=[];
+  const rows=[...document.querySelectorAll('.set-edit-row')];const sets=[];
   for(const row of rows){
     const w=parseFloat(row.querySelector('[data-f="w"]').value);
     const r=parseInt(row.querySelector('[data-f="r"]').value);
@@ -1089,17 +1508,25 @@ async function saveSession(){
   }
   if(!sets.length){alert('Adicione ao menos 1 série!');return;}
   if(MODE==='local'){
-    const e=le(wid,eid);if(!e)return;
-    e.sessions.push({id:uid(),date,sets});localSave();
+    const e=le(CUR_WORKOUT,CUR_EX);if(!e){alert('Erro: exercício não encontrado. Reabra o exercício.');return;}
+    e.sessions.push({id:uid(),date,sets});
+    localSave();
+    // Confirma que salvou
+    const verify=localStorage.getItem('teamms_v1');
+    if(verify) showToast('✓ Sessão salva offline');
+    else showToast('Erro ao salvar!',true);
   }else{
     try{
-      const ref=await db.collection('sessions').add({userId:CURRENT_USER.uid,workoutId:wid,exerciseId:eid,date,sets,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      const e=getE(wid,eid);if(e)e.sessions.push({id:ref.id,date,sets});
-    }catch(err){alert('Erro ao salvar: '+err.message);return;}
+      const ref=await db.collection('sessions').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,exerciseId:CUR_EX,date,sets,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const e=getE(CUR_WORKOUT,CUR_EX);e.sessions.push({id:ref.id,date,sets});
+      saveCloudBackup(); // ← atualiza backup offline
+    }catch(e){
+      alert('Erro ao salvar sessão: '+e.code+' — '+e.message);
+      console.error(e);
+      return;
+    }
   }
-  closeModal('modal-session');
-  // só re-renderiza se ainda estiver no mesmo exercício
-  if(CUR_WORKOUT===wid&&CUR_EX===eid)renderExercise();
+  closeModal('modal-session');renderExercise();
 }
 
 /* ══════════════════════════════════════════════════
@@ -1108,7 +1535,7 @@ async function saveSession(){
 async function renderTrainer(){
   document.getElementById('trainer-chip-name').textContent=CURRENT_USER?.name||'treinador';
   try{
-    const snap=await db.collection('users').where('role','==','student').orderBy('createdAt').get();
+    const snap=await db.collection('users').where('role','==','student').get();
     const students=snap.docs.map(d=>({uid:d.id,...d.data()}));
     const active=students.filter(s=>s.status==='active').length;
     const inactive=students.filter(s=>s.status==='inactive').length;
@@ -1158,14 +1585,14 @@ async function viewStudent(suid,sname){
 async function renderTrainerStudent(s){
   document.getElementById('ts-title').textContent=s.name.toUpperCase();
   try{
-    const wSnaps=await db.collection('workouts').where('userId','==',s.uid).orderBy('createdAt').get();
+    const wSnaps=await db.collection('workouts').where('userId','==',s.uid).get();
     const workouts=[];
     for(const wd of wSnaps.docs){
       const w={id:wd.id,...wd.data(),exercises:[]};
-      const eSnaps=await db.collection('exercises').where('workoutId','==',wd.id).orderBy('createdAt').get();
+      const eSnaps=await db.collection('exercises').where('workoutId','==',wd.id).get();
       for(const ed of eSnaps.docs){
         const ex={id:ed.id,...ed.data(),sessions:[]};
-        const sSnaps=await db.collection('sessions').where('exerciseId','==',ed.id).orderBy('date').get();
+        const sSnaps=await db.collection('sessions').where('exerciseId','==',ed.id).get();
         ex.sessions=sSnaps.docs.map(sd=>({id:sd.id,...sd.data()}));
         w.exercises.push(ex);
       }
@@ -1212,9 +1639,9 @@ function openTsExercise(eid){
   if(!e)return;VIEW_STUDENT_EXERCISE=e;
   document.getElementById('ts-exercise-title').textContent=e.name.toUpperCase();
   tsMiniChart=null;
-  buildChart(e,'tsProgressChart',TS_CHART_MODE,null);
   buildSessions(e,'ts-sessions-list',true);
   showScreen('screen-ts-exercise');
+  requestAnimationFrame(()=>{ buildChart(e,'tsProgressChart',TS_CHART_MODE,null); });
 }
 
 /* ══════════════════════════════════════════════════
@@ -1235,67 +1662,75 @@ async function sendFeedback(){
 /* ══════════════════════════════════════════════════
    EDIT SESSION
 ══════════════════════════════════════════════════ */
-let EDIT_SESSION_WID=null;
-let EDIT_SESSION_EID=null;
+let EDIT_SESSION_ID = null;
+let EDIT_SET_COUNT  = 0;
 
 function openEditSession(sid){
-  const wid=CUR_WORKOUT, eid=CUR_EX;
-  const e=getE(wid,eid);if(!e)return;
-  const sess=e.sessions.find(s=>s.id===sid);if(!sess)return;
-  EDIT_SESSION_ID=sid;
-  EDIT_SESSION_WID=wid;
-  EDIT_SESSION_EID=eid;
-  document.getElementById('edit-session-date').value=sess.date;
-  EDIT_SET_COUNT=0;
-  const editor=document.getElementById('edit-sets-editor');
-  editor.innerHTML='';
-  sess.sets.forEach(s=>addEditSetRow(s.weight,s.reps));
+  const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
+  const sess = e.sessions.find(s => s.id === sid); if(!sess) return;
+  EDIT_SESSION_ID = sid;
+  document.getElementById('edit-session-date').value = sess.date;
+  EDIT_SET_COUNT = 0;
+  const editor = document.getElementById('edit-sets-editor');
+  editor.innerHTML = '';
+  sess.sets.forEach(s => { addEditSetRow(s.weight, s.reps); });
   openModal('modal-edit-session');
 }
 
-function addEditSetRow(weight='',reps=''){
+function addEditSetRow(weight='', reps=''){
   EDIT_SET_COUNT++;
-  const el=document.getElementById('edit-sets-editor');
-  const d=document.createElement('div');
-  d.className='set-edit-row';
-  d.innerHTML=`<span class="set-edit-num">${EDIT_SET_COUNT}</span><input class="set-edit-input readonly" value="${EDIT_SET_COUNT}ª" readonly><input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w" value="${weight}"><input class="set-edit-input" type="number" placeholder="0" min="0" step="1" data-f="r" value="${reps}"><button class="btn-rm-set" onclick="removeEditSet(this)">✕</button>`;
+  const el = document.getElementById('edit-sets-editor');
+  const d  = document.createElement('div');
+  d.className = 'set-edit-row';
+  d.innerHTML = `
+    <span class="set-edit-num">${EDIT_SET_COUNT}</span>
+    <input class="set-edit-input readonly" value="${EDIT_SET_COUNT}ª" readonly>
+    <input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w" value="${weight}">
+    <input class="set-edit-input" type="number" placeholder="0" min="0" step="1"   data-f="r" value="${reps}">
+    <button class="btn-rm-set" onclick="removeEditSet(this)">✕</button>`;
   el.appendChild(d);
 }
 
 function removeEditSet(btn){
   btn.closest('.set-edit-row').remove();
   document.querySelectorAll('#edit-sets-editor .set-edit-row').forEach((r,i)=>{
-    r.querySelector('.set-edit-num').textContent=i+1;
-    r.querySelector('.readonly').value=(i+1)+'ª';
+    r.querySelector('.set-edit-num').textContent = i+1;
+    r.querySelector('.readonly').value = (i+1)+'ª';
   });
 }
 
 async function saveEditSession(){
-  const wid=EDIT_SESSION_WID, eid=EDIT_SESSION_EID, sid=EDIT_SESSION_ID;
-  const date=document.getElementById('edit-session-date').value;
-  if(!date){alert('Selecione a data!');return;}
-  const rows=[...document.querySelectorAll('#edit-sets-editor .set-edit-row')];
-  const sets=[];
+  const date = document.getElementById('edit-session-date').value;
+  if(!date){ alert('Selecione a data!'); return; }
+  const rows = [...document.querySelectorAll('#edit-sets-editor .set-edit-row')];
+  const sets = [];
   for(const row of rows){
-    const w=parseFloat(row.querySelector('[data-f="w"]').value);
-    const r=parseInt(row.querySelector('[data-f="r"]').value);
-    if(isNaN(w)||isNaN(r)||w<0||r<0){alert('Preencha carga e reps em todas as séries!');return;}
-    sets.push({weight:w,reps:r});
+    const w = parseFloat(row.querySelector('[data-f="w"]').value);
+    const r = parseInt(row.querySelector('[data-f="r"]').value);
+    if(isNaN(w)||isNaN(r)||w<0||r<0){ alert('Preencha carga e reps em todas as séries!'); return; }
+    sets.push({weight:w, reps:r});
   }
-  if(!sets.length){alert('Adicione ao menos 1 série!');return;}
-  const e=getE(wid,eid);if(!e)return;
-  const idx=e.sessions.findIndex(s=>s.id===sid);if(idx===-1)return;
+  if(!sets.length){ alert('Adicione ao menos 1 série!'); return; }
+  const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
+  const idx = e.sessions.findIndex(s => s.id === EDIT_SESSION_ID);
+  if(idx === -1) return;
   if(MODE==='local'){
-    e.sessions[idx]={...e.sessions[idx],date,sets};
+    e.sessions[idx].date = date;
+    e.sessions[idx].sets = sets;
     localSave();
   }else{
     try{
-      await db.collection('sessions').doc(sid).update({date,sets});
-      e.sessions[idx]={...e.sessions[idx],date,sets};
-    }catch(err){alert('Erro ao editar: '+err.message);return;}
+      await db.collection('sessions').doc(EDIT_SESSION_ID).update({date, sets});
+      e.sessions[idx].date = date;
+      e.sessions[idx].sets = sets;
+      saveCloudBackup(); // ← atualiza backup offline
+    }catch(err){
+      alert('Erro ao editar: '+err.message);
+      return;
+    }
   }
   closeModal('modal-edit-session');
-  if(CUR_WORKOUT===wid&&CUR_EX===eid)renderExercise();
+  renderExercise();
 }
 
 /* ══════════════════════════════════════════════════
@@ -1328,24 +1763,76 @@ window.addEventListener('resize',()=>{
    INIT
 ══════════════════════════════════════════════════ */
 (function(){
-  const firebaseOK=initFirebase();
-  if(firebaseOK&&CFG.firebase.apiKey!=='COLE_AQUI'){
-    // Timeout de segurança: se Firebase não responder em 4s, vai para login
-    const safetyTimer=setTimeout(()=>{
-      if(document.getElementById('screen-loading').classList.contains('active')){
-        console.warn('Firebase timeout');
-        showScreen('screen-auth');
+  // ── MODO OFFLINE PURO ──────────────────────────────────────────
+  if(localStorage.getItem('teamms_offline_pref')==='1'){
+    MODE='local';
+    // Tenta mesclar dados de qualquer backup por uid que exista no dispositivo
+    // Assim, se o aluno já logou antes, seus dados aparecem aqui também
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        if(k && k.startsWith('teamms_cloud_')){
+          const backup=JSON.parse(localStorage.getItem(k)||'null');
+          if(backup && Array.isArray(backup)) mergeIntoLocal(backup);
+        }
       }
-    },4000);
-    try{ startAuthListener(safetyTimer); }
-    catch(e){ clearTimeout(safetyTimer); localLoad(); MODE='local'; renderHome(); showScreen('screen-home'); }
-  }else{
-    localLoad();MODE='local';
+      localLoad(); // Recarrega LOCAL_DB com dados mesclados
+    }catch(e){}
     document.getElementById('hero-eyebrow').textContent='// modo offline';
     document.getElementById('user-chip-name').textContent='offline';
-    renderHome();showScreen('screen-home');
+    const bar=document.getElementById('debug-bar');
+    if(bar) bar.style.display='block';
+    updateDebugBar();
+    renderHome();
+    showScreen('screen-home');
+    return;
+  }
+
+  // ── Detecta se scripts do Firebase falharam ao carregar ────────
+  function fbScriptsFailed(){
+    return (window.__fbLoadErrors > 0) || (typeof firebase === 'undefined');
+  }
+
+  function fallbackOfflineMode(){
+    console.warn('Firebase indisponível — modo offline');
+    MODE='local';
+    document.getElementById('hero-eyebrow').textContent='// modo offline';
+    document.getElementById('user-chip-name').textContent='offline';
+    renderHome();
+    showScreen('screen-home');
+  }
+
+  // ── MODO CLOUD ─────────────────────────────────────────────────
+  if(fbScriptsFailed()){
+    fallbackOfflineMode();
+    return;
+  }
+
+  const firebaseOK = initFirebase();
+  if(firebaseOK && CFG.firebase.apiKey !== 'COLE_AQUI'){
+    // Timeout reduzido para 8s; se loading ainda ativo vai para auth
+    const safetyTimer = setTimeout(()=>{
+      if(document.getElementById('screen-loading').classList.contains('active')){
+        console.warn('Firebase timeout — indo para auth');
+        AUTH_HANDLED = false;
+        showScreen('screen-auth');
+      }
+    }, 8000);
+    try{ startAuthListener(safetyTimer); }
+    catch(e){ clearTimeout(safetyTimer); showScreen('screen-auth'); }
+  }else{
+    fallbackOfflineMode();
   }
 })();
+
+// ── Registra o Service Worker (PWA / cache offline) ──────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(r=>console.log('SW registrado:', r.scope))
+      .catch(e=>console.warn('SW falhou:', e));
+  });
+}
 </script>
 </body>
 </html>
