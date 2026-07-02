@@ -634,8 +634,10 @@ let VIEW_STUDENT_EXERCISE=null;
 // Student nav state
 let CUR_WORKOUT=null;
 let CUR_EX=null;
-let SESSION_WID=null;   // ID do treino travado no momento que o modal de sessão abre
-let SESSION_EID=null;   // ID do exercício travado no momento que o modal de sessão abre
+let SESSION_WID=null;  // ID do treino travado ao abrir modal de nova sessão
+let SESSION_EID=null;  // ID do exercício travado ao abrir modal de nova sessão
+let EDIT_SESSION_WID=null; // ID travado ao abrir modal de edição de sessão
+let EDIT_SESSION_EID=null;
 let EDIT_W=null;
 let SEL_COLOR=PALETTE[0];
 let SET_COUNT=0;
@@ -853,12 +855,13 @@ async function cleanDuplicates(){
   // Agrupa por nome e mantém só o mais recente
   const seen = {};
   const toDelete = [];
-  snap.docs.forEach(d => {
+  const sortedDocs=[...snap.docs].sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
+  sortedDocs.forEach(d => {
     const name = d.data().name;
     if(seen[name]){
-      toDelete.push(d.id); // duplicata
+      toDelete.push(d.id); // duplicata (mais antiga)
     } else {
-      seen[name] = d.id;
+      seen[name] = d.id;  // mantém o mais recente
     }
   });
   if(toDelete.length === 0){ alert('Nenhum duplicado encontrado!'); return; }
@@ -884,9 +887,10 @@ async function cleanDuplicates(){
 function saveCloudBackup(){
   if(!CURRENT_USER)return;
   try{
+    // Salva cópia por uid (usada para restaurar ao relogar)
     localStorage.setItem('teamms_cloud_'+CURRENT_USER.uid, JSON.stringify(CLOUD_WORKOUTS));
-    // Espelho bidirecional: teamms_v1 sempre reflete o estado cloud
-    mergeIntoLocal(CLOUD_WORKOUTS);
+    // Substitui os dados deste usuário no teamms_v1 — garante que deletes propagam
+    replaceLocalForUser(CURRENT_USER.uid, CLOUD_WORKOUTS);
   }catch(e){}
 }
 function loadCloudBackup(uid){
@@ -894,11 +898,36 @@ function loadCloudBackup(uid){
   catch(e){return [];}
 }
 
+// ── replaceLocalForUser(uid, workouts) ──────────────────────────
+// Substitui no teamms_v1 APENAS os treinos que pertencem a este uid,
+// preservando treinos de outros usuários (offline puro, outros alunos).
+// Isso garante que deletes feitos no cloud se reflitam offline.
+function replaceLocalForUser(userUid, incoming){
+  try{
+    localLoad();
+    // Remove todos os treinos que têm userId igual ao usuário atual
+    // (ou que foram espelhados com o mesmo id de treino do cloud)
+    const cloudIds = new Set((incoming||[]).map(w=>w.id));
+    const cloudNames = new Set((incoming||[]).map(w=>w.name));
+    // Mantém apenas treinos locais que NÃO pertencem a este usuário
+    const others = (LOCAL_DB.workouts||[]).filter(w=>{
+      // Se tem userId explícito diferente, preserva
+      if(w.userId && w.userId !== userUid) return true;
+      // Se tem o mesmo id ou nome de um treino do cloud, vai ser substituído
+      if(cloudIds.has(w.id) || cloudNames.has(w.name)) return false;
+      // Treino local puro sem userId — preserva (offline sem conta)
+      if(!w.userId) return true;
+      return false;
+    });
+    // Junta: outros + todos os treinos atuais do cloud
+    LOCAL_DB.workouts = [...others, ...(incoming||[])];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
+  }catch(e){ console.warn('replaceLocalForUser error:', e); }
+}
+
 // ── mergeIntoLocal(workouts) ────────────────────────────────────
-// Mescla lista de treinos no teamms_v1 sem duplicar por nome.
-// Treinos locais com mesmo nome são substituídos pela versão mais
-// completa (maior número de sessões). Treinos exclusivamente locais
-// são preservados.
+// Usada apenas na migração inicial (offline → cloud) e no login de inativo.
+// Adiciona treinos novos sem sobrescrever dados locais mais recentes.
 function mergeIntoLocal(incoming){
   if(!incoming || !incoming.length) return;
   try{
@@ -908,13 +937,11 @@ function mergeIntoLocal(incoming){
     for(const inW of incoming){
       const idx = merged.findIndex(lw => lw.name === inW.name);
       if(idx === -1){
-        // Novo treino — adiciona
         merged.push(inW);
       } else {
-        // Mesmo nome — mantém o que tiver mais sessões no total
         const localSess  = merged[idx].exercises.reduce((a,e)=>a+(e.sessions||[]).length,0);
         const incomSess  = (inW.exercises||[]).reduce((a,e)=>a+(e.sessions||[]).length,0);
-        if(incomSess >= localSess) merged[idx] = inW; // cloud mais atualizado
+        if(incomSess >= localSess) merged[idx] = inW;
       }
     }
     LOCAL_DB.workouts = merged;
@@ -971,7 +998,7 @@ async function doLogin(){
     btn.disabled=false;btn.textContent='ENTRAR';
   }catch(e){
     btn.disabled=false;btn.textContent='ENTRAR';
-    const msgs={'auth/user-not-found':'Conta não encontrada.','auth/wrong-password':'Senha incorreta.','auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde.'};
+    const msgs={'auth/user-not-found':'Conta não encontrada.','auth/wrong-password':'Senha incorreta.','auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde.','auth/invalid-credential':'E-mail ou senha incorretos.'};
     showAuthError('login-error',msgs[e.code]||('Erro: '+e.code));
   }
 }
@@ -1038,20 +1065,10 @@ async function confirmLogout(){
   showConfirm('Sair','Deseja sair da sua conta?',async()=>{
     // ── Antes de deslogar: copia dados cloud → teamms_v1 (offline) ──
     // Garante que o aluno tenha acesso aos dados mesmo sem conta
-    if(CLOUD_WORKOUTS && CLOUD_WORKOUTS.length > 0){
+    if(CURRENT_USER && CLOUD_WORKOUTS && CLOUD_WORKOUTS.length > 0){
       try{
-        // Mescla com dados locais existentes sem duplicar (por nome do treino)
-        localLoad();
-        const localNames = new Set((LOCAL_DB.workouts||[]).map(w=>w.name));
-        const toMerge = CLOUD_WORKOUTS.filter(w=>!localNames.has(w.name));
-        if(toMerge.length > 0){
-          LOCAL_DB.workouts = [...(LOCAL_DB.workouts||[]), ...toMerge];
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
-        } else if((LOCAL_DB.workouts||[]).length === 0){
-          // Sem dados locais — copia tudo
-          LOCAL_DB.workouts = [...CLOUD_WORKOUTS];
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(LOCAL_DB));
-        }
+        // Substitui dados deste usuário no offline (preserva deletes, não acumula)
+        replaceLocalForUser(CURRENT_USER.uid, CLOUD_WORKOUTS);
       }catch(e){ console.warn('Erro ao copiar dados cloud para offline:', e); }
     }
     try{
@@ -1387,26 +1404,48 @@ function lw(id){return LOCAL_DB.workouts.find(w=>w.id===id);}
 function le(wid,eid){const w=lw(wid);return w?w.exercises.find(e=>e.id===eid):null;}
 
 function deleteWorkout(id){
-  if(MODE==='local'){LOCAL_DB.workouts=LOCAL_DB.workouts.filter(w=>w.id!==id);localSave();renderHome();}
-  else cloudDeleteWorkout(id);
+  if(MODE==='local'){
+    LOCAL_DB.workouts=LOCAL_DB.workouts.filter(w=>w.id!==id);
+    localSave();
+    renderHome();
+  } else {
+    cloudDeleteWorkout(id);
+  }
 }
+
 function deleteSession(sid){
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
-  if(MODE==='local'){e.sessions=e.sessions.filter(s=>s.id!==sid);localSave();}
-  else{db.collection('sessions').doc(sid).delete().then(()=>{e.sessions=e.sessions.filter(s=>s.id!==sid);saveCloudBackup();renderExercise();});}
-  renderExercise();
+  if(MODE==='local'){
+    e.sessions=e.sessions.filter(s=>s.id!==sid);
+    localSave();
+    renderExercise(); // renderiza só após remover da memória
+  }else{
+    db.collection('sessions').doc(sid).delete()
+      .then(()=>{
+        e.sessions=e.sessions.filter(s=>s.id!==sid);
+        saveCloudBackup(); // propaga delete para teamms_v1 via replaceLocalForUser
+        renderExercise();
+      })
+      .catch(err=>{ alert('Erro ao excluir sessão: '+err.message); });
+  }
 }
+
 function deleteCurrentExercise(){
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
   showConfirm('Excluir Exercício','Excluir "'+e.name+'"? Todo o histórico será apagado.',async()=>{
-    if(MODE==='local'){const w=lw(CUR_WORKOUT);w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);localSave();}
-    else{
+    if(MODE==='local'){
+      const w=lw(CUR_WORKOUT);
+      w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);
+      localSave();
+    }else{
       const sess=await db.collection('sessions').where('exerciseId','==',CUR_EX).get();
-      const batch=db.batch();sess.docs.forEach(d=>batch.delete(d.ref));
+      const batch=db.batch();
+      sess.docs.forEach(d=>batch.delete(d.ref));
       batch.delete(db.collection('exercises').doc(CUR_EX));
       await batch.commit();
-      const w=getW(CUR_WORKOUT);w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);
-      saveCloudBackup(); // ← atualiza backup offline
+      const w=getW(CUR_WORKOUT);
+      w.exercises=w.exercises.filter(x=>x.id!==CUR_EX);
+      saveCloudBackup(); // propaga delete para teamms_v1 via replaceLocalForUser
     }
     CUR_EX=null;goWorkout();
   });
@@ -1495,20 +1534,22 @@ async function saveExercise(){
 
 // Session
 function openLogSessionModal(){
-  SESSION_WID=CUR_WORKOUT;   // trava o ID do treino no momento do clique
-  SESSION_EID=CUR_EX;        // trava o ID do exercício no momento do clique
+  SESSION_WID=CUR_WORKOUT;
+  SESSION_EID=CUR_EX;
   document.getElementById('input-session-date').value=today();
-  SET_COUNT=0;document.getElementById('sets-editor').innerHTML='';
+  SET_COUNT=0;
+  document.getElementById('sets-editor').innerHTML='';
   addSetRow();addSetRow();addSetRow();
   openModal('modal-session');
 }
 function addSetRow(){SET_COUNT++;const el=document.getElementById('sets-editor');const d=document.createElement('div');d.className='set-edit-row';d.innerHTML=`<span class="set-edit-num">${SET_COUNT}</span><input class="set-edit-input readonly" value="${SET_COUNT}ª" readonly><input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w"><input class="set-edit-input" type="number" placeholder="0" min="0" step="1" data-f="r"><button class="btn-rm-set" onclick="removeSet(this)">✕</button>`;el.appendChild(d);}
-function removeSet(btn){btn.closest('.set-edit-row').remove();document.querySelectorAll('.set-edit-row').forEach((r,i)=>{r.querySelector('.set-edit-num').textContent=i+1;r.querySelector('.readonly').value=(i+1)+'ª';});}
+function removeSet(btn){btn.closest('.set-edit-row').remove();document.querySelectorAll('#sets-editor .set-edit-row').forEach((r,i)=>{r.querySelector('.set-edit-num').textContent=i+1;r.querySelector('.readonly').value=(i+1)+'ª';});SET_COUNT=document.querySelectorAll('#sets-editor .set-edit-row').length;}
 
 async function saveSession(){
   // Usa IDs travados no momento que o modal abriu — imune a navegação durante o preenchimento
   const wid = SESSION_WID || CUR_WORKOUT;
   const eid = SESSION_EID || CUR_EX;
+  if(!wid || !eid){ alert('Erro: exercício não identificado. Feche e tente novamente.'); return; }
   const date=document.getElementById('input-session-date').value;
   if(!date){alert('Selecione a data!');return;}
   // Seletor restrito ao modal de nova sessão — não pega rows do modal de edição
@@ -1523,6 +1564,7 @@ async function saveSession(){
   if(MODE==='local'){
     const e=le(wid,eid);if(!e){alert('Erro: exercício não encontrado. Reabra o exercício.');return;}
     e.sessions.push({id:uid(),date,sets});
+    e.sessions.sort((a,b)=>a.date.localeCompare(b.date));
     localSave();
     const verify=localStorage.getItem('teamms_v1');
     if(verify) showToast('✓ Sessão salva offline');
@@ -1530,7 +1572,8 @@ async function saveSession(){
   }else{
     try{
       const ref=await db.collection('sessions').add({userId:CURRENT_USER.uid,workoutId:wid,exerciseId:eid,date,sets,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      const e=getE(wid,eid);e.sessions.push({id:ref.id,date,sets});
+      const e=getE(wid,eid);
+      if(e){e.sessions.push({id:ref.id,date,sets});e.sessions.sort((a,b)=>a.date.localeCompare(b.date));}
       saveCloudBackup();
     }catch(e){
       alert('Erro ao salvar sessão: '+e.code+' — '+e.message);
@@ -1682,7 +1725,9 @@ let EDIT_SET_COUNT  = 0;
 function openEditSession(sid){
   const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
   const sess = e.sessions.find(s => s.id === sid); if(!sess) return;
-  EDIT_SESSION_ID = sid;
+  EDIT_SESSION_ID  = sid;
+  EDIT_SESSION_WID = CUR_WORKOUT;
+  EDIT_SESSION_EID = CUR_EX;
   document.getElementById('edit-session-date').value = sess.date;
   EDIT_SET_COUNT = 0;
   const editor = document.getElementById('edit-sets-editor');
@@ -1711,6 +1756,7 @@ function removeEditSet(btn){
     r.querySelector('.set-edit-num').textContent = i+1;
     r.querySelector('.readonly').value = (i+1)+'ª';
   });
+  EDIT_SET_COUNT=document.querySelectorAll('#edit-sets-editor .set-edit-row').length;
 }
 
 async function saveEditSession(){
@@ -1725,26 +1771,31 @@ async function saveEditSession(){
     sets.push({weight:w, reps:r});
   }
   if(!sets.length){ alert('Adicione ao menos 1 série!'); return; }
-  const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
+  // Usa IDs travados no momento da abertura do modal
+  const wid = EDIT_SESSION_WID || CUR_WORKOUT;
+  const eid = EDIT_SESSION_EID || CUR_EX;
+  const e = getE(wid, eid); if(!e) return;
   const idx = e.sessions.findIndex(s => s.id === EDIT_SESSION_ID);
   if(idx === -1) return;
   if(MODE==='local'){
     e.sessions[idx].date = date;
     e.sessions[idx].sets = sets;
+    e.sessions.sort((a,b)=>a.date.localeCompare(b.date));
     localSave();
   }else{
     try{
       await db.collection('sessions').doc(EDIT_SESSION_ID).update({date, sets});
       e.sessions[idx].date = date;
       e.sessions[idx].sets = sets;
-      saveCloudBackup(); // ← atualiza backup offline
+      e.sessions.sort((a,b)=>a.date.localeCompare(b.date));
+      saveCloudBackup();
     }catch(err){
       alert('Erro ao editar: '+err.message);
       return;
     }
   }
   closeModal('modal-edit-session');
-  renderExercise();
+  if(CUR_WORKOUT===wid && CUR_EX===eid) renderExercise();
 }
 
 /* ══════════════════════════════════════════════════
