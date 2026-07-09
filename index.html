@@ -234,88 +234,6 @@
     .user-chip:active{background:var(--border);}
     .user-chip-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
     .user-chip-name{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-    /* REST TIMER (modal-session) */
-    .rest-timer{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin:4px 0 16px;}
-    .rest-timer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-    .rest-timer-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;}
-    .rest-timer-display{font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--text);letter-spacing:.5px;transition:color .2s;}
-    .rest-timer-display.done{color:var(--accent);}
-    .rest-timer-bar-track{height:4px;background:var(--surface);border-radius:2px;overflow:hidden;margin-bottom:10px;}
-    .rest-timer-bar{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 1s linear;}
-    .rest-timer-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-    .rest-timer-presets button{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:8px 4px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:13px;letter-spacing:.3px;cursor:pointer;transition:all .13s;}
-    .rest-timer-presets button:active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
-    .rest-timer-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-    .rest-timer-btn{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:8px 4px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:13px;letter-spacing:.3px;cursor:pointer;}
-    .rest-timer-btn.ghost{background:transparent;border-color:var(--border-l);color:var(--text-muted);}
-
-    /* CALENDAR */
-    .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-    .cal-month-label{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:18px;letter-spacing:.3px;}
-    .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-    .cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;background:var(--card);border:1px solid var(--border);font-size:13px;color:var(--text-dim);gap:2px;}
-    .cal-cell.empty{background:transparent;border:none;}
-    .cal-cell.trained{background:var(--accent-dim);border-color:var(--accent);color:var(--text);cursor:pointer;}
-    .cal-cell.today{box-shadow:0 0 0 1.5px var(--text-muted) inset;}
-    .cal-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);}
-    .cal-summary{margin-top:14px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.5px;}
-    .cal-day-entry{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--wcard-color,var(--accent));border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;}
-    .cal-day-entry-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-    .cal-day-entry-ex{font-weight:600;font-size:14px;}
-    .cal-day-entry-w{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);white-space:nowrap;}
-    .cal-day-entry-meta{font-size:12px;color:var(--text-dim);margin-top:3px;}
-
-    /* QUICK NAV (home) */
-    .quick-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 18px 0;}
-    .quick-nav-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:var(--text-muted);cursor:pointer;transition:border-color .13s,background .13s;}
-    .quick-nav-btn span{font-size:19px;line-height:1;}
-    .quick-nav-btn:active{background:var(--accent-dim);border-color:var(--accent);}
-
-    /* EXERCISE VIDEO */
-    .video-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:14px;}
-    .video-box-empty{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-    .video-box-empty-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:.5px;}
-    .video-box-add-btn{background:transparent;border:1px dashed var(--border-l);color:var(--text-muted);border-radius:6px;padding:7px 12px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;cursor:pointer;flex-shrink:0;}
-    .video-box iframe{width:100%;aspect-ratio:16/9;border:none;border-radius:8px;display:block;}
-    .video-box-link{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-    .video-box-link a{color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;}
-    .video-box-edit-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;flex-shrink:0;}
-
-    /* MEAL PLAN */
-    .meal-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
-    .meal-card-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-    .meal-card-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.5px;flex-shrink:0;}
-    .meal-card-name{font-weight:700;font-size:15px;flex:1;}
-    .meal-card-items{font-size:13px;color:var(--text-dim);line-height:1.6;margin:0 0 6px 18px;padding:0;}
-    .meal-card-notes{font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:10px;}
-    .meal-done-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:8px 12px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;cursor:pointer;width:100%;text-align:center;transition:all .13s;display:block;}
-    .meal-done-btn.done{background:rgba(34,197,94,.12);border-color:var(--success);color:var(--success);}
-    .meal-edit-btn{background:transparent;border:none;color:var(--text-muted);font-size:15px;cursor:pointer;padding:2px 4px;flex-shrink:0;}
-
-    /* PROGRESS PHOTOS */
-    .photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-    .photo-thumb{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--border);}
-    .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-    .photo-thumb-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;font-size:9px;font-family:'DM Mono',monospace;padding:10px 5px 4px;text-align:center;}
-    .photos-compare-btn{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius-sm);padding:10px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px;cursor:pointer;margin-bottom:14px;}
-
-    /* QUESTIONNAIRES */
-    .quest-q-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
-    .quest-q-row input{flex:1;}
-    .quest-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer;}
-    .quest-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px;}
-    .quest-card-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);}
-    .quest-status{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;padding:3px 8px;border-radius:5px;text-transform:uppercase;flex-shrink:0;}
-    .quest-status.pending{background:rgba(245,158,11,.12);color:var(--warn);}
-    .quest-status.answered{background:rgba(34,197,94,.12);color:var(--success);}
-    .quest-card-preview{font-size:13px;color:var(--text-dim);}
-    .quest-answer-item{margin-bottom:14px;}
-    .quest-answer-item label{display:block;font-size:13px;color:var(--text);margin-bottom:6px;font-weight:600;}
-    .quest-view-qa{margin-bottom:12px;}
-    .quest-view-qa .q{font-size:13px;color:var(--text-muted);margin-bottom:3px;}
-    .quest-view-qa .a{font-size:14px;color:var(--text);background:var(--surface);border-radius:6px;padding:8px 10px;}
   </style>
 </head>
 <body>
@@ -397,22 +315,11 @@
       <div class="feedback-banner-text" id="feedback-banner-text"></div>
       <button class="feedback-banner-close" onclick="dismissFeedback()">✕</button>
     </div>
-    <div id="quest-banner" style="display:none" class="feedback-banner">
-      <div class="feedback-banner-label">📝 questionário pendente</div>
-      <div class="feedback-banner-text" id="quest-banner-text">Seu treinador enviou um questionário.</div>
-      <button class="btn-primary" style="margin-top:8px;padding:8px" onclick="openAnswerQuestionnaire(document.getElementById('quest-banner').dataset.qid)">RESPONDER</button>
-    </div>
     <div class="home-hero">
       <div class="home-hero-eyebrow" id="hero-eyebrow">// modo offline</div>
       <div class="home-hero-title">SEUS<br><span class="dim">TREINOS</span></div>
     </div>
     <div class="stats-grid" id="home-stats"></div>
-    <div class="quick-nav">
-      <button class="quick-nav-btn" onclick="openCalendar()"><span>📅</span>Calendário</button>
-      <button class="quick-nav-btn" onclick="openMeals()"><span>🍽</span>Refeições</button>
-      <button class="quick-nav-btn" onclick="openPhotos()"><span>📷</span>Fotos</button>
-      <button class="quick-nav-btn" onclick="openMyQuestionnaires()"><span>📝</span>Question.</button>
-    </div>
     <div class="content">
       <div class="section-header"><span class="section-label">Treinos cadastrados</span></div>
       <div id="workout-list"></div>
@@ -461,78 +368,8 @@
         <div class="chart-wrap"><canvas id="progressChart"></canvas></div>
         <div id="chart-empty-msg" class="chart-empty-msg" style="display:none">Registre sessões para ver o gráfico</div>
       </div>
-      <div id="exercise-video-box"></div>
       <div class="section-header"><span class="section-label">Sessões registradas</span></div>
       <div id="sessions-list"></div>
-    </div>
-  </div>
-
-  <!-- CALENDAR -->
-  <div id="screen-calendar" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goHome()">←</button>
-      <div class="header-title">CALENDÁRIO</div>
-    </div>
-    <div class="content">
-      <div class="cal-nav">
-        <button class="btn-icon ghost" onclick="calShiftMonth(-1)">‹</button>
-        <span class="cal-month-label" id="cal-month-label">—</span>
-        <button class="btn-icon ghost" onclick="calShiftMonth(1)">›</button>
-      </div>
-      <div class="cal-weekdays"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
-      <div class="cal-grid" id="cal-grid"></div>
-      <div class="cal-summary" id="cal-summary">—</div>
-    </div>
-  </div>
-
-  <!-- MEAL PLAN -->
-  <div id="screen-meals" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goHome()">←</button>
-      <div class="header-title">PLANO ALIMENTAR</div>
-    </div>
-    <div id="meals-readonly-note" class="readonly-banner" style="display:none">👁 Plano montado pelo seu treinador</div>
-    <div class="content">
-      <div id="meals-list"></div>
-      <div id="meals-empty" class="empty-state" style="display:none">
-        <div class="empty-icon">🍽</div>
-        <div class="empty-label">Nenhuma refeição cadastrada</div>
-        <div class="empty-hint" id="meals-empty-hint">Toque em + REFEIÇÃO para começar</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROGRESS PHOTOS -->
-  <div id="screen-photos" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goHome()">←</button>
-      <div class="header-title">FOTOS DE PROGRESSO</div>
-    </div>
-    <div class="content">
-      <input type="file" accept="image/*" id="photo-file-input" style="display:none" onchange="handlePhotoSelected(event)">
-      <button class="photos-compare-btn" onclick="openComparePhotos()">↔ COMPARAR FOTOS</button>
-      <div class="photos-grid" id="photos-grid-el"></div>
-      <div id="photos-empty-el" class="empty-state" style="display:none">
-        <div class="empty-icon">📷</div>
-        <div class="empty-label">Nenhuma foto ainda</div>
-        <div class="empty-hint">Toque em + FOTO para enviar a primeira</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MY QUESTIONNAIRES (student) -->
-  <div id="screen-my-quest" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goHome()">←</button>
-      <div class="header-title">QUESTIONÁRIOS</div>
-    </div>
-    <div class="content">
-      <div id="my-quest-list"></div>
-      <div id="my-quest-empty" class="empty-state" style="display:none">
-        <div class="empty-icon">📝</div>
-        <div class="empty-label">Nenhum questionário recebido</div>
-        <div class="empty-hint">Seu treinador ainda não enviou nenhum</div>
-      </div>
     </div>
   </div>
 
@@ -566,18 +403,16 @@
     <div class="header">
       <button class="btn-icon" onclick="goTrainer()">←</button>
       <div class="header-title" id="ts-title">ALUNO</div>
-      <button class="btn-icon ghost" onclick="openTsMeals()" title="Plano alimentar">🍽</button>
-      <button class="btn-icon ghost" onclick="openTsPhotos()" title="Fotos de progresso">📷</button>
-      <button class="btn-icon ghost" onclick="openTsQuestionnaires()" title="Questionários">📝</button>
       <button class="btn-icon ghost" onclick="openFeedbackModal()" title="Enviar feedback">💬</button>
     </div>
+    <div class="readonly-banner">👁 Visualização somente leitura</div>
     <div class="content" style="padding-top:12px">
-      <div class="section-header"><span class="section-label">Treinos do aluno</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">você monta o plano</span></div>
+      <div class="section-header"><span class="section-label">Treinos do aluno</span></div>
       <div id="ts-workout-list"></div>
       <div id="ts-workout-empty" class="empty-state" style="display:none">
         <div class="empty-icon">📋</div>
         <div class="empty-label">Aluno sem treinos</div>
-        <div class="empty-hint">Toque em + NOVO TREINO para montar o plano deste aluno</div>
+        <div class="empty-hint">O aluno ainda não cadastrou nenhum treino</div>
       </div>
     </div>
   </div>
@@ -588,6 +423,7 @@
       <button class="btn-icon" onclick="goTrainerStudent()">←</button>
       <div class="header-title" id="ts-workout-title">TREINO</div>
     </div>
+    <div class="readonly-banner">👁 Visualização somente leitura</div>
     <div class="content" style="padding-top:12px">
       <div class="section-header"><span class="section-label">Exercícios</span></div>
       <div id="ts-exercise-list"></div>
@@ -600,7 +436,7 @@
       <button class="btn-icon" onclick="goTsWorkout()">←</button>
       <div class="header-title" id="ts-exercise-title">EXERCÍCIO</div>
     </div>
-    <div class="readonly-banner">👁 Séries registradas pelo aluno — somente leitura</div>
+    <div class="readonly-banner">👁 Visualização somente leitura</div>
     <div class="content" style="padding-top:12px">
       <div class="chart-container">
         <div class="chart-header">
@@ -614,57 +450,8 @@
         <div class="chart-wrap"><canvas id="tsProgressChart"></canvas></div>
         <div id="ts-chart-empty" class="chart-empty-msg" style="display:none">Sem sessões registradas</div>
       </div>
-      <div id="ts-exercise-video-box"></div>
       <div class="section-header"><span class="section-label">Sessões</span></div>
       <div id="ts-sessions-list"></div>
-    </div>
-  </div>
-
-  <!-- TRAINER VIEWING STUDENT MEALS -->
-  <div id="screen-ts-meals" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goTrainerStudent()">←</button>
-      <div class="header-title">PLANO ALIMENTAR</div>
-    </div>
-    <div class="content" style="padding-top:12px">
-      <div id="ts-meals-list"></div>
-      <div id="ts-meals-empty" class="empty-state" style="display:none">
-        <div class="empty-icon">🍽</div>
-        <div class="empty-label">Nenhuma refeição cadastrada</div>
-        <div class="empty-hint">Toque em + REFEIÇÃO para montar o plano do aluno</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TRAINER VIEWING STUDENT PHOTOS -->
-  <div id="screen-ts-photos" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goTrainerStudent()">←</button>
-      <div class="header-title">FOTOS DE PROGRESSO</div>
-    </div>
-    <div class="readonly-banner">👁 Visualização somente leitura</div>
-    <div class="content" style="padding-top:12px">
-      <div class="photos-grid" id="ts-photos-grid"></div>
-      <div id="ts-photos-empty" class="empty-state" style="display:none">
-        <div class="empty-icon">📷</div>
-        <div class="empty-label">Aluno sem fotos de progresso</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TRAINER QUESTIONNAIRES FOR STUDENT -->
-  <div id="screen-ts-quest" class="screen">
-    <div class="header">
-      <button class="btn-icon" onclick="goTrainerStudent()">←</button>
-      <div class="header-title">QUESTIONÁRIOS</div>
-    </div>
-    <div class="content" style="padding-top:12px">
-      <button class="btn-add-set" style="margin-bottom:14px" onclick="openSendQuestionnaireModal()">+ NOVO QUESTIONÁRIO</button>
-      <div id="ts-quest-list"></div>
-      <div id="ts-quest-empty" class="empty-state" style="display:none">
-        <div class="empty-icon">📝</div>
-        <div class="empty-label">Nenhum questionário enviado</div>
-      </div>
     </div>
   </div>
 
@@ -674,11 +461,6 @@
 <div class="fab-wrap" id="fab-home"><button class="fab" onclick="openAddWorkoutModal()"><span class="fab-icon">+</span> NOVO TREINO</button></div>
 <div class="fab-wrap" id="fab-workout" style="display:none"><button class="fab" onclick="openAddExerciseModal()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
 <div class="fab-wrap" id="fab-exercise" style="display:none"><button class="fab" onclick="openLogSessionModal()"><span class="fab-icon">+</span> REGISTRAR</button></div>
-<div class="fab-wrap" id="fab-ts-workout" style="display:none"><button class="fab" onclick="openAddWorkoutModalTs()"><span class="fab-icon">+</span> NOVO TREINO</button></div>
-<div class="fab-wrap" id="fab-ts-exercise" style="display:none"><button class="fab" onclick="openAddExerciseModalTs()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
-<div class="fab-wrap" id="fab-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
-<div class="fab-wrap" id="fab-ts-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
-<div class="fab-wrap" id="fab-photos" style="display:none"><button class="fab" onclick="triggerPhotoUpload()"><span class="fab-icon">+</span> FOTO</button></div>
 
 <!-- MODAL: Workout -->
 <div class="modal-backdrop" id="modal-workout">
@@ -696,7 +478,7 @@
 <div class="modal-backdrop" id="modal-exercise">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-exercise-title">Novo Exercício</div>
+    <div class="modal-title">Novo Exercício</div>
     <div class="form-group"><label class="form-label">Nome do Exercício</label><input class="form-input" id="input-exercise-name" placeholder="Ex: Supino Reto com Barra" maxlength="70"></div>
     <button class="btn-primary" onclick="saveExercise()">ADICIONAR</button>
     <button class="btn-ghost" onclick="closeModal('modal-exercise')">CANCELAR</button>
@@ -714,23 +496,6 @@
       <div class="sets-cols-header"><span></span><span class="sets-col-lbl">Série</span><span class="sets-col-lbl">Carga (kg)</span><span class="sets-col-lbl">Reps</span><span></span></div>
       <div id="sets-editor"></div>
       <button class="btn-add-set" onclick="addSetRow()">+ ADICIONAR SÉRIE</button>
-    </div>
-    <div class="rest-timer">
-      <div class="rest-timer-head">
-        <span class="rest-timer-label">⏱ Descanso entre séries</span>
-        <span class="rest-timer-display" id="rest-timer-display">00:00</span>
-      </div>
-      <div class="rest-timer-bar-track"><div class="rest-timer-bar" id="rest-timer-bar"></div></div>
-      <div class="rest-timer-presets" id="rest-timer-presets">
-        <button onclick="startRestTimer(30)">30s</button>
-        <button onclick="startRestTimer(60)">60s</button>
-        <button onclick="startRestTimer(90)">90s</button>
-        <button onclick="startRestTimer(120)">120s</button>
-      </div>
-      <div class="rest-timer-controls" id="rest-timer-controls" style="display:none">
-        <button class="rest-timer-btn" id="rest-timer-toggle-btn" onclick="toggleRestTimer()">⏸ Pausar</button>
-        <button class="rest-timer-btn ghost" onclick="resetRestTimer()">↺ Cancelar</button>
-      </div>
     </div>
     <button class="btn-primary" onclick="saveSession()">SALVAR SESSÃO</button>
     <button class="btn-ghost" onclick="closeModal('modal-session')">CANCELAR</button>
@@ -763,110 +528,6 @@
     </div>
     <button class="btn-primary" onclick="saveEditSession()">SALVAR ALTERAÇÕES</button>
     <button class="btn-ghost" onclick="closeModal('modal-edit-session')">CANCELAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Calendar Day Detail -->
-<div class="modal-backdrop" id="modal-cal-day">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="cal-day-modal-title">Dia</div>
-    <div id="cal-day-modal-body"></div>
-    <button class="btn-ghost" onclick="closeModal('modal-cal-day')">FECHAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Exercise Video -->
-<div class="modal-backdrop" id="modal-exercise-video">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Vídeo de Execução</div>
-    <div class="form-group"><label class="form-label">Link (YouTube ou outro)</label><input class="form-input" id="input-video-url" placeholder="https://youtube.com/watch?v=..."></div>
-    <button class="btn-primary" onclick="saveExerciseVideo()">SALVAR</button>
-    <button class="btn-ghost" onclick="removeExerciseVideo()">REMOVER VÍDEO</button>
-    <button class="btn-ghost" onclick="closeModal('modal-exercise-video')">CANCELAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Meal -->
-<div class="modal-backdrop" id="modal-meal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-meal-title">Nova Refeição</div>
-    <div class="form-group"><label class="form-label">Horário</label><input type="time" class="form-input" id="input-meal-time"></div>
-    <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="input-meal-name" placeholder="Ex: Café da manhã" maxlength="60"></div>
-    <div class="form-group"><label class="form-label">Itens (um por linha)</label><textarea class="form-input" id="input-meal-items" rows="4" placeholder="2 ovos
-1 fatia de pão integral
-1 banana" style="resize:vertical;min-height:80px"></textarea></div>
-    <div class="form-group"><label class="form-label">Observações / substituições</label><textarea class="form-input" id="input-meal-notes" rows="2" placeholder="Ex: pode substituir o pão por batata doce" style="resize:vertical;min-height:50px"></textarea></div>
-    <button class="btn-primary" onclick="saveMeal()">SALVAR</button>
-    <button class="btn-ghost" id="btn-delete-meal" onclick="confirmDeleteMeal()" style="display:none;color:var(--danger)">EXCLUIR REFEIÇÃO</button>
-    <button class="btn-ghost" onclick="closeModal('modal-meal')">CANCELAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Photo View -->
-<div class="modal-backdrop" id="modal-photo-view">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="photo-view-title">Foto</div>
-    <img id="photo-view-img" style="width:100%;border-radius:var(--radius-sm);margin-bottom:14px;display:block">
-    <button class="btn-ghost" id="btn-delete-photo" style="color:var(--danger)" onclick="deleteCurrentPhoto()">EXCLUIR FOTO</button>
-    <button class="btn-ghost" onclick="closeModal('modal-photo-view')">FECHAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Compare Photos -->
-<div class="modal-backdrop" id="modal-compare-photos">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Comparar Fotos</div>
-    <div class="form-group"><label class="form-label">Foto 1 (antes)</label><select class="form-input" id="select-compare-a"></select></div>
-    <div class="form-group"><label class="form-label">Foto 2 (depois)</label><select class="form-input" id="select-compare-b"></select></div>
-    <button class="btn-primary" onclick="runComparePhotos()">COMPARAR</button>
-    <div id="compare-result" style="display:none;margin-top:14px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><img id="compare-img-a" style="width:100%;border-radius:8px"><div class="cal-summary" id="compare-label-a" style="margin-top:4px"></div></div>
-        <div><img id="compare-img-b" style="width:100%;border-radius:8px"><div class="cal-summary" id="compare-label-b" style="margin-top:4px"></div></div>
-      </div>
-    </div>
-    <button class="btn-ghost" onclick="closeModal('modal-compare-photos')">FECHAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Send Questionnaire (trainer) -->
-<div class="modal-backdrop" id="modal-send-quest">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Novo Questionário</div>
-    <div class="form-group">
-      <label class="form-label">Perguntas</label>
-      <div id="quest-questions-editor"></div>
-      <button class="btn-add-set" onclick="addQuestionRow()">+ ADICIONAR PERGUNTA</button>
-    </div>
-    <button class="btn-primary" onclick="sendQuestionnaire()">ENVIAR AO ALUNO</button>
-    <button class="btn-ghost" onclick="closeModal('modal-send-quest')">CANCELAR</button>
-  </div>
-</div>
-
-<!-- MODAL: Answer Questionnaire (student) -->
-<div class="modal-backdrop" id="modal-answer-quest">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Responder Questionário</div>
-    <div id="quest-answer-form"></div>
-    <button class="btn-primary" onclick="submitQuestionnaireAnswers()">ENVIAR RESPOSTAS</button>
-    <button class="btn-ghost" onclick="closeModal('modal-answer-quest')">DEPOIS</button>
-  </div>
-</div>
-
-<!-- MODAL: View Questionnaire (read-only, both sides) -->
-<div class="modal-backdrop" id="modal-view-quest">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Questionário Respondido</div>
-    <div id="quest-view-body"></div>
-    <button class="btn-ghost" onclick="closeModal('modal-view-quest')">FECHAR</button>
   </div>
 </div>
 
@@ -979,11 +640,7 @@ let EDIT_SESSION_WID=null; // ID travado ao abrir modal de edição de sessão
 let EDIT_SESSION_EID=null;
 let EDIT_W=null;
 let SEL_COLOR=PALETTE[0];
-let MODAL_TARGET='self'; // 'self' | 'student' — define se o modal de treino/exercício salva para o próprio usuário ou para o aluno (VIEW_STUDENT), definido pelo treinador
 let SET_COUNT=0;
-let REST_INTERVAL=null, REST_REMAINING=0, REST_TOTAL=0, REST_PAUSED=false;
-let CAL_YEAR=null, CAL_MONTH=null;
-const MONTH_NAMES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 let CHART_MODE='weight';
 let TS_CHART_MODE='weight';
 let CONFIRM_CB=null;
@@ -1535,21 +1192,10 @@ function showScreen(id){
   window.scrollTo({top:0,behavior:'instant'});
   // FABs visíveis em local e cloud; ocultos apenas para treinador vendo aluno
   const isReadonly = (CURRENT_USER?.role==='trainer' && VIEW_STUDENT!==null);
-  // Treino e Exercício (a estrutura do plano) só podem ser criados pelo treinador.
-  // Em modo local (uso solo, sem treinador vinculado) o próprio usuário continua se autogerenciando.
-  document.getElementById('fab-home').style.display=id==='screen-home'&&!isReadonly&&MODE==='local'?'flex':'none';
-  document.getElementById('fab-workout').style.display=id==='screen-workout'&&!isReadonly&&MODE==='local'?'flex':'none';
-  // Registrar séries (o que foi feito) continua sendo tarefa do aluno, tanto local quanto na nuvem.
+  document.getElementById('fab-home').style.display=id==='screen-home'&&!isReadonly?'flex':'none';
+  document.getElementById('fab-workout').style.display=id==='screen-workout'&&!isReadonly?'flex':'none';
   document.getElementById('fab-exercise').style.display=id==='screen-exercise'&&!isReadonly?'flex':'none';
-  // FABs do treinador para montar o plano do aluno (adicionar treino / exercício)
-  document.getElementById('fab-ts-workout').style.display=id==='screen-trainer-student'?'flex':'none';
-  document.getElementById('fab-ts-exercise').style.display=id==='screen-ts-workout'?'flex':'none';
-  // Plano alimentar: aluno só edita em modo local (uso solo). Em nuvem, só o treinador edita (fab-ts-meals).
-  document.getElementById('fab-meals').style.display=id==='screen-meals'&&MODE==='local'?'flex':'none';
-  document.getElementById('fab-ts-meals').style.display=id==='screen-ts-meals'?'flex':'none';
-  document.getElementById('fab-photos').style.display=id==='screen-photos'&&!isReadonly?'flex':'none';
-  // Excluir exercício: só em modo local (autogerenciado). Na nuvem, só o treinador exclui (via tela do treinador).
-  if(id==='screen-exercise'||id==='screen-ts-exercise') document.getElementById('btn-del-exercise').style.display=id==='screen-exercise'&&!isReadonly&&MODE==='local'?'flex':'none';
+  if(id==='screen-exercise'||id==='screen-ts-exercise') document.getElementById('btn-del-exercise').style.display=id==='screen-exercise'&&!isReadonly&&CURRENT_USER?.role!=='trainer'?'flex':'none';
 }
 
 function goHome(){CUR_WORKOUT=null;CUR_EX=null;if(MODE==='local'){renderHome();}else{loadCloudHome();}showScreen('screen-home');}
@@ -1572,99 +1218,24 @@ function renderHome(){
   const stats=document.getElementById('home-stats');
   const nW=ws.length,nE=ws.reduce((a,w)=>a+w.exercises.length,0),nS=ws.reduce((a,w)=>a+w.exercises.reduce((acc2,e)=>acc2+e.sessions.length,0),0);
   stats.innerHTML=`<div class="stat-cell"><div class="num">${nW}</div><div class="lbl">Treinos</div></div><div class="stat-cell"><div class="num">${nE}</div><div class="lbl">Exercícios</div></div><div class="stat-cell"><div class="num">${nS}</div><div class="lbl">Sessões</div></div>`;
-  if(!nW){
-    list.innerHTML='';
-    empty.style.display='block';
-    const hint=empty.querySelector('.empty-hint');
-    if(hint) hint.textContent=MODE==='local'?'Toque em + NOVO TREINO para começar':'Seu treinador ainda não montou seu plano de treino';
-    return;
-  }
+  if(!nW){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   list.innerHTML=ws.map(w=>{
     const last=lastDate(w);
     const meta=last?'Último: '+fmt(last):w.exercises.length+' exercício(s)';
     const wid=esc(w.id),wn=esc(w.name);
-    // Editar/excluir treino: só em modo local (autogerenciado). Na nuvem, o treino é montado pelo treinador.
-    const actions=MODE==='local'?`<div class="workout-card-actions">
-        <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout('${wid}')" title="Editar">✏️</button>
-        <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir Treino','Excluir este treino e todos seus dados?',function(){deleteWorkout('${wid}');})" title="Excluir">🗑</button>
-      </div>`:'';
     return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openWorkout('${wid}')">
       <div class="workout-card-info"><div class="workout-card-name">${wn}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
-      ${actions}
+      <div class="workout-card-actions">
+        <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout('${wid}')" title="Editar">✏️</button>
+        <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir Treino','Excluir este treino e todos seus dados?',function(){deleteWorkout('${wid}');})" title="Excluir">🗑</button>
+      </div>
     </div>`;
   }).join('');
   loadFeedbackBanner();
 }
 
 function lastDate(w){let b=null;w.exercises.forEach(e=>e.sessions.forEach(s=>{if(!b||s.date>b)b=s.date;}));return b;}
-
-/* ══════════════════════════════════════════════════
-   CALENDÁRIO DE TREINOS
-══════════════════════════════════════════════════ */
-/* Agrega, para um mês (0-11), todas as sessões de todos os treinos/exercícios
-   por data: {'YYYY-MM-DD': [{exerciseName, workoutName, workoutColor, sets}]} */
-function getCalendarMonthData(year,month){
-  const workouts=getWorkouts();
-  const days={};
-  const prefix=year+'-'+String(month+1).padStart(2,'0');
-  for(const w of workouts){
-    for(const e of (w.exercises||[])){
-      for(const s of (e.sessions||[])){
-        if(s.date.startsWith(prefix)){
-          if(!days[s.date])days[s.date]=[];
-          days[s.date].push({exerciseName:e.name,workoutName:w.name,workoutColor:w.color,sets:s.sets});
-        }
-      }
-    }
-  }
-  return days;
-}
-function openCalendar(){
-  const now=new Date();
-  CAL_YEAR=now.getFullYear();CAL_MONTH=now.getMonth();
-  renderCalendar();
-  showScreen('screen-calendar');
-}
-function calShiftMonth(delta){
-  CAL_MONTH+=delta;
-  if(CAL_MONTH<0){CAL_MONTH=11;CAL_YEAR--;}
-  if(CAL_MONTH>11){CAL_MONTH=0;CAL_YEAR++;}
-  renderCalendar();
-}
-function renderCalendar(){
-  document.getElementById('cal-month-label').textContent=MONTH_NAMES[CAL_MONTH]+' '+CAL_YEAR;
-  const data=getCalendarMonthData(CAL_YEAR,CAL_MONTH);
-  const firstDow=new Date(CAL_YEAR,CAL_MONTH,1).getDay();
-  const daysInMonth=new Date(CAL_YEAR,CAL_MONTH+1,0).getDate();
-  const todayStr=today();
-  let cells='';
-  for(let i=0;i<firstDow;i++) cells+='<div class="cal-cell empty"></div>';
-  for(let d=1;d<=daysInMonth;d++){
-    const dateStr=CAL_YEAR+'-'+String(CAL_MONTH+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const trained=(data[dateStr]||[]).length>0;
-    const isToday=dateStr===todayStr;
-    cells+=`<div class="cal-cell${trained?' trained':''}${isToday?' today':''}"${trained?` onclick="openCalDay('${dateStr}')"`:''}>
-      <span class="cal-daynum">${d}</span>${trained?'<span class="cal-dot"></span>':''}
-    </div>`;
-  }
-  document.getElementById('cal-grid').innerHTML=cells;
-  const nDays=Object.keys(data).length;
-  document.getElementById('cal-summary').textContent=nDays?nDays+' dia(s) treinado(s) neste mês':'Nenhum treino registrado neste mês';
-}
-function openCalDay(dateStr){
-  const data=getCalendarMonthData(CAL_YEAR,CAL_MONTH);
-  const entries=data[dateStr]||[];
-  document.getElementById('cal-day-modal-title').textContent=fmt(dateStr);
-  document.getElementById('cal-day-modal-body').innerHTML=entries.map(en=>{
-    const vol=en.sets.reduce((a,s)=>a+s.weight*s.reps,0);
-    return`<div class="cal-day-entry" style="--wcard-color:${esc(en.workoutColor||'var(--accent)')}">
-      <div class="cal-day-entry-top"><span class="cal-day-entry-ex">${esc(en.exerciseName)}</span><span class="cal-day-entry-w">${esc(en.workoutName)}</span></div>
-      <div class="cal-day-entry-meta">${en.sets.length} séries · Vol: ${vol} kg</div>
-    </div>`;
-  }).join('');
-  openModal('modal-cal-day');
-}
 
 /* ══════════════════════════════════════════════════
    CLOUD DATA (in-memory cache for student)
@@ -1729,7 +1300,7 @@ async function dismissFeedback(){
   b.style.display='none';
   if(fid&&db) try{await db.collection('feedback').doc(fid).update({read:true});}catch(e){}
 }
-function loadFeedbackBanner(){if(MODE==='cloud'){checkFeedback();checkQuestionnaires();}}
+function loadFeedbackBanner(){if(MODE==='cloud')checkFeedback();}
 
 /* ══════════════════════════════════════════════════
    WORKOUT NAVIGATION
@@ -1738,57 +1309,15 @@ function getWorkouts(){return (MODE==='local')?LOCAL_DB.workouts:CLOUD_WORKOUTS;
 function getW(id){return getWorkouts().find(w=>w.id===id);}
 function getE(wid,eid){const w=getW(wid);return w?w.exercises.find(e=>e.id===eid):null;}
 
-/* ── Histórico compartilhado por nome ─────────────────────────────────
-   Agrega sessões de TODOS os exercícios com o mesmo nome (case-insensitive)
-   em todos os treinos do usuário. Retorna array ordenado por data asc.
-   ws = array de workouts opcional (padrão: getWorkouts()) ──────────── */
-function getSharedSessions(exerciseName,ws){
-  const norm=(exerciseName||'').trim().toLowerCase();
-  const workouts=ws||getWorkouts();
-  const all=[];const seen=new Set();
-  for(const w of workouts){
-    for(const e of (w.exercises||[])){
-      if((e.name||'').trim().toLowerCase()===norm){
-        for(const s of (e.sessions||[])){
-          if(!seen.has(s.id)){
-            seen.add(s.id);
-            // _wName/_wColor/_wid permitem exibir badge de treino de origem
-            all.push({...s,_wName:w.name,_wColor:w.color||'var(--accent)',_wid:w.id,_eid:e.id});
-          }
-        }
-      }
-    }
-  }
-  return all.sort((a,b)=>a.date.localeCompare(b.date));
-}
-/* Localiza treino+exercício dono de uma sessão — usado por delete e edit */
-function findSessionOwner(sid,ws){
-  const workouts=ws||getWorkouts();
-  for(const w of workouts){
-    for(const e of (w.exercises||[])){
-      const s=(e.sessions||[]).find(x=>x.id===sid);
-      if(s)return{workout:w,exercise:e,session:s};
-    }
-  }
-  return null;
-}
-
 function openWorkout(id){CUR_WORKOUT=id;renderWorkout();showScreen('screen-workout');}
 function renderWorkout(){
   const w=getW(CUR_WORKOUT);if(!w)return goHome();
   document.getElementById('workout-screen-title').textContent=w.name;
   const list=document.getElementById('exercise-list'),empty=document.getElementById('exercise-empty');
-  if(!w.exercises.length){
-    list.innerHTML='';
-    empty.style.display='block';
-    const hint=empty.querySelector('.empty-hint');
-    if(hint) hint.textContent=MODE==='local'?'Adicione o primeiro exercício':'Seu treinador ainda não adicionou exercícios aqui';
-    return;
-  }
+  if(!w.exercises.length){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   list.innerHTML=w.exercises.map(e=>{
-    const shared=getSharedSessions(e.name);
-    const last=shared.length?shared[shared.length-1]:null;
+    const last=e.sessions.length?e.sessions[e.sessions.length-1]:null;
     const info=last?'Último: '+fmt(last.date)+' · '+Math.max(...last.sets.map(s=>s.weight))+' kg':'— sem registros';
     return`<div class="exercise-row" onclick="openExercise('${esc(e.id)}')">
       <div class="exercise-row-dot"></div>
@@ -1802,8 +1331,7 @@ function openExercise(eid){
   CUR_EX=eid;miniChart=null;tsMiniChart=null;CHART_MODE='weight';
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
   document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
-  buildSessions(e,'sessions-list',false,CUR_WORKOUT);
-  renderExerciseVideo(e,'exercise-video-box',false);
+  buildSessions(e,'sessions-list',false);
   showScreen('screen-exercise');
   // Render chart AFTER screen is visible so canvas has correct dimensions
   requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
@@ -1811,454 +1339,17 @@ function openExercise(eid){
 function renderExercise(){
   const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
   document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
-  buildSessions(e,'sessions-list',false,CUR_WORKOUT);
-  renderExerciseVideo(e,'exercise-video-box',false);
+  buildSessions(e,'sessions-list',false);
   requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
-}
-
-/* ══════════════════════════════════════════════════
-   VÍDEO DE EXECUÇÃO
-══════════════════════════════════════════════════ */
-function extractYouTubeId(url){
-  const m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  return m?m[1]:null;
-}
-/* Renderiza a caixa de vídeo. readonly=true esconde os controles de edição (visão do treinador) */
-function renderExerciseVideo(e,elId,readonly){
-  const el=document.getElementById(elId);if(!el)return;
-  const url=(e.videoUrl||'').trim();
-  if(!url){
-    el.innerHTML=readonly?'':
-      `<div class="video-box"><div class="video-box-empty">
-        <span class="video-box-empty-label">🎬 Sem vídeo de execução</span>
-        <button class="video-box-add-btn" onclick="openExerciseVideoModal()">+ ADICIONAR</button>
-      </div></div>`;
-    return;
-  }
-  const yid=extractYouTubeId(url);
-  const editBtn=readonly?'':`<button class="video-box-edit-btn" onclick="openExerciseVideoModal()">✏️ editar</button>`;
-  if(yid){
-    el.innerHTML=`<div class="video-box"><iframe src="https://www.youtube.com/embed/${esc(yid)}" allowfullscreen></iframe>${readonly?'':`<div style="text-align:right;margin-top:8px">${editBtn}</div>`}</div>`;
-  }else{
-    el.innerHTML=`<div class="video-box"><div class="video-box-link">
-      <a href="${esc(url)}" target="_blank" rel="noopener">🎬 Ver vídeo de execução ↗</a>${editBtn}
-    </div></div>`;
-  }
-}
-function openExerciseVideoModal(){
-  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
-  document.getElementById('input-video-url').value=e.videoUrl||'';
-  openModal('modal-exercise-video');
-}
-async function saveExerciseVideo(){
-  const url=document.getElementById('input-video-url').value.trim();
-  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
-  e.videoUrl=url;
-  if(MODE==='local'){ localSave(); }
-  else{
-    try{ await db.collection('exercises').doc(CUR_EX).update({videoUrl:url}); saveCloudBackup(); }
-    catch(err){ alert('Erro ao salvar vídeo: '+err.message); return; }
-  }
-  closeModal('modal-exercise-video');
-  renderExerciseVideo(e,'exercise-video-box',false);
-}
-async function removeExerciseVideo(){
-  document.getElementById('input-video-url').value='';
-  await saveExerciseVideo();
-}
-
-/* ══════════════════════════════════════════════════
-   PLANO ALIMENTAR
-   Modo nuvem: só o TREINADOR edita o conteúdo (mealPlans/{studentUid}).
-   O "concluído hoje" do aluno vive numa coleção separada (mealCompletions),
-   então a permissão de escrita do aluno nunca toca no conteúdo do plano —
-   isso é o que torna a regra de segurança "só treinador edita" aplicável de verdade.
-   Modo local (sem treinador, uso solo): aluno segue se autogerenciando.
-══════════════════════════════════════════════════ */
-let EDIT_MEAL_ID=null;
-let MEAL_PLAN_CACHE={meals:[]};
-let MEAL_CTX={listId:'meals-list',emptyId:'meals-empty',canEditContent:false,canToggleDone:true,targetUid:null};
-let MEAL_COMPLETIONS_TODAY=new Set();
-
-async function loadMealPlan(uidOverride){
-  if(MODE==='local' && !uidOverride){
-    if(!LOCAL_DB.mealPlan) LOCAL_DB.mealPlan={meals:[]};
-    return LOCAL_DB.mealPlan.meals;
-  }
-  const targetUid=uidOverride||CURRENT_USER.uid;
-  try{
-    const doc=await db.collection('mealPlans').doc(targetUid).get();
-    return doc.exists?(doc.data().meals||[]):[];
-  }catch(e){console.error('loadMealPlan',e);return [];}
-}
-async function loadCompletionsToday(uid){
-  MEAL_COMPLETIONS_TODAY=new Set();
-  try{
-    const snap=await db.collection('mealCompletions').where('studentUid','==',uid).where('date','==',today()).get();
-    snap.docs.forEach(d=>MEAL_COMPLETIONS_TODAY.add(d.data().mealId));
-  }catch(e){console.error('loadCompletionsToday',e);}
-}
-function isMealDoneToday(m){
-  if(MODE==='local' && !MEAL_CTX.targetUid) return (m.doneDates||[]).includes(today());
-  return MEAL_COMPLETIONS_TODAY.has(m.id);
-}
-async function openMeals(){
-  const isCloud=(MODE==='cloud');
-  MEAL_CTX={listId:'meals-list',emptyId:'meals-empty',canEditContent:!isCloud,canToggleDone:true,targetUid:isCloud?CURRENT_USER.uid:null};
-  MEAL_PLAN_CACHE.meals=await loadMealPlan();
-  if(isCloud) await loadCompletionsToday(CURRENT_USER.uid);
-  document.getElementById('meals-readonly-note').style.display=isCloud?'block':'none';
-  document.getElementById('meals-empty-hint').textContent=isCloud?'Seu treinador ainda não montou seu plano':'Toque em + REFEIÇÃO para começar';
-  renderMealsList();
-  showScreen('screen-meals');
-}
-async function openTsMeals(){
-  if(!VIEW_STUDENT)return;
-  MEAL_CTX={listId:'ts-meals-list',emptyId:'ts-meals-empty',canEditContent:true,canToggleDone:false,targetUid:VIEW_STUDENT.uid};
-  MEAL_PLAN_CACHE.meals=await loadMealPlan(VIEW_STUDENT.uid);
-  await loadCompletionsToday(VIEW_STUDENT.uid);
-  renderMealsList();
-  showScreen('screen-ts-meals');
-}
-function renderMealsList(){
-  const {listId,emptyId,canEditContent,canToggleDone}=MEAL_CTX;
-  const list=document.getElementById(listId);
-  const empty=document.getElementById(emptyId);
-  const meals=MEAL_PLAN_CACHE.meals;
-  if(!meals.length){list.innerHTML='';if(empty)empty.style.display='block';return;}
-  if(empty)empty.style.display='none';
-  const sorted=[...meals].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  list.innerHTML=sorted.map(m=>{
-    const done=isMealDoneToday(m);
-    const items=(m.items||'').split('\n').map(i=>i.trim()).filter(Boolean).map(i=>`<li>${esc(i)}</li>`).join('');
-    const editBtn=canEditContent?`<button class="meal-edit-btn" onclick="openEditMealModal('${esc(m.id)}')">✏️</button>`:'';
-    const doneBtn=canToggleDone
-      ?`<button class="meal-done-btn${done?' done':''}" onclick="toggleMealDone('${esc(m.id)}')">${done?'✓ Concluído hoje':'Marcar como concluído'}</button>`
-      :`<span class="meal-done-btn${done?' done':''}" style="cursor:default">${done?'✓ Concluído hoje':'— não concluído hoje'}</span>`;
-    return`<div class="meal-card">
-      <div class="meal-card-top"><span class="meal-card-time">${esc(m.time||'--:--')}</span><span class="meal-card-name">${esc(m.name)}</span>${editBtn}</div>
-      ${items?`<ul class="meal-card-items">${items}</ul>`:''}
-      ${m.notes?`<div class="meal-card-notes">💡 ${esc(m.notes)}</div>`:''}
-      ${doneBtn}
-    </div>`;
-  }).join('');
-}
-function openAddMealModal(){
-  if(!MEAL_CTX.canEditContent)return;
-  EDIT_MEAL_ID=null;
-  document.getElementById('modal-meal-title').textContent='Nova Refeição';
-  document.getElementById('input-meal-time').value='';
-  document.getElementById('input-meal-name').value='';
-  document.getElementById('input-meal-items').value='';
-  document.getElementById('input-meal-notes').value='';
-  document.getElementById('btn-delete-meal').style.display='none';
-  openModal('modal-meal');
-}
-function openEditMealModal(mid){
-  if(!MEAL_CTX.canEditContent)return;
-  const m=MEAL_PLAN_CACHE.meals.find(x=>x.id===mid);if(!m)return;
-  EDIT_MEAL_ID=mid;
-  document.getElementById('modal-meal-title').textContent='Editar Refeição';
-  document.getElementById('input-meal-time').value=m.time||'';
-  document.getElementById('input-meal-name').value=m.name||'';
-  document.getElementById('input-meal-items').value=m.items||'';
-  document.getElementById('input-meal-notes').value=m.notes||'';
-  document.getElementById('btn-delete-meal').style.display='block';
-  openModal('modal-meal');
-}
-async function persistMealPlan(){
-  if(MODE==='local' && !MEAL_CTX.targetUid){
-    LOCAL_DB.mealPlan={meals:MEAL_PLAN_CACHE.meals};
-    localSave();
-  }else{
-    const uidTarget=MEAL_CTX.targetUid||CURRENT_USER.uid;
-    try{ await db.collection('mealPlans').doc(uidTarget).set({meals:MEAL_PLAN_CACHE.meals},{merge:true}); }
-    catch(e){ alert('Erro ao salvar plano alimentar: '+e.message); }
-  }
-}
-async function saveMeal(){
-  if(!MEAL_CTX.canEditContent)return;
-  const time=document.getElementById('input-meal-time').value;
-  const name=document.getElementById('input-meal-name').value.trim();
-  const items=document.getElementById('input-meal-items').value;
-  const notes=document.getElementById('input-meal-notes').value.trim();
-  if(!name){alert('Digite o nome da refeição!');return;}
-  if(EDIT_MEAL_ID){
-    const m=MEAL_PLAN_CACHE.meals.find(x=>x.id===EDIT_MEAL_ID);
-    if(m){m.time=time;m.name=name;m.items=items;m.notes=notes;}
-  }else{
-    MEAL_PLAN_CACHE.meals.push({id:uid(),time,name,items,notes,doneDates:[]});
-  }
-  await persistMealPlan();
-  closeModal('modal-meal');
-  renderMealsList();
-}
-function confirmDeleteMeal(){
-  if(!MEAL_CTX.canEditContent||!EDIT_MEAL_ID)return;
-  closeModal('modal-meal');
-  showConfirm('Excluir Refeição','Remover esta refeição do plano?',async function(){
-    MEAL_PLAN_CACHE.meals=MEAL_PLAN_CACHE.meals.filter(x=>x.id!==EDIT_MEAL_ID);
-    await persistMealPlan();
-    renderMealsList();
-  });
-}
-async function toggleMealDone(mid){
-  if(!MEAL_CTX.canToggleDone)return;
-  const m=MEAL_PLAN_CACHE.meals.find(x=>x.id===mid);if(!m)return;
-  const t=today();
-  if(MODE==='local' && !MEAL_CTX.targetUid){
-    m.doneDates=m.doneDates||[];
-    const idx=m.doneDates.indexOf(t);
-    if(idx>=0)m.doneDates.splice(idx,1);else m.doneDates.push(t);
-    await persistMealPlan();
-  }else{
-    const uidTarget=MEAL_CTX.targetUid||CURRENT_USER.uid;
-    const compId=uidTarget+'_'+mid+'_'+t;
-    try{
-      if(MEAL_COMPLETIONS_TODAY.has(mid)){
-        await db.collection('mealCompletions').doc(compId).delete();
-        MEAL_COMPLETIONS_TODAY.delete(mid);
-      }else{
-        await db.collection('mealCompletions').doc(compId).set({studentUid:uidTarget,mealId:mid,date:t});
-        MEAL_COMPLETIONS_TODAY.add(mid);
-      }
-    }catch(e){ alert('Erro ao atualizar: '+e.message); return; }
-  }
-  renderMealsList();
-}
-
-/* ══════════════════════════════════════════════════
-   FOTOS DE PROGRESSO (base64 comprimido no Firestore —
-   evita depender do Firebase Storage / plano pago Blaze)
-══════════════════════════════════════════════════ */
-let PHOTOS_CACHE=[];
-let CUR_PHOTO_ID=null;
-
-function compressImageFile(file,maxDim,quality){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const img=new Image();
-      img.onload=()=>{
-        let w=img.width,h=img.height;
-        if(w>=h && w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
-        else if(h>w && h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
-        const canvas=document.createElement('canvas');
-        canvas.width=w;canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg',quality));
-      };
-      img.onerror=()=>reject(new Error('Não foi possível ler a imagem'));
-      img.src=e.target.result;
-    };
-    reader.onerror=()=>reject(new Error('Falha ao ler arquivo'));
-    reader.readAsDataURL(file);
-  });
-}
-function openPhotos(){
-  if(MODE==='local'){
-    alert('Fotos de progresso ficam salvas na nuvem e exigem login. Faça login para usar este recurso.');
-    return;
-  }
-  loadPhotos().then(()=>{ renderPhotosGallery('photos-grid-el','photos-empty-el',false); showScreen('screen-photos'); });
-}
-async function loadPhotos(uidOverride){
-  const targetUid=uidOverride||CURRENT_USER.uid;
-  try{
-    const snap=await db.collection('progressPhotos').where('userId','==',targetUid).get();
-    const photos=snap.docs.map(d=>({id:d.id,...d.data()}));
-    photos.sort((a,b)=>b.date.localeCompare(a.date));
-    if(!uidOverride) PHOTOS_CACHE=photos; else PHOTOS_CACHE=photos; // cache serve tanto próprio quanto visão do treinador (uma tela por vez)
-    return photos;
-  }catch(e){console.error('loadPhotos',e);PHOTOS_CACHE=[];return [];}
-}
-function renderPhotosGallery(gridId,emptyId,readonly){
-  const grid=document.getElementById(gridId);
-  const empty=document.getElementById(emptyId);
-  if(!grid)return;
-  if(!PHOTOS_CACHE.length){grid.innerHTML='';if(empty)empty.style.display='block';return;}
-  if(empty)empty.style.display='none';
-  grid.innerHTML=PHOTOS_CACHE.map(p=>
-    `<div class="photo-thumb" onclick="openPhotoView('${esc(p.id)}',${readonly})"><img src="${p.dataUrl}"><div class="photo-thumb-date">${fmt(p.date)}</div></div>`
-  ).join('');
-}
-function triggerPhotoUpload(){ document.getElementById('photo-file-input').click(); }
-async function handlePhotoSelected(ev){
-  const file=ev.target.files[0];ev.target.value='';
-  if(!file)return;
-  try{
-    const dataUrl=await compressImageFile(file,900,0.6);
-    if(dataUrl.length>900000){alert('Foto muito grande mesmo após compressão. Tente outra imagem.');return;}
-    await db.collection('progressPhotos').add({userId:CURRENT_USER.uid,date:today(),dataUrl,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    showToast('✓ Foto enviada');
-    await loadPhotos();
-    renderPhotosGallery('photos-grid-el','photos-empty-el',false);
-  }catch(e){ alert('Erro ao enviar foto: '+e.message); }
-}
-function openPhotoView(pid,readonly){
-  const p=PHOTOS_CACHE.find(x=>x.id===pid);if(!p)return;
-  CUR_PHOTO_ID=pid;
-  document.getElementById('photo-view-title').textContent=fmt(p.date);
-  document.getElementById('photo-view-img').src=p.dataUrl;
-  document.getElementById('btn-delete-photo').style.display=readonly?'none':'block';
-  openModal('modal-photo-view');
-}
-async function deleteCurrentPhoto(){
-  if(!CUR_PHOTO_ID)return;
-  const pid=CUR_PHOTO_ID;
-  closeModal('modal-photo-view');
-  showConfirm('Excluir Foto','Apagar esta foto de progresso?',async function(){
-    try{ await db.collection('progressPhotos').doc(pid).delete(); }catch(e){}
-    await loadPhotos();
-    renderPhotosGallery('photos-grid-el','photos-empty-el',false);
-  });
-}
-function openComparePhotos(){
-  const opts=PHOTOS_CACHE.map(p=>`<option value="${esc(p.id)}">${fmt(p.date)}</option>`).join('');
-  document.getElementById('select-compare-a').innerHTML=opts;
-  document.getElementById('select-compare-b').innerHTML=opts;
-  document.getElementById('compare-result').style.display='none';
-  openModal('modal-compare-photos');
-}
-function runComparePhotos(){
-  const a=PHOTOS_CACHE.find(x=>x.id===document.getElementById('select-compare-a').value);
-  const b=PHOTOS_CACHE.find(x=>x.id===document.getElementById('select-compare-b').value);
-  if(!a||!b)return;
-  document.getElementById('compare-img-a').src=a.dataUrl;
-  document.getElementById('compare-label-a').textContent=fmt(a.date);
-  document.getElementById('compare-img-b').src=b.dataUrl;
-  document.getElementById('compare-label-b').textContent=fmt(b.date);
-  document.getElementById('compare-result').style.display='block';
-}
-async function openTsPhotos(){
-  if(!VIEW_STUDENT)return;
-  await loadPhotos(VIEW_STUDENT.uid);
-  renderPhotosGallery('ts-photos-grid','ts-photos-empty',true);
-  showScreen('screen-ts-photos');
-}
-
-/* ══════════════════════════════════════════════════
-   QUESTIONÁRIOS
-══════════════════════════════════════════════════ */
-let QUEST_Q_COUNT=0;
-let CUR_ANSWER_QUEST_ID=null;
-let TS_QUEST_CACHE=[];
-let MY_QUEST_CACHE=[];
-
-function addQuestionRow(text){
-  QUEST_Q_COUNT++;
-  const el=document.getElementById('quest-questions-editor');
-  const d=document.createElement('div');
-  d.className='quest-q-row';
-  d.innerHTML=`<input class="form-input" placeholder="Pergunta ${QUEST_Q_COUNT}" value="${esc(text||'')}"><button class="btn-rm-set" onclick="this.closest('.quest-q-row').remove()">✕</button>`;
-  el.appendChild(d);
-}
-function openSendQuestionnaireModal(){
-  document.getElementById('quest-questions-editor').innerHTML='';
-  QUEST_Q_COUNT=0;
-  addQuestionRow();addQuestionRow();
-  openModal('modal-send-quest');
-}
-async function sendQuestionnaire(){
-  if(!VIEW_STUDENT)return;
-  const inputs=[...document.querySelectorAll('#quest-questions-editor input')];
-  const questions=inputs.map(i=>i.value.trim()).filter(Boolean);
-  if(!questions.length){alert('Adicione ao menos 1 pergunta!');return;}
-  try{
-    await db.collection('questionnaires').add({studentId:VIEW_STUDENT.uid,trainerId:CURRENT_USER.uid,questions,answers:null,answered:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    closeModal('modal-send-quest');
-    showToast('✓ Questionário enviado');
-    openTsQuestionnaires();
-  }catch(e){ alert('Erro ao enviar questionário: '+e.message); }
-}
-function renderQuestList(cache,listId,emptyId,fromTrainer){
-  const list=document.getElementById(listId);
-  const empty=document.getElementById(emptyId);
-  if(!cache.length){list.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  list.innerHTML=cache.map(q=>{
-    const d=q.createdAt?.seconds?new Date(q.createdAt.seconds*1000).toLocaleDateString('pt-BR'):'—';
-    const tap=q.answered?`viewQuestionnaire('${esc(q.id)}',${fromTrainer})`:(fromTrainer?'':`openAnswerQuestionnaire('${esc(q.id)}')`);
-    return`<div class="quest-card" onclick="${tap}">
-      <div class="quest-card-top"><span class="quest-card-date">${d}</span><span class="quest-status ${q.answered?'answered':'pending'}">${q.answered?'Respondido':'Aguardando'}</span></div>
-      <div class="quest-card-preview">${q.questions.length} pergunta(s)</div>
-    </div>`;
-  }).join('');
-}
-async function openTsQuestionnaires(){
-  if(!VIEW_STUDENT)return;
-  try{
-    const snap=await db.collection('questionnaires').where('studentId','==',VIEW_STUDENT.uid).get();
-    TS_QUEST_CACHE=snap.docs.map(d=>({id:d.id,...d.data()}));
-    TS_QUEST_CACHE.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-  }catch(e){TS_QUEST_CACHE=[];}
-  renderQuestList(TS_QUEST_CACHE,'ts-quest-list','ts-quest-empty',true);
-  showScreen('screen-ts-quest');
-}
-async function checkQuestionnaires(){
-  if(!CURRENT_USER||CURRENT_USER.role==='trainer')return;
-  try{
-    const snap=await db.collection('questionnaires').where('studentId','==',CURRENT_USER.uid).where('answered','==',false).limit(1).get();
-    const b=document.getElementById('quest-banner');
-    if(!snap.empty){
-      b.dataset.qid=snap.docs[0].id;
-      b.style.display='block';
-    }else{
-      b.style.display='none';
-    }
-  }catch(e){}
-}
-async function openAnswerQuestionnaire(qid){
-  if(!qid)return;
-  try{
-    const doc=await db.collection('questionnaires').doc(qid).get();
-    if(!doc.exists)return;
-    const q={id:doc.id,...doc.data()};
-    CUR_ANSWER_QUEST_ID=qid;
-    document.getElementById('quest-answer-form').innerHTML=q.questions.map((qt,i)=>
-      `<div class="quest-answer-item"><label>${i+1}. ${esc(qt)}</label><textarea class="form-input" data-qi="${i}" rows="2" style="resize:vertical;min-height:50px"></textarea></div>`
-    ).join('');
-    openModal('modal-answer-quest');
-  }catch(e){ alert('Erro ao carregar questionário.'); }
-}
-async function submitQuestionnaireAnswers(){
-  if(!CUR_ANSWER_QUEST_ID)return;
-  const areas=[...document.querySelectorAll('#quest-answer-form textarea')];
-  const answers=areas.map(a=>a.value.trim());
-  try{
-    await db.collection('questionnaires').doc(CUR_ANSWER_QUEST_ID).update({answers,answered:true,answeredAt:firebase.firestore.FieldValue.serverTimestamp()});
-    closeModal('modal-answer-quest');
-    document.getElementById('quest-banner').style.display='none';
-    showToast('✓ Respostas enviadas');
-  }catch(e){ alert('Erro ao enviar respostas: '+e.message); }
-}
-async function openMyQuestionnaires(){
-  if(MODE==='local'){ alert('Questionários exigem login (recurso do modo nuvem).'); return; }
-  try{
-    const snap=await db.collection('questionnaires').where('studentId','==',CURRENT_USER.uid).get();
-    MY_QUEST_CACHE=snap.docs.map(d=>({id:d.id,...d.data()}));
-    MY_QUEST_CACHE.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-  }catch(e){MY_QUEST_CACHE=[];}
-  renderQuestList(MY_QUEST_CACHE,'my-quest-list','my-quest-empty',false);
-  showScreen('screen-my-quest');
-}
-async function viewQuestionnaire(qid,fromTrainer){
-  const cache=fromTrainer?TS_QUEST_CACHE:MY_QUEST_CACHE;
-  const q=cache.find(x=>x.id===qid);if(!q||!q.answered)return;
-  document.getElementById('quest-view-body').innerHTML=q.questions.map((qt,i)=>
-    `<div class="quest-view-qa"><div class="q">${i+1}. ${esc(qt)}</div><div class="a">${esc(q.answers?.[i]||'(sem resposta)')}</div></div>`
-  ).join('');
-  openModal('modal-view-quest');
 }
 
 /* ══════════════════════════════════════════════════
    SESSIONS RENDER
 ══════════════════════════════════════════════════ */
-function buildSessions(e,elId,readonly,homeWid,ws){
+function buildSessions(e,elId,readonly){
   const el=document.getElementById(elId);
-  const sessions=getSharedSessions(e.name,ws);
-  if(!sessions.length){el.innerHTML='<div class="no-data-inline">Nenhuma sessão registrada.</div>';return;}
-  const sorted=[...sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!e.sessions.length){el.innerHTML='<div class="no-data-inline">Nenhuma sessão registrada.</div>';return;}
+  const sorted=[...e.sessions].sort((a,b)=>b.date.localeCompare(a.date));
   el.innerHTML=sorted.map(sess=>{
     const vol=sess.sets.reduce((a,s)=>a+s.weight*s.reps,0);
     const rows=sess.sets.map((s,i)=>`<tr><td><span class="set-idx">${i+1}</span></td><td><span class="set-chip">${i+1}ª</span></td><td><span class="set-chip">${s.weight} kg</span></td><td><span class="set-chip">${s.reps}×</span></td></tr>`).join('');
@@ -2267,12 +1358,9 @@ function buildSessions(e,elId,readonly,homeWid,ws){
         onclick="openEditSession('${esc(sess.id)}')">✏️</button>
        <button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px"
         onclick="showConfirm('Excluir Sessão','Apagar este registro?',function(){deleteSession('${esc(sess.id)}');})">🗑</button>`;
-    const srcBadge=(homeWid&&sess._wid&&sess._wid!==homeWid)
-      ?`<span style="font-size:10px;color:${esc(sess._wColor)};background:rgba(0,0,0,.2);border-radius:4px;padding:2px 7px;margin-left:5px;font-family:'DM Mono',monospace;">${esc(sess._wName)}</span>`
-      :'';
     return`<div class="session-block">
       <div class="session-header">
-        <span class="session-date-badge">📅 ${fmt(sess.date)}${srcBadge}</span>
+        <span class="session-date-badge">📅 ${fmt(sess.date)}</span>
         <div style="display:flex;align-items:center;gap:6px"><span class="session-vol">Vol: ${vol} kg</span>${del}</div>
       </div>
       <table class="sets-table"><thead><tr><th>#</th><th>Série</th><th>Carga</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>
@@ -2283,16 +1371,16 @@ function buildSessions(e,elId,readonly,homeWid,ws){
 /* ══════════════════════════════════════════════════
    CHART
 ══════════════════════════════════════════════════ */
-function buildChart(e,canvasId,mode,chartRef,ws){
+function buildChart(e,canvasId,mode,chartRef){
   const cv=document.getElementById(canvasId);
   const empty=document.getElementById(canvasId==='progressChart'?'chart-empty-msg':'ts-chart-empty');
-  const sessions=getSharedSessions(e.name,ws);
-  if(!sessions.length){cv.style.display='none';empty.style.display='block';return;}
+  if(!e.sessions.length){cv.style.display='none';empty.style.display='block';return;}
   cv.style.display='block';empty.style.display='none';
-  const labels=sessions.map(s=>fmt(s.date));
-  const data=mode==='weight'?sessions.map(s=>Math.max(...s.sets.map(st=>st.weight))):
-    mode==='volume'?sessions.map(s=>s.sets.length):
-    sessions.map(s=>Math.max(...s.sets.map(st=>st.reps)));
+  const sorted=[...e.sessions].sort((a,b)=>a.date.localeCompare(b.date));
+  const labels=sorted.map(s=>fmt(s.date));
+  const data=mode==='weight'?sorted.map(s=>Math.max(...s.sets.map(st=>st.weight))):
+    mode==='volume'?sorted.map(s=>s.sets.length):
+    sorted.map(s=>Math.max(...s.sets.map(st=>st.reps)));
   const unit=mode==='weight'?'kg (máx)':mode==='volume'?'séries':'reps (máx)';
   if(canvasId==='progressChart'){if(!miniChart)miniChart=new MiniChart(cv);miniChart.render(labels,data,unit);}
   else{if(!tsMiniChart)tsMiniChart=new MiniChart(cv);tsMiniChart.render(labels,data,unit);}
@@ -2306,7 +1394,7 @@ function switchChart(mode){
 function switchTsChart(mode){
   TS_CHART_MODE=mode;
   ['weight','reps','volume'].forEach(m=>document.getElementById('ts-btn-'+m).classList.toggle('active',m===mode));
-  if(VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',mode,null,VIEW_STUDENT?.workouts);
+  if(VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',mode,null);
 }
 
 /* ══════════════════════════════════════════════════
@@ -2326,17 +1414,16 @@ function deleteWorkout(id){
 }
 
 function deleteSession(sid){
-  const owner=findSessionOwner(sid);if(!owner)return;
-  const e=owner.exercise;
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return;
   if(MODE==='local'){
     e.sessions=e.sessions.filter(s=>s.id!==sid);
     localSave();
-    renderExercise();
+    renderExercise(); // renderiza só após remover da memória
   }else{
     db.collection('sessions').doc(sid).delete()
       .then(()=>{
         e.sessions=e.sessions.filter(s=>s.id!==sid);
-        saveCloudBackup();
+        saveCloudBackup(); // propaga delete para teamms_v1 via replaceLocalForUser
         renderExercise();
       })
       .catch(err=>{ alert('Erro ao excluir sessão: '+err.message); });
@@ -2382,41 +1469,6 @@ async function cloudDeleteWorkout(id){
   renderHome();
 }
 
-/* Treinador excluindo treino/exercício do plano de um aluno (VIEW_STUDENT) */
-async function deleteTsWorkout(wid){
-  if(!VIEW_STUDENT)return;
-  try{
-    const batch=db.batch();
-    const exs=await db.collection('exercises').where('workoutId','==',wid).get();
-    for(const ex of exs.docs){
-      const sess=await db.collection('sessions').where('exerciseId','==',ex.id).get();
-      sess.docs.forEach(s=>batch.delete(s.ref));
-      batch.delete(ex.ref);
-    }
-    batch.delete(db.collection('workouts').doc(wid));
-    await batch.commit();
-    await renderTrainerStudent(VIEW_STUDENT);
-  }catch(e){
-    alert('Erro ao excluir treino: '+e.message);
-  }
-}
-async function deleteTsExercise(eid){
-  if(!VIEW_STUDENT||!VIEW_STUDENT_WORKOUT)return;
-  const wid=VIEW_STUDENT_WORKOUT.id;
-  try{
-    const sess=await db.collection('sessions').where('exerciseId','==',eid).get();
-    const batch=db.batch();
-    sess.docs.forEach(d=>batch.delete(d.ref));
-    batch.delete(db.collection('exercises').doc(eid));
-    await batch.commit();
-    await renderTrainerStudent(VIEW_STUDENT);
-    const w=VIEW_STUDENT.workouts.find(x=>x.id===wid);
-    if(w){VIEW_STUDENT_WORKOUT=w;renderTsWorkout(w);}else{goTrainerStudent();}
-  }catch(e){
-    alert('Erro ao excluir exercício: '+e.message);
-  }
-}
-
 /* ══════════════════════════════════════════════════
    MODALS
 ══════════════════════════════════════════════════ */
@@ -2430,34 +1482,12 @@ function buildColorPicker(){
   ).join('');
 }
 function pickColor(c){SEL_COLOR=c;document.querySelectorAll('.color-swatch').forEach(d=>d.classList.toggle('active',d.dataset.color===c));}
-function openAddWorkoutModal(){MODAL_TARGET='self';EDIT_W=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo Treino';document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
-function openEditWorkout(id){const w=getW(id);if(!w)return;MODAL_TARGET='self';EDIT_W=id;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar Treino';document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
-
-// Versões usadas pelo treinador para montar o treino do aluno (VIEW_STUDENT)
-function openAddWorkoutModalTs(){if(!VIEW_STUDENT)return;MODAL_TARGET='student';EDIT_W=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo Treino — '+VIEW_STUDENT.name;document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
-function openEditWorkoutTs(id){if(!VIEW_STUDENT)return;const w=VIEW_STUDENT.workouts.find(x=>x.id===id);if(!w)return;MODAL_TARGET='student';EDIT_W=id;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar Treino — '+VIEW_STUDENT.name;document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
+function openAddWorkoutModal(){EDIT_W=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo Treino';document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
+function openEditWorkout(id){const w=getW(id);if(!w)return;EDIT_W=id;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar Treino';document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
 
 async function saveWorkout(){
   const name=document.getElementById('input-workout-name').value.trim();
   if(!name){alert('Digite o nome do treino!');return;}
-  // Treinador montando o treino do aluno
-  if(MODAL_TARGET==='student'){
-    if(!VIEW_STUDENT)return;
-    try{
-      if(EDIT_W){
-        await db.collection('workouts').doc(EDIT_W).update({name,color:SEL_COLOR});
-      }else{
-        await db.collection('workouts').add({userId:VIEW_STUDENT.uid,name,color:SEL_COLOR,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      }
-      closeModal('modal-workout');
-      showToast('✓ Treino salvo');
-      await renderTrainerStudent(VIEW_STUDENT);
-    }catch(e){
-      alert('Erro ao salvar treino: '+e.code+' — '+e.message);
-      console.error(e);
-    }
-    return;
-  }
   if(MODE==='local'){
     if(EDIT_W){const w=lw(EDIT_W);w.name=name;w.color=SEL_COLOR;}
     else LOCAL_DB.workouts.push({id:uid(),name,color:SEL_COLOR,exercises:[]});
@@ -2481,38 +1511,18 @@ async function saveWorkout(){
 }
 
 // Exercise
-function openAddExerciseModal(){MODAL_TARGET='self';document.getElementById('modal-exercise-title').textContent='Novo Exercício';document.getElementById('input-exercise-name').value='';openModal('modal-exercise');setTimeout(()=>document.getElementById('input-exercise-name').focus(),300);}
-// Versão usada pelo treinador para adicionar exercício ao treino do aluno (VIEW_STUDENT_WORKOUT)
-function openAddExerciseModalTs(){if(!VIEW_STUDENT_WORKOUT)return;MODAL_TARGET='student';document.getElementById('modal-exercise-title').textContent='Novo Exercício — '+(VIEW_STUDENT?.name||'aluno');document.getElementById('input-exercise-name').value='';openModal('modal-exercise');setTimeout(()=>document.getElementById('input-exercise-name').focus(),300);}
-
+function openAddExerciseModal(){document.getElementById('input-exercise-name').value='';openModal('modal-exercise');setTimeout(()=>document.getElementById('input-exercise-name').focus(),300);}
 async function saveExercise(){
   const name=document.getElementById('input-exercise-name').value.trim();
   if(!name){alert('Digite o nome do exercício!');return;}
-  // Treinador adicionando exercício ao treino do aluno
-  if(MODAL_TARGET==='student'){
-    if(!VIEW_STUDENT||!VIEW_STUDENT_WORKOUT)return;
-    try{
-      const wid=VIEW_STUDENT_WORKOUT.id;
-      await db.collection('exercises').add({userId:VIEW_STUDENT.uid,workoutId:wid,name,videoUrl:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      closeModal('modal-exercise');
-      showToast('✓ Exercício salvo');
-      await renderTrainerStudent(VIEW_STUDENT);
-      const w=VIEW_STUDENT.workouts.find(x=>x.id===wid);
-      if(w){VIEW_STUDENT_WORKOUT=w;renderTsWorkout(w);}
-    }catch(e){
-      alert('Erro ao salvar exercício: '+e.code+' — '+e.message);
-      console.error(e);
-    }
-    return;
-  }
   if(MODE==='local'){
     const w=lw(CUR_WORKOUT);if(!w)return;
-    w.exercises.push({id:uid(),name,sessions:[],videoUrl:''});
+    w.exercises.push({id:uid(),name,sessions:[]});
     localSave();showToast('✓ Exercício salvo offline');closeModal('modal-exercise');renderWorkout();
   }else{
     try{
-      const ref=await db.collection('exercises').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,videoUrl:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      const w=getW(CUR_WORKOUT);w.exercises.push({id:ref.id,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[],videoUrl:''});
+      const ref=await db.collection('exercises').add({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const w=getW(CUR_WORKOUT);w.exercises.push({id:ref.id,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[]});
       saveCloudBackup();
       closeModal('modal-exercise');renderWorkout();
     }catch(e){
@@ -2530,82 +1540,10 @@ function openLogSessionModal(){
   SET_COUNT=0;
   document.getElementById('sets-editor').innerHTML='';
   addSetRow();addSetRow();addSetRow();
-  resetRestTimer();
   openModal('modal-session');
 }
 function addSetRow(){SET_COUNT++;const el=document.getElementById('sets-editor');const d=document.createElement('div');d.className='set-edit-row';d.innerHTML=`<span class="set-edit-num">${SET_COUNT}</span><input class="set-edit-input readonly" value="${SET_COUNT}ª" readonly><input class="set-edit-input" type="number" placeholder="0" min="0" step="0.5" data-f="w"><input class="set-edit-input" type="number" placeholder="0" min="0" step="1" data-f="r"><button class="btn-rm-set" onclick="removeSet(this)">✕</button>`;el.appendChild(d);}
 function removeSet(btn){btn.closest('.set-edit-row').remove();document.querySelectorAll('#sets-editor .set-edit-row').forEach((r,i)=>{r.querySelector('.set-edit-num').textContent=i+1;r.querySelector('.readonly').value=(i+1)+'ª';});SET_COUNT=document.querySelectorAll('#sets-editor .set-edit-row').length;}
-
-/* ══════════════════════════════════════════════════
-   REST TIMER (dentro do modal Registrar Sessão)
-══════════════════════════════════════════════════ */
-function startRestTimer(seconds){
-  clearInterval(REST_INTERVAL);
-  REST_TOTAL=seconds;REST_REMAINING=seconds;REST_PAUSED=false;
-  document.getElementById('rest-timer-presets').style.display='none';
-  document.getElementById('rest-timer-controls').style.display='grid';
-  document.getElementById('rest-timer-toggle-btn').textContent='⏸ Pausar';
-  document.getElementById('rest-timer-display').classList.remove('done');
-  renderRestTick();
-  REST_INTERVAL=setInterval(restTick,1000);
-}
-function restTick(){
-  // Auto-limpa se o modal foi fechado (backdrop, ESC ou salvar) sem passar por resetRestTimer
-  const modal=document.getElementById('modal-session');
-  if(!modal||!modal.classList.contains('open')){clearInterval(REST_INTERVAL);REST_INTERVAL=null;return;}
-  REST_REMAINING--;
-  if(REST_REMAINING<=0){
-    REST_REMAINING=0;renderRestTick();
-    clearInterval(REST_INTERVAL);REST_INTERVAL=null;
-    document.getElementById('rest-timer-display').classList.add('done');
-    beepRestDone();
-    if(navigator.vibrate)navigator.vibrate([200,100,200]);
-    return;
-  }
-  renderRestTick();
-}
-function renderRestTick(){
-  const m=Math.floor(REST_REMAINING/60),s=REST_REMAINING%60;
-  document.getElementById('rest-timer-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-  const pct=REST_TOTAL?((REST_TOTAL-REST_REMAINING)/REST_TOTAL*100):0;
-  document.getElementById('rest-timer-bar').style.width=pct+'%';
-}
-function toggleRestTimer(){
-  if(REST_REMAINING<=0)return;
-  if(REST_PAUSED){
-    REST_PAUSED=false;
-    REST_INTERVAL=setInterval(restTick,1000);
-    document.getElementById('rest-timer-toggle-btn').textContent='⏸ Pausar';
-  }else{
-    REST_PAUSED=true;
-    clearInterval(REST_INTERVAL);REST_INTERVAL=null;
-    document.getElementById('rest-timer-toggle-btn').textContent='▶ Continuar';
-  }
-}
-function resetRestTimer(){
-  clearInterval(REST_INTERVAL);REST_INTERVAL=null;
-  REST_REMAINING=0;REST_TOTAL=0;REST_PAUSED=false;
-  const disp=document.getElementById('rest-timer-display');
-  if(disp){disp.textContent='00:00';disp.classList.remove('done');}
-  const bar=document.getElementById('rest-timer-bar');if(bar)bar.style.width='0%';
-  const presets=document.getElementById('rest-timer-presets');if(presets)presets.style.display='grid';
-  const controls=document.getElementById('rest-timer-controls');if(controls)controls.style.display='none';
-}
-function beepRestDone(){
-  try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    [0,220].forEach(delay=>{
-      setTimeout(()=>{
-        const osc=ctx.createOscillator(),gain=ctx.createGain();
-        osc.type='sine';osc.frequency.value=880;
-        osc.connect(gain);gain.connect(ctx.destination);
-        gain.gain.setValueAtTime(.15,ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);
-        osc.start();osc.stop(ctx.currentTime+.18);
-      },delay);
-    });
-  }catch(e){/* Web Audio indisponível — falha silenciosa */}
-}
 
 async function saveSession(){
   // Usa IDs travados no momento que o modal abriu — imune a navegação durante o preenchimento
@@ -2725,13 +1663,9 @@ async function renderTrainerStudent(s){
     list.innerHTML=workouts.map(w=>{
       const last=lastDate(w);
       const meta=last?'Último: '+fmt(last):w.exercises.length+' exercício(s)';
-      const wid=esc(w.id);
-      return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openTsWorkout('${wid}')">
+      return`<div class="workout-card" style="--wcard-color:${w.color};cursor:pointer" onclick="openTsWorkout('${esc(w.id)}')">
         <div class="workout-card-info"><div class="workout-card-name">${esc(w.name)}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
-        <div class="workout-card-actions">
-          <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkoutTs('${wid}')" title="Editar">✏️</button>
-          <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir Treino','Excluir este treino e todos seus dados?',function(){deleteTsWorkout('${wid}');})" title="Excluir">🗑</button>
-        </div>
+        <div class="exercise-row-arrow" style="padding-right:4px">›</div>
       </div>`;
     }).join('');
   }catch(e){console.error('renderTrainerStudent',e);}
@@ -2745,16 +1679,13 @@ function openTsWorkout(wid){
 function renderTsWorkout(w){
   document.getElementById('ts-workout-title').textContent=w.name;
   const list=document.getElementById('ts-exercise-list');
-  if(!w.exercises.length){list.innerHTML='<div class="no-data-inline">Sem exercícios neste treino. Toque em + EXERCÍCIO para adicionar.</div>';return;}
+  if(!w.exercises.length){list.innerHTML='<div class="no-data-inline">Sem exercícios neste treino.</div>';return;}
   list.innerHTML=w.exercises.map(e=>{
-    const shared=getSharedSessions(e.name,VIEW_STUDENT?.workouts);
-    const last=shared.length?shared[shared.length-1]:null;
+    const last=e.sessions.length?e.sessions[e.sessions.length-1]:null;
     const info=last?'Último: '+fmt(last.date)+' · '+Math.max(...last.sets.map(s=>s.weight))+' kg':'— sem registros';
-    const eid=esc(e.id);
-    return`<div class="exercise-row" onclick="openTsExercise('${eid}')">
+    return`<div class="exercise-row" onclick="openTsExercise('${esc(e.id)}')">
       <div class="exercise-row-dot"></div>
       <div class="exercise-row-info"><div class="exercise-row-name">${esc(e.name)}</div><div class="exercise-row-last">${info}</div></div>
-      <button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px" onclick="event.stopPropagation();showConfirm('Excluir Exercício','Excluir este exercício e todo o histórico?',function(){deleteTsExercise('${eid}');})" title="Excluir">🗑</button>
       <div class="exercise-row-arrow">›</div>
     </div>`;
   }).join('');
@@ -2765,10 +1696,9 @@ function openTsExercise(eid){
   if(!e)return;VIEW_STUDENT_EXERCISE=e;
   document.getElementById('ts-exercise-title').textContent=e.name.toUpperCase();
   tsMiniChart=null;
-  buildSessions(e,'ts-sessions-list',true,VIEW_STUDENT_WORKOUT?.id,VIEW_STUDENT?.workouts);
-  renderExerciseVideo(e,'ts-exercise-video-box',true);
+  buildSessions(e,'ts-sessions-list',true);
   showScreen('screen-ts-exercise');
-  requestAnimationFrame(()=>{ buildChart(e,'tsProgressChart',TS_CHART_MODE,null,VIEW_STUDENT?.workouts); });
+  requestAnimationFrame(()=>{ buildChart(e,'tsProgressChart',TS_CHART_MODE,null); });
 }
 
 /* ══════════════════════════════════════════════════
@@ -2793,11 +1723,11 @@ let EDIT_SESSION_ID = null;
 let EDIT_SET_COUNT  = 0;
 
 function openEditSession(sid){
-  const owner=findSessionOwner(sid);if(!owner)return;
-  const sess=owner.session;
+  const e = getE(CUR_WORKOUT, CUR_EX); if(!e) return;
+  const sess = e.sessions.find(s => s.id === sid); if(!sess) return;
   EDIT_SESSION_ID  = sid;
-  EDIT_SESSION_WID = owner.workout.id;
-  EDIT_SESSION_EID = owner.exercise.id;
+  EDIT_SESSION_WID = CUR_WORKOUT;
+  EDIT_SESSION_EID = CUR_EX;
   document.getElementById('edit-session-date').value = sess.date;
   EDIT_SET_COUNT = 0;
   const editor = document.getElementById('edit-sets-editor');
@@ -2891,7 +1821,7 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('resize',()=>{
   if(miniChart&&CUR_EX){const e=getE(CUR_WORKOUT,CUR_EX);if(e)buildChart(e,'progressChart',CHART_MODE,null);}
-  if(tsMiniChart&&VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',TS_CHART_MODE,null,VIEW_STUDENT?.workouts);
+  if(tsMiniChart&&VIEW_STUDENT_EXERCISE)buildChart(VIEW_STUDENT_EXERCISE,'tsProgressChart',TS_CHART_MODE,null);
 });
 
 /* ══════════════════════════════════════════════════
