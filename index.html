@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Team Bulls v8.1: permissões diagnosticáveis, relatórios robustos e envio múltiplo de fotos. -->
+<!-- Team Bulls v8.2.1: catálogos, prescrição semanal e identidade visual atualizada. -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -12,8 +12,9 @@
   <meta name="description" content="Treinos, dietas e evolução — Team Bulls">
   <title>Team Bulls</title>
   <link rel="manifest" href="manifest_4.json">
-  <!-- Ícone para iOS (splash / homescreen) -->
-  <link rel="apple-touch-icon" href="icon-192-v8.png">
+  <!-- Ícones do navegador e da tela inicial -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192-v8-2.png">
+  <link rel="apple-touch-icon" href="icon-192-v8-2.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -382,6 +383,24 @@
     .food-misc-name{font-weight:700;font-size:14px;color:var(--text);margin-bottom:3px;}
     .food-misc-note{font-size:12px;color:var(--text-muted);line-height:1.5;}
     .food-add-btn{background:transparent;border:1px dashed var(--border-l);color:var(--text-muted);border-radius:6px;padding:8px;width:100%;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:12px;letter-spacing:.5px;cursor:pointer;margin-bottom:10px;}
+    .options-intro{border:1px solid var(--border-l);border-left:3px solid var(--accent);background:linear-gradient(110deg,var(--accent-dim),var(--card));padding:14px;margin-bottom:14px;}
+    .options-intro-title{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:24px;font-weight:900;color:var(--text);line-height:1;text-transform:none;}
+    .options-intro-subtitle{font-size:13px;color:var(--text-dim);line-height:1.45;margin-top:6px;}
+    .food-table-scroll{overflow-x:auto;margin:0 -2px 18px;padding-bottom:5px;scrollbar-color:var(--border-l) transparent;}
+    .food-options-table{border-collapse:collapse;min-width:820px;width:100%;table-layout:fixed;background:var(--surface);}
+    .food-options-table th,.food-options-table td{border:1px solid var(--border-l);vertical-align:top;text-align:left;}
+    .food-options-table th{position:sticky;top:0;z-index:2;background:#181512;color:var(--accent);padding:9px 8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.6px;text-transform:uppercase;}
+    .food-options-table td{height:49px;padding:8px;background:rgba(17,16,15,.88);}
+    .food-options-table .food-table-name{display:block;color:var(--text);font-size:12px;font-weight:600;line-height:1.25;}
+    .food-options-table .food-table-amount{display:block;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:10px;line-height:1.25;margin-top:3px;}
+    .food-options-table .food-table-edit{width:100%;border:0;background:transparent;text-align:left;cursor:pointer;padding:0;color:inherit;}
+    .food-options-table .food-table-empty{opacity:.24;background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,255,255,.025) 6px 7px);}
+    .food-table-add{float:right;background:transparent;border:1px solid currentColor;color:var(--accent);width:20px;height:20px;line-height:16px;cursor:pointer;font-size:14px;}
+    .catalog-picker{border:1px solid var(--border-l);background:rgba(122,24,25,.08);padding:12px;margin-bottom:14px;}
+    .catalog-picker-title{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;}
+    .catalog-picker-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+    .catalog-picker-help{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);line-height:1.5;margin-top:8px;}
+    .form-input:disabled{opacity:.5;cursor:not-allowed;}
 
     /* PROGRESS PHOTOS */
     .photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
@@ -409,7 +428,7 @@
     .quest-view-qa .a{font-size:14px;color:var(--text);background:var(--surface);border-radius:6px;padding:8px 10px;}
 
     /* ═══════════════════════════════════════════════
-       TEAM BULLS — SURVIVAL FITNESS SYSTEM (v8.1 revisada)
+       TEAM BULLS — SURVIVAL FITNESS SYSTEM (v8.2 revisada)
        Tema original inspirado em interfaces survival horror dos anos 90.
        Texturas ficam nos fundos/cabeçalhos; formulários preservam legibilidade.
     ═══════════════════════════════════════════════ */
@@ -673,7 +692,7 @@
     <div class="content">
       <div class="weekly-plan-shell">
         <div class="weekly-plan-head">
-          <div><div class="weekly-plan-title">Ciclo de 8 semanas</div><div class="weekly-plan-hint">arquivo de protocolo · toque numa semana para abrir</div></div>
+          <div><div class="weekly-plan-title">Ciclo de 8 semanas</div><div class="weekly-plan-hint">arquivo de protocolo · toque em uma semana para abrir</div></div>
           <button class="btn-ger-info" onclick="openGerInfo()">? ENTENDA O GER</button>
         </div>
         <div id="student-weekly-board"></div>
@@ -794,19 +813,19 @@
       </div>
     </div>
     <div class="trainer-header-info">
-      <div class="trainer-eyebrow">// acesso nível treinador</div>
+      <div class="trainer-eyebrow">// acesso do treinador</div>
       <div class="trainer-title">CENTRAL<br><span class="dim">DE COMANDO</span></div>
     </div>
     <div class="stats-grid" id="trainer-stats"></div>
     <div class="content">
-      <button class="btn-add-set" style="margin-bottom:14px" onclick="openFoodOptions()">🍎 Opções de Alimentos (tabela de substituições)</button>
-      <button class="btn-add-set" style="margin-bottom:14px" onclick="openExerciseOptions()">🔄 Substituições de Exercícios (tabela de trocas)</button>
+      <button class="btn-add-set" style="margin-bottom:14px" onclick="openFoodOptions()">🍎 Opções de alimentos (tabela de substituições)</button>
+      <button class="btn-add-set" style="margin-bottom:14px" onclick="openExerciseOptions()">🔄 Substituições de exercícios (tabela de trocas)</button>
       <div class="section-header"><span class="section-label">Arquivos dos alunos</span></div>
       <div id="student-list"></div>
       <div id="student-empty" class="empty-state" style="display:none">
         <div class="empty-icon">👥</div>
         <div class="empty-label">Nenhum aluno ainda</div>
-        <div class="empty-hint">Alunos aparecem aqui ao se cadastrar com seu código</div>
+        <div class="empty-hint">Os alunos aparecem aqui quando se cadastram com seu código.</div>
       </div>
     </div>
   </div>
@@ -846,7 +865,7 @@
     <div class="content" style="padding-top:12px">
       <div class="weekly-plan-shell">
         <div class="weekly-plan-head">
-          <div><div class="weekly-plan-title">Protocolo semanal</div><div class="weekly-plan-hint">nível treinador · toque para ajustar</div></div>
+          <div><div class="weekly-plan-title">Protocolo semanal</div><div class="weekly-plan-hint">nível do treinador · toque para ajustar</div></div>
           <button class="btn-ger-info" onclick="openGerInfo()">? ESCALA GER</button>
         </div>
         <div id="trainer-weekly-board"></div>
@@ -862,7 +881,7 @@
       <button class="btn-icon" onclick="goTsWorkout()">←</button>
       <div class="header-title" id="ts-exercise-title">EXERCÍCIO</div>
     </div>
-    <div class="readonly-banner">👁 Resultados do aluno são somente leitura · a prescrição e o GER são editáveis por você</div>
+    <div class="readonly-banner">👁 Os resultados do aluno são somente leitura · a prescrição e o GER são editáveis por você</div>
     <div class="content" style="padding-top:12px">
       <div id="ts-exercise-prescription-card"></div>
       <div class="chart-container">
@@ -903,7 +922,7 @@
   <div id="screen-food-options" class="screen">
     <div class="header">
       <button class="btn-icon" onclick="goBackFromFoodOptions()">←</button>
-      <div class="header-title">OPÇÕES DE ALIMENTOS</div>
+      <div class="header-title">Opções de alimentos</div>
     </div>
     <div class="content" style="padding-top:12px" id="food-options-content"></div>
   </div>
@@ -911,7 +930,7 @@
   <div id="screen-exercise-options" class="screen">
     <div class="header">
       <button class="btn-icon" onclick="goBackFromExerciseOptions()">←</button>
-      <div class="header-title">SUBSTITUIÇÕES DE EXERCÍCIOS</div>
+      <div class="header-title">Opções de exercícios</div>
     </div>
     <div class="content" style="padding-top:12px" id="exercise-options-content"></div>
   </div>
@@ -983,8 +1002,8 @@
 <div class="modal-backdrop" id="modal-workout">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-workout-title">Novo Protocolo</div>
-    <div class="form-group"><label class="form-label">Nome do Protocolo</label><input class="form-input" id="input-workout-name" placeholder="Ex: Protocolo A — Peito / Ombro" maxlength="60"></div>
+    <div class="modal-title" id="modal-workout-title">Novo protocolo</div>
+    <div class="form-group"><label class="form-label">Nome do protocolo</label><input class="form-input" id="input-workout-name" placeholder="Ex.: Protocolo A — peito/ombro" maxlength="60"></div>
     <div class="form-group"><label class="form-label">Cor</label><div class="color-row" id="color-picker-row"></div></div>
     <button class="btn-primary" onclick="saveWorkout()">SALVAR</button>
     <button class="btn-ghost" onclick="closeModal('modal-workout')">CANCELAR</button>
@@ -995,8 +1014,20 @@
 <div class="modal-backdrop" id="modal-exercise">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-exercise-title">Novo Exercício</div>
-    <div class="form-group"><label class="form-label">Nome do Exercício</label><input class="form-input" id="input-exercise-name" placeholder="Ex: Supino Reto com Barra" maxlength="70"></div>
+    <div class="modal-title" id="modal-exercise-title">Novo exercício</div>
+    <div class="catalog-picker">
+      <div class="catalog-picker-title">Catálogo de exercícios</div>
+      <div class="catalog-picker-grid">
+        <select class="form-input" id="input-exercise-catalog-group" onchange="renderExerciseCatalogItems()" aria-label="Grupo de exercícios">
+          <option value="">Carregando grupos...</option>
+        </select>
+        <select class="form-input" id="input-exercise-catalog-item" onchange="selectCatalogExercise()" aria-label="Exercício do catálogo" disabled>
+          <option value="">Selecione primeiro um grupo</option>
+        </select>
+      </div>
+      <div class="catalog-picker-help" id="exercise-catalog-help">Os exercícios do PDF ficam registrados no banco de dados e aparecem nesta mesma ordem.</div>
+    </div>
+    <div class="form-group"><label class="form-label">Nome do exercício</label><input class="form-input" id="input-exercise-name" placeholder="Ex.: Supino reto com barra" maxlength="100" oninput="syncCatalogSelectionWithName()"></div>
     <button class="btn-primary" onclick="saveExercise()">ADICIONAR</button>
     <button class="btn-ghost" onclick="closeModal('modal-exercise')">CANCELAR</button>
   </div>
@@ -1006,8 +1037,8 @@
 <div class="modal-backdrop" id="modal-prescription">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-prescription-title">Prescrever Exercício</div>
-    <div class="form-group"><label class="form-label">Semana de Treino</label>
+    <div class="modal-title" id="modal-prescription-title">Prescrever exercício</div>
+    <div class="form-group"><label class="form-label">Semana de treino</label>
       <select class="form-input" id="input-prescription-week" onchange="loadPrescriptionEditor()">
         <option value="1">Semana 1</option><option value="2">Semana 2</option><option value="3">Semana 3</option><option value="4">Semana 4</option>
         <option value="5">Semana 5</option><option value="6">Semana 6</option><option value="7">Semana 7</option><option value="8">Semana 8</option>
@@ -1024,7 +1055,7 @@
     <div id="prescription-editor"></div>
     <button class="btn-add-set" onclick="addPrescriptionSetRow()">+ ADICIONAR SÉRIE PRESCRITA</button>
     <button class="btn-primary" onclick="savePrescription(false)">SALVAR ESTA SEMANA</button>
-    <button class="btn-ghost" onclick="confirmReplicatePrescription()">REPASSAR ATÉ A SEMANA 8</button>
+    <button class="btn-ghost" id="btn-replicate-prescription" onclick="confirmReplicatePrescription()">REPASSAR ATÉ A SEMANA 8</button>
     <button class="btn-ghost" onclick="clearPrescriptionWeek()">SEM EXERCÍCIO NESTA SEMANA</button>
     <button class="btn-ghost" onclick="closeModal('modal-prescription')">CANCELAR</button>
   </div>
@@ -1034,9 +1065,9 @@
 <div class="modal-backdrop" id="modal-session">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Registrar Resultado</div>
+    <div class="modal-title">Registrar resultado</div>
     <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="input-session-date"></div>
-    <div class="form-group"><label class="form-label">Semana de Treino</label>
+    <div class="form-group"><label class="form-label">Semana de treino</label>
       <select class="form-input" id="input-session-week" onchange="onSessionWeekChange()">
         <option value="1">Semana 1</option><option value="2">Semana 2</option><option value="3">Semana 3</option><option value="4">Semana 4</option>
         <option value="5">Semana 5</option><option value="6">Semana 6</option><option value="7">Semana 7</option><option value="8">Semana 8</option>
@@ -1050,7 +1081,7 @@
       <button class="btn-add-set" onclick="addSetRow()">+ REGISTRAR SÉRIE EXTRA</button>
     </div>
     <div class="form-group"><label class="form-label">Anotação (opcional)</label>
-      <textarea class="form-input" id="input-session-note" rows="2" maxlength="2000" placeholder="Ex: banco na posição 3, polia alta, pegada aberta..." style="resize:vertical;min-height:50px"></textarea>
+      <textarea class="form-input" id="input-session-note" rows="2" maxlength="2000" placeholder="Ex.: banco na posição 3, polia alta, pegada aberta..." style="resize:vertical;min-height:50px"></textarea>
     </div>
     <div class="rest-timer">
       <div class="rest-timer-head">
@@ -1078,9 +1109,9 @@
 <div class="modal-backdrop" id="modal-feedback">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Enviar Transmissão</div>
+    <div class="modal-title">Enviar transmissão</div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">O aluno receberá esta transmissão na Sala Vermelha.</p>
-    <div class="form-group"><label class="form-label">Mensagem</label><textarea class="form-input" id="input-feedback" rows="4" maxlength="5000" placeholder="Ex: Parabéns pela evolução! Aumenta a carga no supino." style="resize:vertical;min-height:90px"></textarea></div>
+    <div class="form-group"><label class="form-label">Mensagem</label><textarea class="form-input" id="input-feedback" rows="4" maxlength="5000" placeholder="Ex.: Parabéns pela evolução! Aumente a carga no supino." style="resize:vertical;min-height:90px"></textarea></div>
     <button class="btn-primary" onclick="sendFeedback()">TRANSMITIR</button>
     <button class="btn-ghost" onclick="closeModal('modal-feedback')">CANCELAR</button>
   </div>
@@ -1090,9 +1121,9 @@
 <div class="modal-backdrop" id="modal-edit-session">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Editar Sessão</div>
+    <div class="modal-title">Editar sessão</div>
     <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="edit-session-date"></div>
-    <div class="form-group"><label class="form-label">Semana de Treino</label>
+    <div class="form-group"><label class="form-label">Semana de treino</label>
       <select class="form-input" id="edit-session-week" onchange="onEditSessionWeekChange()">
         <option value="1">Semana 1</option><option value="2">Semana 2</option><option value="3">Semana 3</option><option value="4">Semana 4</option>
         <option value="5">Semana 5</option><option value="6">Semana 6</option><option value="7">Semana 7</option><option value="8">Semana 8</option>
@@ -1106,7 +1137,7 @@
       <button class="btn-add-set" onclick="addEditSetRow()">+ REGISTRAR SÉRIE EXTRA</button>
     </div>
     <div class="form-group"><label class="form-label">Anotação (opcional)</label>
-      <textarea class="form-input" id="edit-session-note" rows="2" maxlength="2000" placeholder="Ex: banco na posição 3, polia alta, pegada aberta..." style="resize:vertical;min-height:50px"></textarea>
+      <textarea class="form-input" id="edit-session-note" rows="2" maxlength="2000" placeholder="Ex.: banco na posição 3, polia alta, pegada aberta..." style="resize:vertical;min-height:50px"></textarea>
     </div>
     <button class="btn-primary" onclick="saveEditSession()">SALVAR ALTERAÇÕES</button>
     <button class="btn-ghost" onclick="closeModal('modal-edit-session')">CANCELAR</button>
@@ -1117,7 +1148,7 @@
 <div class="modal-backdrop" id="modal-ger-info">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Graus de Esforço (GER)</div>
+    <div class="modal-title">Graus de esforço (GER)</div>
     <div id="ger-definitions-list"></div>
     <div class="ger-warning">GER 4 a 6 representam esforços muito elevados. Devem ser usados somente quando prescritos pelo treinador e com execução segura.</div>
     <button class="btn-ghost" onclick="closeModal('modal-ger-info')">FECHAR</button>
@@ -1138,7 +1169,7 @@
 <div class="modal-backdrop" id="modal-exercise-video">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Vídeo de Execução</div>
+    <div class="modal-title">Vídeo de execução</div>
     <div class="form-group"><label class="form-label">Link (YouTube ou outro)</label><input class="form-input" id="input-video-url" maxlength="2000" placeholder="https://youtube.com/watch?v=..."></div>
     <button class="btn-primary" onclick="saveExerciseVideo()">SALVAR</button>
     <button class="btn-ghost" onclick="removeExerciseVideo()">REMOVER VÍDEO</button>
@@ -1150,14 +1181,14 @@
 <div class="modal-backdrop" id="modal-meal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-meal-title">Nova Refeição</div>
+    <div class="modal-title" id="modal-meal-title">Nova refeição</div>
     <div class="form-group"><label class="form-label">Horário</label><input type="time" class="form-input" id="input-meal-time"></div>
     <input type="hidden" id="input-meal-name">
     <div class="plan-help" id="meal-sequence-help">O nome será definido automaticamente como Refeição 1, Refeição 2 e assim por diante.</div>
-    <div class="form-group"><label class="form-label">Alimento Prescrito (um por linha)</label><textarea class="form-input" id="input-meal-items" rows="4" placeholder="2 ovos
+    <div class="form-group"><label class="form-label">Alimento prescrito (um por linha)</label><textarea class="form-input" id="input-meal-items" rows="4" placeholder="2 ovos
 1 fatia de pão integral
 1 banana" style="resize:vertical;min-height:80px"></textarea></div>
-    <div class="form-group"><label class="form-label">Observações / substituições</label><textarea class="form-input" id="input-meal-notes" rows="2" placeholder="Ex: pode substituir o pão por batata doce" style="resize:vertical;min-height:50px"></textarea></div>
+    <div class="form-group"><label class="form-label">Observações/substituições</label><textarea class="form-input" id="input-meal-notes" rows="2" placeholder="Ex.: pode substituir o pão por batata-doce" style="resize:vertical;min-height:50px"></textarea></div>
     <button class="btn-primary" onclick="saveMeal()">SALVAR</button>
     <button class="btn-ghost" id="btn-delete-meal" onclick="confirmDeleteMeal()" style="display:none;color:var(--danger)">EXCLUIR REFEIÇÃO</button>
     <button class="btn-ghost" onclick="closeModal('modal-meal')">CANCELAR</button>
@@ -1168,9 +1199,9 @@
 <div class="modal-backdrop" id="modal-food-item">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-food-item-title">Novo Alimento</div>
-    <div class="form-group"><label class="form-label">Alimento</label><input class="form-input" id="input-food-item-name" placeholder="Ex: Arroz" maxlength="60"></div>
-    <div class="form-group"><label class="form-label">Quantidade</label><input class="form-input" id="input-food-item-amount" placeholder="Ex: 100g" maxlength="30"></div>
+    <div class="modal-title" id="modal-food-item-title">Novo alimento</div>
+    <div class="form-group"><label class="form-label">Alimento</label><input class="form-input" id="input-food-item-name" placeholder="Ex.: arroz" maxlength="60"></div>
+    <div class="form-group"><label class="form-label">Quantidade</label><input class="form-input" id="input-food-item-amount" placeholder="Ex.: 100 g" maxlength="30"></div>
     <button class="btn-primary" onclick="saveFoodItem()">SALVAR</button>
     <button class="btn-ghost" id="btn-delete-food-item" onclick="deleteFoodItemFromModal()" style="display:none;color:var(--danger)">EXCLUIR</button>
     <button class="btn-ghost" onclick="closeModal('modal-food-item')">CANCELAR</button>
@@ -1181,9 +1212,9 @@
 <div class="modal-backdrop" id="modal-food-misc">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-food-misc-title">Novo Item (Diversos)</div>
-    <div class="form-group"><label class="form-label">Alimento</label><input class="form-input" id="input-food-misc-name" placeholder="Ex: Leite desnatado 250ml" maxlength="80"></div>
-    <div class="form-group"><label class="form-label">Equivalência / substituição</label><textarea class="form-input" id="input-food-misc-note" rows="2" placeholder="Ex: subtrair ½ porção de proteína e ½ porção de carbo daquela refeição" style="resize:vertical;min-height:50px"></textarea></div>
+    <div class="modal-title" id="modal-food-misc-title">Novo item (diversos)</div>
+    <div class="form-group"><label class="form-label">Alimento</label><input class="form-input" id="input-food-misc-name" placeholder="Ex.: leite desnatado, 250 ml" maxlength="80"></div>
+    <div class="form-group"><label class="form-label">Equivalência/substituição</label><textarea class="form-input" id="input-food-misc-note" rows="2" placeholder="Ex.: subtrair ½ porção de proteína e ½ porção de carboidrato daquela refeição" style="resize:vertical;min-height:50px"></textarea></div>
     <button class="btn-primary" onclick="saveFoodMisc()">SALVAR</button>
     <button class="btn-ghost" id="btn-delete-food-misc" onclick="deleteFoodMiscFromModal()" style="display:none;color:var(--danger)">EXCLUIR</button>
     <button class="btn-ghost" onclick="closeModal('modal-food-misc')">CANCELAR</button>
@@ -1194,9 +1225,9 @@
 <div class="modal-backdrop" id="modal-exercise-group">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-exercise-group-title">Novo Grupo</div>
-    <div class="form-group"><label class="form-label">Nome do grupo</label><input class="form-input" id="input-exercise-group-name" placeholder="Ex: Supino Reto" maxlength="60"></div>
-    <div class="form-group"><label class="form-label">Observação (opcional)</label><textarea class="form-input" id="input-exercise-group-note" rows="2" placeholder="Ex: ou qualquer máquina que tiver disponível" style="resize:vertical;min-height:50px"></textarea></div>
+    <div class="modal-title" id="modal-exercise-group-title">Novo grupo</div>
+    <div class="form-group"><label class="form-label">Nome do grupo</label><input class="form-input" id="input-exercise-group-name" placeholder="Ex.: Supino reto" maxlength="60"></div>
+    <div class="form-group"><label class="form-label">Observação (opcional)</label><textarea class="form-input" id="input-exercise-group-note" rows="2" placeholder="Ex.: ou qualquer máquina que estiver disponível" style="resize:vertical;min-height:50px"></textarea></div>
     <button class="btn-primary" onclick="saveExerciseGroup()">SALVAR</button>
     <button class="btn-ghost" id="btn-delete-exercise-group" onclick="deleteExerciseGroupFromModal()" style="display:none;color:var(--danger)">EXCLUIR</button>
     <button class="btn-ghost" onclick="closeModal('modal-exercise-group')">CANCELAR</button>
@@ -1207,8 +1238,8 @@
 <div class="modal-backdrop" id="modal-exercise-option-item">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-exercise-option-item-title">Nova Opção</div>
-    <div class="form-group"><label class="form-label">Exercício</label><input class="form-input" id="input-exercise-option-item-name" placeholder="Ex: Supino reto barra" maxlength="60"></div>
+    <div class="modal-title" id="modal-exercise-option-item-title">Nova opção</div>
+    <div class="form-group"><label class="form-label">Exercício</label><input class="form-input" id="input-exercise-option-item-name" placeholder="Ex.: Supino reto com barra" maxlength="60"></div>
     <button class="btn-primary" onclick="saveExOptItem()">SALVAR</button>
     <button class="btn-ghost" id="btn-delete-exercise-option-item" onclick="deleteExOptItemFromModal()" style="display:none;color:var(--danger)">EXCLUIR</button>
     <button class="btn-ghost" onclick="closeModal('modal-exercise-option-item')">CANCELAR</button>
@@ -1219,11 +1250,11 @@
 <div class="modal-backdrop" id="modal-photo-upload">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Nova Evidência</div>
+    <div class="modal-title">Nova evidência</div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Selecione de 1 a 6 fotos. Todas recebem a mesma data e o peso informado.</p>
     <div class="form-group">
       <label class="form-label">Peso atual (kg)</label>
-      <input class="form-input" id="input-photo-weight" type="number" inputmode="decimal" min="20" max="500" step="0.1" placeholder="Ex: 82,5">
+      <input class="form-input" id="input-photo-weight" type="number" inputmode="decimal" min="20" max="500" step="0.1" placeholder="Ex.: 82,5">
     </div>
     <button class="btn-primary" onclick="choosePhotoForUpload()">SELECIONAR FOTOS E ENVIAR</button>
     <button class="btn-ghost" onclick="closeModal('modal-photo-upload')">CANCELAR</button>
@@ -1246,7 +1277,7 @@
 <div class="modal-backdrop" id="modal-compare-photos">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Comparar Fotos</div>
+    <div class="modal-title">Comparar fotos</div>
     <div class="form-group"><label class="form-label">Foto 1 (antes)</label><select class="form-input" id="select-compare-a"></select></div>
     <div class="form-group"><label class="form-label">Foto 2 (depois)</label><select class="form-input" id="select-compare-b"></select></div>
     <button class="btn-primary" onclick="runComparePhotos()">COMPARAR</button>
@@ -1264,7 +1295,7 @@
 <div class="modal-backdrop" id="modal-send-quest">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Questionário Personalizado</div>
+    <div class="modal-title">Questionário personalizado</div>
     <div class="form-group">
       <label class="form-label">Perguntas</label>
       <div id="quest-questions-editor"></div>
@@ -1279,7 +1310,7 @@
 <div class="modal-backdrop" id="modal-answer-quest">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Responder Questionário</div>
+    <div class="modal-title">Responder questionário</div>
     <div id="quest-answer-form"></div>
     <button class="btn-primary" onclick="submitQuestionnaireAnswers()">ENVIAR RESPOSTAS</button>
     <button class="btn-ghost" onclick="closeModal('modal-answer-quest')">DEPOIS</button>
@@ -1290,7 +1321,7 @@
 <div class="modal-backdrop" id="modal-view-quest">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Questionário Respondido</div>
+    <div class="modal-title">Questionário respondido</div>
     <div id="quest-view-body"></div>
     <button class="btn-ghost" onclick="closeModal('modal-view-quest')">FECHAR</button>
   </div>
@@ -1329,7 +1360,7 @@ const CFG = {
 };
 
 /* ══════════════════════════════════════════════════
-   TEAM BULLS v8.1 — AMBIÊNCIA E PRÉVIA VISUAL
+   TEAM BULLS v8.2 — AMBIÊNCIA E PRÉVIA VISUAL
    A prévia é isolada: não lê nem grava Firebase/localStorage de treinos.
 ══════════════════════════════════════════════════ */
 let SURVIVAL_AMBIENCE=(()=>{try{return Math.max(0,Math.min(2,Number(localStorage.getItem('team_bulls_ambience')||1)));}catch(e){return 1;}})();
@@ -1397,16 +1428,16 @@ function renderThemePreview(role){
       <div class="preview-section"><div class="preview-stats"><div class="preview-stat"><b>3</b><span>PROTOCOLOS</span></div><div class="preview-stat"><b>18</b><span>EXERCÍCIOS</span></div><div class="preview-stat"><b>27</b><span>REGISTROS</span></div></div></div>
       <div class="preview-section"><div class="preview-transmission survival-pulse"><b>● TRANSMISSÃO RECEBIDA // TREINADOR</b>Mantenha a faixa prescrita no supino e registre todas as repetições realizadas.</div></div>
       <div class="preview-section"><div class="preview-section-title">Protocolos ativos</div><div class="preview-protocol"><div class="preview-kicker">PROTOCOLO A // SEMANA 03 DE 08</div><div class="preview-name">Peitoral e tríceps</div><div class="preview-meta">ÚLTIMO REGISTRO: 17/07/2026 · STATUS: EM ANDAMENTO</div><div class="preview-week"><span>S1 ✓</span><span>S2 ✓</span><span class="active">S3 ATIVA</span><span>S4</span></div></div><div class="preview-protocol"><div class="preview-kicker">PROTOCOLO B // SEMANA 03 DE 08</div><div class="preview-name">Costas e bíceps</div><div class="preview-meta">PRESCRIÇÃO: 3×8–12 · GER 03</div>${renderGerMeter(3)}</div></div>
-      <div class="preview-section"><div class="preview-section-title">Suprimentos</div><div class="preview-meal"><div class="preview-kicker">REFEIÇÃO 1 // 07:00</div><div class="meal-prescribed-label">Alimento Prescrito</div><div class="preview-food">2 ovos<br>2 fatias de pão integral<br>1 banana</div></div><div class="preview-meal"><div class="preview-kicker">REFEIÇÃO 2 // 12:30</div><div class="meal-prescribed-label">Alimento Prescrito</div><div class="preview-food">150 g de arroz<br>150 g de frango<br>Salada à vontade</div></div></div>
+      <div class="preview-section"><div class="preview-section-title">Suprimentos</div><div class="preview-meal"><div class="preview-kicker">REFEIÇÃO 1 // 07:00</div><div class="meal-prescribed-label">Alimento prescrito</div><div class="preview-food">2 ovos<br>2 fatias de pão integral<br>1 banana</div></div><div class="preview-meal"><div class="preview-kicker">REFEIÇÃO 2 // 12:30</div><div class="meal-prescribed-label">Alimento prescrito</div><div class="preview-food">150 g de arroz<br>150 g de frango<br>Salada à vontade</div></div></div>
       <div class="preview-section"><div class="preview-section-title">Arquivo de evidências</div><div class="preview-evidence"><div>01/07<br>82,4 KG</div><div>08/07<br>82,0 KG</div><div>15/07<br>81,7 KG</div></div></div>`;
   }else{
     el.innerHTML=`
-      <div class="preview-hero"><div><div class="preview-kicker">// acesso nível treinador</div><div class="preview-hero-title">CENTRAL<br><span>DE COMANDO</span></div></div></div>
+      <div class="preview-hero"><div><div class="preview-kicker">// acesso do treinador</div><div class="preview-hero-title">CENTRAL<br><span>DE COMANDO</span></div></div></div>
       <div class="preview-section"><div class="preview-stats"><div class="preview-stat"><b>24</b><span>ARQUIVOS</span></div><div class="preview-stat"><b>21</b><span>ATIVOS</span></div><div class="preview-stat"><b>03</b><span>PAUSADOS</span></div></div></div>
       <div class="preview-section"><div class="preview-section-title">Arquivo selecionado</div><div class="archive-file-card"><div class="archive-file-kicker">ARQUIVO CONFIDENCIAL // BT-2205</div><div class="archive-file-name">Lucas Ferreira</div><div class="archive-file-meta">STATUS: ATIVO<br>PROTOCOLO: SEMANA 03/08<br>ÚLTIMO REGISTRO: 17/07/2026</div></div></div>
       <div class="preview-section"><div class="preview-section-title">Prescrição semanal</div><div class="preview-protocol"><div class="preview-kicker">SUPINO RETO // SEMANA 03</div><div class="preview-name">Séries e GER individual</div><div class="preview-meta">SÉRIE 1 · 8–12 REPS · GER 03</div>${renderGerMeter(3)}<div class="preview-meta" style="margin-top:7px">SÉRIE 2 · 8–12 REPS · GER 04</div>${renderGerMeter(4)}<div class="preview-meta" style="margin-top:7px">SÉRIE 3 · 8–12 REPS · GER 04</div>${renderGerMeter(4)}</div></div>
       <div class="preview-section"><div class="preview-section-title">Transmissão para o aluno</div><div class="preview-transmission"><b>CENTRAL TEAM BULLS // CANAL PRIVADO</b>Mensagem pronta para ser transmitida ao arquivo BT-2205.</div></div>
-      <div class="preview-section"><div class="preview-section-title">Suprimentos do aluno</div><div class="preview-meal"><div class="preview-kicker">REFEIÇÃO 1 // 07:00</div><div class="meal-prescribed-label">Alimento Prescrito</div><div class="preview-food">2 ovos · pão integral · banana</div></div></div>
+      <div class="preview-section"><div class="preview-section-title">Suprimentos do aluno</div><div class="preview-meal"><div class="preview-kicker">REFEIÇÃO 1 // 07:00</div><div class="meal-prescribed-label">Alimento prescrito</div><div class="preview-food">2 ovos · pão integral · banana</div></div></div>
       <div class="preview-section"><div class="preview-section-title">Arquivo de evidências</div><div class="preview-evidence"><div>01/07<br>82,4 KG</div><div>08/07<br>82,0 KG</div><div>15/07<br>81,7 KG</div></div></div>`;
   }
 }
@@ -1489,7 +1520,7 @@ let CUR_WORKOUT=null;
 let CUR_EX=null;
 let SESSION_WID=null;  // ID do treino travado ao abrir modal de nova sessão
 let SESSION_EID=null;  // ID do exercício travado ao abrir modal de nova sessão
-let LAST_SESSION_WEEK=1; // lembra a última semana selecionada, pra não ter que reescolher a cada série
+let LAST_SESSION_WEEK=1; // lembra a última semana selecionada, para não ter que reescolher a cada série
 let TRAINER_ACTIVE_WEEK=1; // semana selecionada ao treinador visualizar/prescrever
 let SESSION_EDITOR_WEEK=1;
 let EDIT_SESSION_WID=null; // ID travado ao abrir modal de edição de sessão
@@ -1662,7 +1693,7 @@ function cloudWriteError(error,action){
   const code=String(error?.code||'');
   const message=String(error?.message||'Falha desconhecida');
   if(code.includes('permission-denied')||/missing or insufficient permissions/i.test(message)){
-    return 'Permissão recusada pelo Firebase ao '+action+'. Publique também o arquivo firestore_7.rules no Firebase Console; atualizar apenas o HTML não altera as permissões do servidor.';
+    return 'Permissão recusada pelo Firebase ao '+action+'. Publique também o arquivo firestore_8.rules no Firebase Console; atualizar apenas o HTML não altera as permissões do servidor.';
   }
   if(code.includes('unavailable')||/network|offline|failed to fetch/i.test(message)){
     return 'O servidor está indisponível no momento. Verifique a conexão e tente novamente.';
@@ -1732,8 +1763,8 @@ const GER_DEFINITIONS=[
   {level:1,text:'2 a 4 repetições na reserva'},
   {level:2,text:'1 repetição na reserva'},
   {level:3,text:'0 repetições na reserva'},
-  {level:4,text:'Falhar ao tentar executar a próxima repetição parcialmente'},
-  {level:5,text:'Falhar e usar roubo ou ajuda para realizar mais repetições'},
+  {level:4,text:'Falhar durante a tentativa de executar parcialmente a próxima repetição'},
+  {level:5,text:'Chegar à falha e usar impulso ou ajuda para realizar repetições adicionais'},
   {level:6,text:'Esforço máximo extremo — “até sentir o gosto de sangue” (metaforicamente)'}
 ];
 
@@ -2013,7 +2044,7 @@ async function cleanDuplicates(){
       }
     }
     if(!removed){showToast('Nenhum treino duplicado encontrado.');return;}
-    showToast('✓ '+removed+' duplicata(s) corrigida(s), sem apagar o histórico');
+    showToast(removed===1?'✓ 1 duplicata corrigida, sem apagar o histórico':'✓ '+removed+' duplicatas corrigidas, sem apagar o histórico');
     await renderTrainerStudent(VIEW_STUDENT);
   }catch(e){
     alert('Erro ao corrigir duplicatas: '+e.message);
@@ -2205,7 +2236,7 @@ async function doRegister(){
   const pass=document.getElementById('reg-pass').value;
   const code=document.getElementById('reg-code').value.trim();
   if(!name||!email||!pass){showAuthError('reg-error','Preencha todos os campos.');return;}
-  if(pass.length<6){showAuthError('reg-error','Senha deve ter ao menos 6 caracteres.');return;}
+  if(pass.length<6){showAuthError('reg-error','A senha deve ter ao menos 6 caracteres.');return;}
   if(code!==CFG.studentCode){
     showAuthError('reg-error','Código inválido. Peça o código ao seu treinador.');return;
   }
@@ -2484,12 +2515,12 @@ function renderHome(){
   empty.style.display='none';
   list.innerHTML=ws.map(w=>{
     const last=lastDate(w);
-    const meta=last?'Último: '+fmt(last):w.exercises.length+' exercício(s)';
+    const meta=last?'Último: '+fmt(last):w.exercises.length+' '+(w.exercises.length===1?'exercício':'exercícios');
     const wid=esc(w.id),wn=esc(w.name);
     // Editar/excluir treino: só quem se autogerencia de verdade (ver canSelfManagePlan). Na nuvem, o treino é montado pelo treinador.
     const actions=canSelfManagePlan()?`<div class="workout-card-actions">
         <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout('${wid}')" title="Editar">✏️</button>
-        <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir Treino','Excluir este treino e todos seus dados?',function(){deleteWorkout('${wid}');})" title="Excluir">🗑</button>
+        <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino e todos os seus dados?',function(){deleteWorkout('${wid}');})" title="Excluir">🗑</button>
       </div>`:'';
     return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openWorkout('${wid}')">
       <div class="workout-card-info"><div class="archive-file-kicker">PROTOCOLO ATIVO</div><div class="workout-card-name">${wn}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
@@ -2551,7 +2582,7 @@ function renderCalendar(){
   }
   document.getElementById('cal-grid').innerHTML=cells;
   const nDays=Object.keys(data).length;
-  document.getElementById('cal-summary').textContent=nDays?nDays+' dia(s) treinado(s) neste mês':'Nenhum treino registrado neste mês';
+  document.getElementById('cal-summary').textContent=nDays?(nDays===1?'1 dia treinado neste mês':nDays+' dias treinados neste mês'):'Nenhum treino registrado neste mês';
 }
 function openCalDay(dateStr){
   const data=getCalendarMonthData(CAL_YEAR,CAL_MONTH);
@@ -2713,7 +2744,7 @@ function getE(wid,eid){const w=getW(wid);return w?w.exercises.find(e=>e.id===eid
 // ainda existir. Alimentado em loadCloudHome()/renderTrainerStudent() com uma
 // busca direta em `sessions` (por userId). Assim, mesmo que o treino/exercício
 // original seja excluído depois, getSharedSessions() ainda encontra as séries
-// antigas pra mesclar com um exercício novo de mesmo nome.
+// antigas para mesclar com um exercício novo de mesmo nome.
 let HISTORY_BY_NAME={};
 function buildHistoryByName(allSessions){
   const map={};
@@ -2743,7 +2774,7 @@ function getSharedSessions(exerciseName,ws){
   }
   // Séries de um treino/exercício já excluído, preservadas em HISTORY_BY_NAME —
   // aparecem marcadas como _archived (o badge mostra "treino anterior" genérico,
-  // já que o treino original não existe mais pra dar nome/cor).
+  // já que o treino original não existe mais para dar nome/cor).
   for(const s of (HISTORY_BY_NAME[norm]||[])){
     if(!seen.has(s.id)){
       seen.add(s.id);
@@ -2896,7 +2927,7 @@ function renderExercisePrescription(exercise,elId,week,canEdit,trainerMode){
       <div class="week-stepper"><button onclick="changeExerciseWeek(-1,${trainerMode?'true':'false'})" ${week<=1?'disabled':''}>‹</button><span>${week}/8</span><button onclick="changeExerciseWeek(1,${trainerMode?'true':'false'})" ${week>=8?'disabled':''}>›</button></div>
     </div>
     <div class="prescription-set-list">${rows}</div>
-    ${completed.length?`<div class="prescription-result">✓ ${completed.length} sessão(ões) registrada(s) nesta semana</div>`:''}
+    ${completed.length?`<div class="prescription-result">✓ ${completed.length} ${completed.length===1?'sessão registrada':'sessões registradas'} nesta semana</div>`:''}
     <div class="prescription-actions"><button class="btn-ghost" onclick="openGerInfo()">? ESCALA GER</button>${action}</div>
   </div>`;
 }
@@ -2933,6 +2964,11 @@ function loadPrescriptionEditor(){
   document.getElementById('prescription-editor').innerHTML='';
   if(rx.sets.length)rx.sets.forEach(set=>addPrescriptionSetRow(set.targetMin,set.targetMax,set.ger));
   else for(let i=0;i<3;i++)addPrescriptionSetRow(8,12,3);
+  const replicateButton=document.getElementById('btn-replicate-prescription');
+  if(replicateButton){
+    replicateButton.disabled=week>=8;
+    replicateButton.textContent=week>=8?'ESTA JÁ É A SEMANA 8':'REPASSAR ATÉ A SEMANA 8';
+  }
 }
 function addPrescriptionSetRow(targetMin=8,targetMax=12,ger=3){
   if(PLAN_SET_COUNT>=30){alert('Limite de 30 séries prescritas.');return;}
@@ -2977,10 +3013,9 @@ function collectPrescriptionRows(){
 async function persistPrescription(sets,replicate){
   const exercise=getPlanEditExercise();if(!exercise)return;
   const week=Number(document.getElementById('input-prescription-week').value)||1;
-  const weeklyPlan=normalizeWeeklyPlan(exercise.weeklyPlan);
-  weeklyPlan['w'+week]=clonePrescriptionSets(sets);
-  if(replicate){for(let next=week+1;next<=8;next++)weeklyPlan['w'+next]=clonePrescriptionSets(sets);}
-  if(!beginAction('save-prescription','modal-prescription'))return;
+  const actionKey='save-prescription-'+exercise.id;
+  if(!beginAction(actionKey,'modal-prescription'))return false;
+  const weeklyPlan=buildWeeklyPlanUpdate(exercise.weeklyPlan,week,sets,replicate);
   try{
     if(PLAN_EDIT_TARGET==='trainer')await db.collection('exercises').doc(exercise.id).update({weeklyPlan});
     else{exercise.weeklyPlan=weeklyPlan;localSave();}
@@ -2996,20 +3031,36 @@ async function persistPrescription(sets,replicate){
       if(CUR_EX===exercise.id)renderExercise();
     }
     showToast(replicate?'✓ Prescrição repassada até a semana 8':'✓ Prescrição da semana salva');
-  }catch(error){alert('Erro ao salvar prescrição: '+error.message);}
-  finally{endAction('save-prescription','modal-prescription');}
+    return true;
+  }catch(error){alert('Erro ao salvar a prescrição: '+error.message);return false;}
+  finally{endAction(actionKey,'modal-prescription');}
+}
+function buildWeeklyPlanUpdate(currentPlan,week,sets,replicate=false){
+  const safeWeek=Math.max(1,Math.min(8,Number(week)||1));
+  const weeklyPlan=normalizeWeeklyPlan(currentPlan);
+  weeklyPlan['w'+safeWeek]=clonePrescriptionSets(sets);
+  if(replicate){
+    for(let next=safeWeek+1;next<=8;next++)weeklyPlan['w'+next]=clonePrescriptionSets(sets);
+  }
+  return weeklyPlan;
 }
 async function savePrescription(replicate){
   const sets=collectPrescriptionRows();if(!sets)return;
-  await persistPrescription(sets,!!replicate);
+  return persistPrescription(sets,!!replicate);
 }
 function confirmReplicatePrescription(){
   const week=Number(document.getElementById('input-prescription-week').value)||1;
-  showConfirm('Repassar Prescrição','Copiar esta prescrição da semana '+week+' para todas as semanas seguintes? Ajustes futuros já existentes serão substituídos.',()=>savePrescription(true));
+  if(week>=8){showToast('A prescrição já está na semana 8.',true);return;}
+  const sets=collectPrescriptionRows();if(!sets)return;
+  showConfirm(
+    'Repassar prescrição',
+    'Copiar a prescrição da semana '+week+' para as semanas '+(week+1)+' a 8? As personalizações já existentes nessas semanas serão substituídas.',
+    ()=>persistPrescription(clonePrescriptionSets(sets),true)
+  );
 }
 function clearPrescriptionWeek(){
   const week=Number(document.getElementById('input-prescription-week').value)||1;
-  showConfirm('Remover da Semana','Deixar este exercício sem prescrição na semana '+week+'?',()=>persistPrescription([],false));
+  showConfirm('Remover da semana','Deixar este exercício sem prescrição na semana '+week+'?',()=>persistPrescription([],false));
 }
 
 function extractYouTubeId(url){
@@ -3177,7 +3228,7 @@ function renderMealsList(){
       :`<span class="meal-done-btn${done?' done':''}" style="cursor:default">${done?'✓ Concluído hoje':'— não concluído hoje'}</span>`;
     return`<div class="meal-card">
       <div class="meal-card-top"><span class="meal-card-time">${esc(m.time||'--:--')}</span><span class="meal-card-name">Refeição ${index+1}</span>${editBtn}</div>
-      ${items?`<div class="meal-prescribed-label">Alimento Prescrito</div><ul class="meal-card-items">${items}</ul>`:''}
+      ${items?`<div class="meal-prescribed-label">Alimento prescrito</div><ul class="meal-card-items">${items}</ul>`:''}
       ${m.notes?`<div class="meal-card-notes">💡 ${esc(m.notes)}</div>`:''}
       ${doneBtn}
     </div>`;
@@ -3187,7 +3238,7 @@ function openAddMealModal(){
   if(!MEAL_CTX.canEditContent)return;
   EDIT_MEAL_ID=null;
   const nextNumber=MEAL_PLAN_CACHE.meals.length+1;
-  document.getElementById('modal-meal-title').textContent='Nova Refeição '+nextNumber;
+  document.getElementById('modal-meal-title').textContent='Nova refeição '+nextNumber;
   document.getElementById('input-meal-time').value='';
   document.getElementById('input-meal-name').value='Refeição '+nextNumber;
   document.getElementById('meal-sequence-help').textContent='Este registro será exibido como Refeição '+nextNumber+'.';
@@ -3202,7 +3253,7 @@ function openEditMealModal(mid){
   EDIT_MEAL_ID=mid;
   const sorted=[...MEAL_PLAN_CACHE.meals].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   const mealNumber=Math.max(1,sorted.findIndex(x=>x.id===mid)+1);
-  document.getElementById('modal-meal-title').textContent='Editar Refeição '+mealNumber;
+  document.getElementById('modal-meal-title').textContent='Editar refeição '+mealNumber;
   document.getElementById('input-meal-time').value=m.time||'';
   document.getElementById('input-meal-name').value='Refeição '+mealNumber;
   document.getElementById('meal-sequence-help').textContent='Este registro é exibido como Refeição '+mealNumber+'.';
@@ -3251,7 +3302,7 @@ function confirmDeleteMeal(){
   if(!MEAL_CTX.canEditContent||!EDIT_MEAL_ID)return;
   const mealId=EDIT_MEAL_ID;
   closeModal('modal-meal');
-  showConfirm('Excluir Refeição','Remover esta refeição do plano?',async function(){
+  showConfirm('Excluir refeição','Remover esta refeição do plano?',async function(){
     const before=MEAL_PLAN_CACHE.meals;
     MEAL_PLAN_CACHE.meals=MEAL_PLAN_CACHE.meals.filter(x=>x.id!==mealId);
     try{await persistMealPlan();renderMealsList();}
@@ -3288,184 +3339,218 @@ async function toggleMealDone(mid){
    alunos do treinador — não é por aluno. Só o treinador edita; os alunos
    (modo nuvem) só visualizam, para escolher substituições equivalentes. */
 let FOOD_OPTIONS={categories:[],misc:[]};
-let FOOD_OPTIONS_FROM='home'; // 'home' | 'trainer' — pra onde voltar
+let FOOD_OPTIONS_FROM='home'; // 'home' | 'trainer' — para onde voltar
 let EDIT_FOOD_CAT_ID=null,EDIT_FOOD_ITEM_ID=null,EDIT_FOOD_MISC_ID=null;
 let EXERCISE_OPTIONS={groups:[]};
-let EXERCISE_OPTIONS_FROM='home'; // 'home' | 'trainer' — pra onde voltar
+let EXERCISE_OPTIONS_FROM='home'; // 'home' | 'trainer' — para onde voltar
 let EDIT_EXOPT_GROUP_ID=null,EDIT_EXOPT_ITEM_ID=null;
+let SELECTED_EXERCISE_CATALOG=null;
+let EXERCISE_PICKER_SEQ=0;
+let GLOBAL_CATALOG_INIT_PROMISE=null;
+const FOOD_CATALOG_VERSION=2;
+const EXERCISE_CATALOG_VERSION=2;
+
+function ensureGlobalCatalogs(){
+  if(MODE!=='cloud'||CURRENT_USER?.role!=='trainer')return Promise.resolve();
+  if(!GLOBAL_CATALOG_INIT_PROMISE){
+    GLOBAL_CATALOG_INIT_PROMISE=Promise.all([loadFoodOptions(),loadExerciseOptions()])
+      .catch(error=>{
+        GLOBAL_CATALOG_INIT_PROMISE=null;
+        console.error('ensureGlobalCatalogs',error);
+      });
+  }
+  return GLOBAL_CATALOG_INIT_PROMISE;
+}
 
 function defaultFoodOptions(){
-  return {
+  const data={
+    catalogVersion:FOOD_CATALOG_VERSION,
     categories:[
       {id:'carb',name:'Carboidratos',items:[
-        {id:uid(),name:'Arroz',amount:'100g'},
-        {id:uid(),name:'Feijão',amount:'140g'},
-        {id:uid(),name:'Macarrão',amount:'80g'},
-        {id:uid(),name:'Batata Inglesa',amount:'180g'},
-        {id:uid(),name:'Batata Doce',amount:'140g'},
-        {id:uid(),name:'Pipoca Pronta sem Óleo',amount:'40g'},
-        {id:uid(),name:'Mel',amount:'30g'},
-        {id:uid(),name:'Milho',amount:'100g'},
-        {id:uid(),name:'Granola',amount:'30g'},
-        {id:uid(),name:'Pão de Forma Integral',amount:'2 fatias'},
-        {id:uid(),name:'Pão Francês',amount:'50g (1 unidade)'},
-        {id:uid(),name:'Pão de Manteiga',amount:'50g (1 unidade)'},
-        {id:uid(),name:'Cuscuz',amount:'100g'},
-        {id:uid(),name:'Aveia em Flocos',amount:'40g'},
-        {id:uid(),name:'Tapioca (crua)',amount:'35g'},
-        {id:uid(),name:'Mandioca',amount:'80g'},
-        {id:uid(),name:'Ervilha',amount:'150g'},
-        {id:uid(),name:'Suco de Uva Integral',amount:'200ml'}
+        {id:uid(),name:'Arroz',amount:'100 g'},
+        {id:uid(),name:'Feijão',amount:'160 g'},
+        {id:uid(),name:'Macarrão',amount:'80 g'},
+        {id:uid(),name:'Batata inglesa',amount:'130 g'},
+        {id:uid(),name:'Pipoca pronta sem óleo',amount:'40 g'},
+        {id:uid(),name:'Batata-doce',amount:'140 g'},
+        {id:uid(),name:'Mel',amount:'30 g'},
+        {id:uid(),name:'Milho',amount:'100 g'},
+        {id:uid(),name:'Granola',amount:'30 g'},
+        {id:uid(),name:'Pão de forma integral',amount:'2 fatias'},
+        {id:uid(),name:'Pão francês',amount:'50 g (1 unidade)'},
+        {id:uid(),name:'Pão Mandi',amount:'50 g (1 unidade)'},
+        {id:uid(),name:'Cuscuz',amount:'100 g'},
+        {id:uid(),name:'Aveia em flocos',amount:'40 g'},
+        {id:uid(),name:'Tapioca (crua)',amount:'35 g'},
+        {id:uid(),name:'Mandioca',amount:'80 g'},
+        {id:uid(),name:'Ervilha',amount:'150 g'},
+        {id:uid(),name:'Suco de uva integral',amount:'200 ml'}
       ]},
       {id:'prot',name:'Proteínas',items:[
-        {id:uid(),name:'Clara de Ovos',amount:'4 unidades'},
-        {id:uid(),name:'Whey Protein',amount:'20g'},
-        {id:uid(),name:'Camarão',amount:'90g'},
-        {id:uid(),name:'Sardinha Sem Óleo',amount:'80g'},
-        {id:uid(),name:'Carne Vermelha Magra',amount:'50g'},
-        {id:uid(),name:'Filé Peito de Frango',amount:'50g'},
-        {id:uid(),name:'Filé Mignon Suíno',amount:'60g'},
-        {id:uid(),name:'Filé de Tilápia',amount:'60g'},
-        {id:uid(),name:'Atum',amount:'70g'},
-        {id:uid(),name:'Filé de Pirarucu',amount:'90g'},
-        {id:uid(),name:'Bacalhau',amount:'60g'},
-        {id:uid(),name:'Fígado Bovino',amount:'50g'},
-        {id:uid(),name:'Moela de Frango',amount:'50g'},
-        {id:uid(),name:'Albumina Pura',amount:'20g'},
-        {id:uid(),name:'Proteína em Pó de Carne (Growth)',amount:'20g'},
-        {id:uid(),name:'Proteína em Pó Vegetal (Growth)',amount:'20g'}
+        {id:uid(),name:'Whey protein',amount:'20 g'},
+        {id:uid(),name:'Claras de ovos',amount:'4 unidades'},
+        {id:uid(),name:'Carne vermelha magra',amount:'50 g'},
+        {id:uid(),name:'Filé de peito de frango',amount:'50 g'},
+        {id:uid(),name:'Camarão',amount:'90 g'},
+        {id:uid(),name:'Sardinha sem óleo',amount:'80 g'},
+        {id:uid(),name:'Filé mignon suíno',amount:'60 g'},
+        {id:uid(),name:'Filé de tilápia',amount:'60 g'},
+        {id:uid(),name:'Atum',amount:'70 g'},
+        {id:uid(),name:'Filé de pirarucu',amount:'90 g'},
+        {id:uid(),name:'Bacalhau',amount:'60 g'},
+        {id:uid(),name:'Fígado bovino',amount:'50 g'},
+        {id:uid(),name:'Moela de frango',amount:'50 g'},
+        {id:uid(),name:'Albumina pura',amount:'20 g'},
+        {id:uid(),name:'Proteína de carne em pó (Growth)',amount:'20 g'},
+        {id:uid(),name:'Proteína vegetal em pó (Growth)',amount:'20 g'},
+        {id:uid(),name:'Filé de merluza cru',amount:'80 g'}
       ]},
       {id:'gord',name:'Gorduras',items:[
-        {id:uid(),name:'Abacate',amount:'100g'},
-        {id:uid(),name:'Gema de Ovo',amount:'1 unidade'},
-        {id:uid(),name:'Amendoim',amount:'15g'},
-        {id:uid(),name:'Pasta de Amendoim',amount:'15g'},
-        {id:uid(),name:'Nozes',amount:'15g'},
-        {id:uid(),name:'Avelã',amount:'10g'},
+        {id:uid(),name:'Abacate',amount:'100 g'},
+        {id:uid(),name:'Gema de ovo',amount:'1 unidade'},
+        {id:uid(),name:'Amendoim',amount:'15 g'},
+        {id:uid(),name:'Pasta de amendoim',amount:'15 g'},
+        {id:uid(),name:'Nozes',amount:'15 g'},
+        {id:uid(),name:'Avelã',amount:'10 g'},
         {id:uid(),name:'Azeite',amount:'1 colher de sopa'},
-        {id:uid(),name:'Chocolate 70%',amount:'15g'},
-        {id:uid(),name:'Queijo Minas',amount:'30g'},
-        {id:uid(),name:'Requeijão Nestlé Tradicional',amount:'30g'},
-        {id:uid(),name:'Creme de Ricota Light',amount:'60g'},
-        {id:uid(),name:'Ricota',amount:'40g'},
-        {id:uid(),name:'Leite de Coco',amount:'100g'},
-        {id:uid(),name:'Mussarela de Búfala',amount:'30g'},
-        {id:uid(),name:'Azeitona',amount:'50g'},
-        {id:uid(),name:'Manteiga Sem Sal',amount:'10g'},
-        {id:uid(),name:"Maionese Light Hellmann's",amount:'30g'},
-        {id:uid(),name:'Margarina Light',amount:'20g'},
-        {id:uid(),name:'Mussarela',amount:'30g'},
-        {id:uid(),name:'Bacon',amount:'15g'},
-        {id:uid(),name:'Cream Cheese Light',amount:'40g'},
-        {id:uid(),name:'Queijo Coalho',amount:'20g'}
+        {id:uid(),name:'Chocolate 70%',amount:'15 g'},
+        {id:uid(),name:'Queijo minas',amount:'30 g'},
+        {id:uid(),name:'Requeijão Nestlé tradicional',amount:'30 g'},
+        {id:uid(),name:'Creme de ricota light',amount:'60 g'},
+        {id:uid(),name:'Ricota',amount:'40 g'},
+        {id:uid(),name:'Leite de coco',amount:'100 g'},
+        {id:uid(),name:'Muçarela de búfala',amount:'30 g'},
+        {id:uid(),name:'Azeitona',amount:'50 g'},
+        {id:uid(),name:'Manteiga sem sal',amount:'10 g'},
+        {id:uid(),name:"Maionese light Hellmann's",amount:'30 g'},
+        {id:uid(),name:'Margarina light',amount:'20 g'},
+        {id:uid(),name:'Muçarela',amount:'30 g'},
+        {id:uid(),name:'Bacon',amount:'15 g'},
+        {id:uid(),name:'Cream cheese light',amount:'40 g'},
+        {id:uid(),name:'Queijo coalho',amount:'20 g'}
       ]},
       {id:'fruta1',name:'Frutas 01',items:[
-        {id:uid(),name:'Banana',amount:'100g'},
-        {id:uid(),name:'Mamão',amount:'200g'},
-        {id:uid(),name:'Abacaxi',amount:'200g'},
-        {id:uid(),name:'Maçã',amount:'90g'},
-        {id:uid(),name:'Morango',amount:'300g'},
-        {id:uid(),name:'Melancia',amount:'250g'},
-        {id:uid(),name:'Melão',amount:'280g'},
-        {id:uid(),name:'Manga',amount:'130g'},
-        {id:uid(),name:'Laranja',amount:'250g'},
-        {id:uid(),name:'Uva',amount:'150g'},
-        {id:uid(),name:'Água de Coco',amount:'400ml'},
-        {id:uid(),name:'Acerola',amount:'250g'},
-        {id:uid(),name:'Ameixa',amount:'190g'},
-        {id:uid(),name:'Amora',amount:'200g'},
-        {id:uid(),name:'Goiaba',amount:'160g'},
-        {id:uid(),name:'Caju',amount:'190g'},
-        {id:uid(),name:'Pera',amount:'80g'},
-        {id:uid(),name:'Mexerica',amount:'250g'},
-        {id:uid(),name:'Pêssego',amount:'170g'},
-        {id:uid(),name:'Jaca',amount:'100g'},
-        {id:uid(),name:'Seriguela',amount:'130g'},
-        {id:uid(),name:'Mirtilo',amount:'150g'}
+        {id:uid(),name:'Banana',amount:'100 g'},
+        {id:uid(),name:'Mamão',amount:'200 g'},
+        {id:uid(),name:'Abacaxi',amount:'200 g'},
+        {id:uid(),name:'Maçã',amount:'90 g'},
+        {id:uid(),name:'Morango',amount:'300 g'},
+        {id:uid(),name:'Melancia',amount:'250 g'},
+        {id:uid(),name:'Melão',amount:'280 g'},
+        {id:uid(),name:'Manga',amount:'130 g'},
+        {id:uid(),name:'Laranja',amount:'250 g'},
+        {id:uid(),name:'Uva',amount:'150 g'},
+        {id:uid(),name:'Água de coco',amount:'400 ml'},
+        {id:uid(),name:'Acerola',amount:'250 g'},
+        {id:uid(),name:'Ameixa',amount:'190 g'},
+        {id:uid(),name:'Amora',amount:'200 g'},
+        {id:uid(),name:'Goiaba',amount:'160 g'},
+        {id:uid(),name:'Caju',amount:'190 g'},
+        {id:uid(),name:'Pera',amount:'80 g'},
+        {id:uid(),name:'Mexerica',amount:'250 g'},
+        {id:uid(),name:'Pêssego',amount:'170 g'},
+        {id:uid(),name:'Jaca',amount:'100 g'},
+        {id:uid(),name:'Seriguela',amount:'130 g'},
+        {id:uid(),name:'Mirtilo',amount:'150 g'},
+        {id:uid(),name:'Figo',amount:'200 g'}
       ]},
       {id:'fruta2',name:'Frutas 02',items:[
-        {id:uid(),name:'Figo',amount:'200g'},
-        {id:uid(),name:'Banana Pacovan',amount:'80g'},
-        {id:uid(),name:'Cereja',amount:'200g'},
-        {id:uid(),name:'Maracujá',amount:'150g'},
-        {id:uid(),name:'Pinha',amount:'100g'},
-        {id:uid(),name:'Pitaya',amount:'250g'},
-        {id:uid(),name:'Damasco',amount:'200g'},
-        {id:uid(),name:'Caqui',amount:'100g'},
-        {id:uid(),name:'Jabuticaba',amount:'130g'},
-        {id:uid(),name:'Kiwi',amount:'160g'}
+        {id:uid(),name:'Cereja',amount:'200 g'},
+        {id:uid(),name:'Maracujá',amount:'150 g'},
+        {id:uid(),name:'Pinha',amount:'100 g'},
+        {id:uid(),name:'Pitaya',amount:'250 g'},
+        {id:uid(),name:'Damasco',amount:'200 g'},
+        {id:uid(),name:'Caqui',amount:'100 g'},
+        {id:uid(),name:'Jabuticaba',amount:'130 g'},
+        {id:uid(),name:'Kiwi',amount:'160 g'}
       ]}
     ],
     misc:[
-      {id:uid(),name:'Leite desnatado 250ml',note:'Subtrair ½ porção de proteína e ½ porção de carbo daquela refeição.'},
+      {id:uid(),name:'Leite desnatado — 250 ml',note:'Subtrair ½ porção de proteína e ½ porção de carboidrato daquela refeição.'},
       {id:uid(),name:'10 ovos de codorna',note:'Subtrair 1 porção de proteína e 1 porção de gordura daquela refeição.'},
-      {id:uid(),name:'Salmão 70g (grelhado ou cru)',note:'Subtrair 1 porção de proteína e 1 porção de gordura daquela refeição.'},
-      {id:uid(),name:'Açaí (fruta pura) 200g',note:'Subtrair 1 porção de carbo e 1 porção de gordura daquela refeição.'},
-      {id:uid(),name:'Leite em pó desnatado 25g',note:'Subtrair ½ porção de proteína e ½ porção de carbo daquela refeição.'},
-      {id:uid(),name:'Coxa e sobrecoxa assada sem pele 50g',note:'Subtrair 1 porção de proteína e ½ porção de gordura daquela refeição.'},
-      {id:uid(),name:'Bebida Láctea Growth 15g high Protein',note:'Subtrair 1 porção de proteína e 1 porção de carbo daquela refeição.'},
-      {id:uid(),name:'Bebida Láctea YOPRO 15g high Protein',note:'Subtrair 1 porção de proteína e 1 porção de carbo daquela refeição.'},
-      {id:uid(),name:'Iogurte líquido YOPRO 15g high Protein',note:'Subtrair 1 porção de proteína e 1 porção de carbo daquela refeição.'},
-      {id:uid(),name:'Iogurte YOPRO 15g high Protein',note:'Subtrair 1 porção de proteína daquela refeição.'},
-      {id:uid(),name:'Pão de queijo 40g',note:'Subtrair ½ porção de carbo e ½ porção de gordura daquela refeição.'},
-      {id:uid(),name:'Bolacha água e sal 30g',note:'Subtrair ½ porção de carbo e ½ porção de gordura daquela refeição.'},
-      {id:uid(),name:'Presunto de Parma 50g',note:'Subtrair 1 porção de proteína e 1 porção de gordura daquela refeição.'}
+      {id:uid(),name:'Salmão — 70 g (grelhado ou cru)',note:'Subtrair 1 porção de proteína e 1 porção de gordura daquela refeição.'},
+      {id:uid(),name:'Açaí (fruta pura) — 200 g',note:'Subtrair 1 porção de carboidrato e 1 porção de gordura daquela refeição.'},
+      {id:uid(),name:'Leite em pó desnatado — 25 g',note:'Subtrair ½ porção de proteína e ½ porção de carboidrato daquela refeição.'},
+      {id:uid(),name:'Coxa e sobrecoxa assadas sem pele — 50 g',note:'Subtrair 1 porção de proteína e ½ porção de gordura daquela refeição.'},
+      {id:uid(),name:'Bebida láctea Growth',note:'Subtrair 1 porção de proteína e 1 porção de carboidrato daquela refeição.'},
+      {id:uid(),name:'Bebida láctea YOPRO 15 g High Protein',note:'Subtrair 1 porção de proteína e 1 porção de carboidrato daquela refeição.'},
+      {id:uid(),name:'Iogurte líquido YOPRO 15 g High Protein',note:'Subtrair 1 porção de proteína e 1 porção de carboidrato daquela refeição.'},
+      {id:uid(),name:'Iogurte YOPRO 15 g High Protein',note:'Subtrair 1 porção de proteína daquela refeição.'},
+      {id:uid(),name:'Pão de queijo — 40 g',note:'Subtrair ½ porção de carboidrato e 1 porção de gordura daquela refeição.'},
+      {id:uid(),name:'Bolacha de água e sal — 30 g',note:'Subtrair 1 porção de carboidrato e ½ porção de gordura daquela refeição.'},
+      {id:uid(),name:'Presunto de Parma — 50 g',note:'Subtrair 1 porção de proteína e 1 porção de gordura daquela refeição.'}
     ]
   };
+  data.categories.forEach(category=>{
+    category.items.forEach(item=>{item.id=stableEntityId('food',category.id,normalizedName(item.name));});
+  });
+  data.misc.forEach(item=>{item.id=stableEntityId('foodmisc',normalizedName(item.name));});
+  return data;
 }
 
-const OQM='ou qualquer máquina que tiver disponível';
+const OQM='ou qualquer máquina que estiver disponível';
 function defaultExerciseOptions(){
-  const g=(name,items,note)=>({id:uid(),name,note:note===undefined?OQM:note,items:items.map(n=>({id:uid(),name:n}))});
-  return {groups:[
-    g('Supino Reto',['Supino reto barra','Supino reto halteres','Supino reto articulado','Supino reto no smith','Supino vertical articulado']),
-    g('Flexões de Braços',['Flexão de braço paralelo ao chão','Flexão de braço inclinado com apoio de banco'],null),
-    g('Supino Inclinado',['Supino inclinado barra','Supino inclinado halteres','Supino inclinado no smith','Supino Inclinado Articulado']),
-    g('Supino Declinado',['Supino declinado articulado','Supino declinado halteres','Supino declinado barra','Supino declinado no smith']),
-    g('Adução do Peitoral',['Crucifixo máquina','Crucifixo máquina articulada','Crossover polia média','Crucifixo banco reto na polia baixa','Crucifixo reto com halteres','Crucifixo banco inclinado na polia baixa','Crucifixo inclinado halteres']),
-    g('Crossovers',['Crossover polia alta','Crossover polia média','Crossover polia baixa'],null),
-    g('Puxadas',['Puxada alta barra','Barra fixa','Puxada alta articulada','Puxada alta triângulo','Puxada alta semi-ajoelhado unilateral','Puxada alta frontal polia','Puxada alta frontal articulada']),
-    g('Remadas Apoiadas',['Remada apoiada máquina','Remada apoiada banco 30° com halteres','Remada apoiada inclinada máquina']),
-    g('Remadas Livres',['Remada curvada barra','Remada curvada máquina articulada/Smith','Remada serrote tradicional','Remada serrote em cima do banco','Remada curvada unilateral barra','Remada cavalinho','Remada meadows']),
-    g('Remadas nos Cabos',['Remada polia baixa triângulo','Remada baixa articulada','Remada unilateral polia baixa','Remada baixa barra pegada pronada','Remada baixa barra pegada supinada']),
-    g('Desenvolvimentos',['Desenvolvimento halteres','Desenvolvimento barra livre','Desenvolvimento no smith','Desenvolvimento máquina articulada']),
-    g('Elevações Laterais',['Elevação lateral halteres','Elevação lateral halteres sentado','Elevação lateral polia baixa','Elevação lateral polia média (um pouco abaixo do quadril)','Elevação lateral peito apoiado no banco a 70°','Elevação lateral máquina articulada de pé','Elevação lateral máquina articulada sentado','Elevação lateral polia baixa + halteres']),
-    g('Elevações Frontais',['Elevação frontal halteres','Elevação frontal halteres apoiado no banco 45°','Elevação frontal barra','Elevação frontal barra apoiado no banco 45°','Elevação frontal máquina articulada','Elevação frontal halteres sentado banco 45°','Elevação frontal corda na polia']),
-    g('Elevações Posteriores',['Crucifixo inverso máquina','Crucifixo inverso máquina unilateral','Crucifixo inverso sentado com halteres','Crucifixo inverso de pé com halteres','Crucifixo inverso polia unilateral','Crucifixo inverso polia bilateral','Face Pull']),
-    g('Encolhimentos',['Encolhimento com halteres de pé','Encolhimento barra de pé','Encolhimento no smith','Encolhimento na polia']),
-    g('Roscas Bíceps',['Rosca direta barra','Rosca direta halteres','Rosca direta barra polia','Rosca direta unilateral polia','Rosca direta máquina','Rosca Arnold/Rosca Concentrada','Rosca apoiado no banco inclinado com a barra','Rosca apoiado no banco inclinado com halteres','Rosca alternada halteres']),
-    g('Roscas Braquial',['Rosca martelo','Rosca martelo corda polia','Rosca punho invertido (pronado)','Rosca scott','Rosca scott unilateral','Rosca scott punho neutro','Rosca scott punho neutro unilateral','Rosca scott máquina','Rosca scott polia (adaptação máquina)','Rosca scott punho invertido (pronado)','Rosca inversa polia','Rosca inversa barra/halteres']),
-    g('Roscas Bíceps Inclinadas',['Rosca banco 45°','Rosca banco 45° polia','Rosca bayesian','Rosca bayesian unilateral']),
-    g('Extensão de Tríceps',['Tríceps corda polia','Tríceps unilateral polia','Tríceps unilateral polia (segurando no triângulo)','Tríceps barra polia']),
-    g('Extensão de Tríceps Francês',['Tríceps francês halter','Tríceps francês halter unilateral','Tríceps francês barra w','Tríceps francês polia','Tríceps francês polia unilateral','Tríceps francês máquina']),
-    g('Extensão de Tríceps Testa',['Tríceps testa barra w','Tríceps testa halteres','Tríceps testa halteres unilateral','Tríceps testa polia','Tríceps testa polia unilateral','Tríceps testa máquina']),
-    g('Roscas Inversas',['Rosca inversa barra','Rosca inversa halteres','Rosca inversa halteres unilateral','Rosca inversa polia barra','Rosca inversa polia corda','Rosca inversa polia unilateral triângulo']),
-    g('Legs Press',['Leg press 45','Leg press horizontal','Leg press vertical (90°)']),
+  const g=(name,items,note)=>({
+    id:stableEntityId('exgroup',normalizedName(name)),
+    name,
+    note:note===undefined?OQM:note,
+    items:items.map(itemName=>({id:stableEntityId('exopt',normalizedName(name),normalizedName(itemName)),name:itemName}))
+  });
+  return {catalogVersion:EXERCISE_CATALOG_VERSION,groups:[
+    g('Supino Reto',['Supino reto com barra','Supino reto com halteres','Supino reto articulado','Supino reto no Smith','Supino vertical articulado']),
+    g('Flexões de Braços',['Flexão de braços paralela ao chão','Flexão de braços inclinada com apoio no banco'],null),
+    g('Supino Inclinado',['Supino inclinado com barra','Supino inclinado com halteres','Supino inclinado no Smith','Supino inclinado articulado']),
+    g('Supino Declinado',['Supino declinado articulado','Supino declinado com halteres','Supino declinado com barra','Supino declinado no Smith']),
+    g('Adução do Peitoral',['Crucifixo na máquina','Crucifixo na máquina articulada','Crossover na polia média','Crucifixo no banco reto com polia baixa','Crucifixo no banco reto com halteres','Crucifixo no banco inclinado com polia baixa','Crucifixo inclinado com halteres']),
+    g('Crossovers',['Crossover na polia alta','Crossover na polia média','Crossover na polia baixa'],null),
+    g('Puxadas',['Puxada alta com barra','Barra fixa','Puxada alta articulada','Puxada alta com triângulo','Puxada alta semi-ajoelhada unilateral','Puxada alta frontal na polia','Puxada alta frontal articulada']),
+    g('Remadas Apoiadas',['Remada apoiada na máquina','Remada apoiada no banco a 30° com halteres','Remada apoiada inclinada na máquina']),
+    g('Remadas Livres',['Remada curvada com barra','Remada curvada na máquina articulada ou no Smith','Remada serrote tradicional','Remada serrote sobre o banco','Remada curvada unilateral com barra','Remada cavalinho','Remada Meadows']),
+    g('Remadas nos Cabos',['Remada na polia baixa com triângulo','Remada baixa articulada','Remada unilateral na polia baixa','Remada baixa com barra e pegada pronada','Remada baixa com barra e pegada supinada']),
+    g('Desenvolvimentos',['Desenvolvimento com halteres','Desenvolvimento com barra livre','Desenvolvimento no Smith','Desenvolvimento na máquina articulada']),
+    g('Elevações Laterais',['Elevação lateral com halteres','Elevação lateral sentada com halteres','Elevação lateral na polia baixa','Elevação lateral na polia média (um pouco abaixo do quadril)','Elevação lateral com o peito apoiado no banco a 70°','Elevação lateral na máquina articulada, em pé','Elevação lateral sentada na máquina articulada','Elevação lateral na polia baixa com halteres']),
+    g('Elevações Frontais',['Elevação frontal com halteres','Elevação frontal com halteres e apoio no banco a 45°','Elevação frontal com barra','Elevação frontal com barra e apoio no banco a 45°','Elevação frontal na máquina articulada','Elevação frontal sentada com halteres no banco a 45°','Elevação frontal com corda na polia']),
+    g('Elevações Posteriores',['Crucifixo inverso máquina','Crucifixo inverso máquina unilateral','Crucifixo inverso sentado com halteres','Crucifixo inverso de pé com halteres','Crucifixo inverso polia unilateral','Crucifixo inverso polia bilateral','Face pull']),
+    g('Encolhimentos',['Encolhimento em pé com halteres','Encolhimento em pé com barra','Encolhimento no Smith','Encolhimento na polia']),
+    g('Roscas Bíceps',['Rosca direta com barra','Rosca direta com halteres','Rosca direta com barra na polia','Rosca direta unilateral na polia','Rosca direta na máquina','Rosca Arnold ou rosca concentrada','Rosca apoiada no banco inclinado com barra','Rosca apoiada no banco inclinado com halteres','Rosca alternada com halteres']),
+    g('Roscas para o Braquial',['Rosca martelo','Rosca martelo com corda na polia','Rosca com punho invertido (pronado)','Rosca Scott','Rosca Scott unilateral','Rosca Scott com punho neutro','Rosca Scott com punho neutro unilateral','Rosca Scott máquina','Rosca Scott na polia (adaptação da máquina)','Rosca Scott com punho invertido (pronado)','Rosca inversa na polia','Rosca inversa com barra/halteres']),
+    g('Roscas Bíceps Inclinadas',['Rosca no banco a 45°','Rosca na polia com banco a 45°','Rosca bayesian','Rosca bayesian unilateral']),
+    g('Extensão de Tríceps',['Tríceps na polia com corda','Tríceps unilateral na polia','Tríceps unilateral na polia (segurando o triângulo)','Tríceps na polia com barra']),
+    g('Extensão de Tríceps Francês',['Tríceps francês com halter','Tríceps francês unilateral com halter','Tríceps francês com barra W','Tríceps francês na polia','Tríceps francês unilateral na polia','Tríceps francês na máquina']),
+    g('Extensão de Tríceps Testa',['Tríceps testa com barra W','Tríceps testa com halteres','Tríceps testa unilateral com halter','Tríceps testa na polia','Tríceps testa unilateral na polia','Tríceps testa na máquina']),
+    g('Roscas Inversas',['Rosca inversa com barra','Rosca inversa com halteres','Rosca inversa unilateral com halter','Rosca inversa na polia com barra','Rosca inversa na polia com corda','Rosca inversa unilateral na polia com triângulo']),
+    g('Leg Press',['Leg press 45°','Leg press horizontal','Leg press vertical (90°)']),
     g('Agachamentos',['Agachamento livre','Agachamento com halteres','Agachamento no smith','Agachamento hack','Agachamento sumô']),
-    g('Afundos e Búlgaros',['Afundo com halteres','Afundo no smith','Afundo no smith com step nos dois pés','Búlgaro com halteres','Búlgaro com a barra','Búlgaro land mine','Búlgaro máquina']),
-    g('Extensoras',['Cadeira Extensora'],null),
+    g('Afundos e Búlgaros',['Afundo com halteres','Afundo no Smith','Afundo no Smith com step nos dois pés','Búlgaro com halteres','Búlgaro com barra','Búlgaro landmine','Búlgaro na máquina']),
+    g('Extensoras',['Cadeira extensora'],null),
     g('Aduções',['Cadeira adutora','Adução na polia']),
-    g('Flexoras',['Mesa flexora','Cadeira flexora','Flexora de pé','Flexão Nórdica','Flexão de pernas com halter','Flexão Nórdica no banco romano']),
-    g("Stiff's",['Stiff barra','Stiff halteres','Stiff halteres unilateral','Stiff polia','Banco Romano']),
+    g('Flexoras',['Mesa flexora','Cadeira flexora','Flexora de pé','Flexão nórdica','Flexão de pernas com halter','Flexão nórdica no banco romano']),
+    g('Stiff',['Stiff com barra','Stiff com halteres','Stiff unilateral com halter','Stiff na polia','Banco romano']),
     g('Levantamentos',['RDL','Levantamento terra','Levantamento meio-terra','Levantamento terra sumô']),
-    g('Abdutoras',['Cadeira abdutora 45°','Cadeira abdutora','Abdução 45° com caneleira','Abdução 45° no cabo','Abdução de quadril na polia','Passadas Laterais']),
-    g('Elevações Pélvicas',['Elevação pélvica livre barra','Elevação pélvica livre barra unilateral','Elevação pélvica máquina','Elevação pélvica máquina unilateral','Elevação pélvica smith','Elevação pélvica smith unilateral','Elevação pélvica livre halteres unilateral']),
-    g('Coices',['Coice polia','Coice máquina']),
-    g('Gêmeos Sóleo',['Panturrilha sentado','Panturrilha sentado no smith']),
-    g('Flexão Plantar',['Panturrilha de pé máquina','Panturrilha de pé no smith','Panturrilha no leg press','Panturrilha segurando haltere de pé'])
+    g('Abdutoras',['Cadeira abdutora 45°','Cadeira abdutora','Abdução a 45° com caneleira','Abdução a 45° no cabo','Abdução de quadril na polia','Passadas laterais']),
+    g('Elevações Pélvicas',['Elevação pélvica livre com barra','Elevação pélvica livre unilateral com barra','Elevação pélvica na máquina','Elevação pélvica unilateral na máquina','Elevação pélvica no Smith','Elevação pélvica unilateral no Smith','Elevação pélvica livre unilateral com halter']),
+    g('Coices',['Coice na polia','Coice na máquina']),
+    g('Gêmeos e Sóleo',['Panturrilha sentada','Panturrilha sentada no Smith']),
+    g('Flexão Plantar',['Panturrilha em pé na máquina','Panturrilha em pé no Smith','Panturrilha no leg press','Panturrilha em pé segurando um halter'])
   ]};
 }
 
 async function loadFoodOptions(){
-  if(MODE==='local'){FOOD_OPTIONS={categories:[],misc:[]};return;}
+  if(MODE==='local'){FOOD_OPTIONS=defaultFoodOptions();return;}
   try{
     const doc=await db.collection('foodOptions').doc('main').get();
     if(doc.exists){
-      FOOD_OPTIONS=doc.data();
-      FOOD_OPTIONS.categories=FOOD_OPTIONS.categories||[];
-      FOOD_OPTIONS.misc=FOOD_OPTIONS.misc||[];
+      const stored=doc.data()||{};
+      if(Number(stored.catalogVersion)!==FOOD_CATALOG_VERSION){
+        FOOD_OPTIONS=defaultFoodOptions();
+        if(CURRENT_USER?.role==='trainer')await db.collection('foodOptions').doc('main').set(FOOD_OPTIONS);
+      }else{
+        FOOD_OPTIONS=stored;
+        FOOD_OPTIONS.categories=Array.isArray(FOOD_OPTIONS.categories)?FOOD_OPTIONS.categories:[];
+        FOOD_OPTIONS.misc=Array.isArray(FOOD_OPTIONS.misc)?FOOD_OPTIONS.misc:[];
+      }
     }else if(CURRENT_USER?.role==='trainer'){
-      // Primeira vez: semeia a tabela padrão pra já começar populada.
+      // Primeira abertura do treinador: registra a tabela de referência.
       FOOD_OPTIONS=defaultFoodOptions();
       await db.collection('foodOptions').doc('main').set(FOOD_OPTIONS);
     }else{
@@ -3498,19 +3583,23 @@ function renderFoodOptions(){
     wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">🍎</div><div class="empty-label">Nenhuma opção cadastrada</div><div class="empty-hint">${canEdit?'Toque em + para adicionar':'Seu treinador ainda não cadastrou as opções de alimentos'}</div></div>`;
     return;
   }
-  let html=`<div class="section-header"><span class="section-label">substituições por categoria</span></div>`;
-  html+=FOOD_OPTIONS.categories.map(cat=>{
-    const items=cat.items.map(it=>`<div class="food-item-row">
-        <span class="food-item-name">${esc(it.name)}</span>
-        <span class="food-item-amount">${esc(it.amount)}</span>
-        ${canEdit?`<div class="food-item-actions"><button class="btn-icon ghost" style="width:26px;height:26px;font-size:12px" onclick="openEditFoodItem('${cat.id}','${it.id}')">✏️</button></div>`:''}
-      </div>`).join('');
-    return `<div class="food-cat-block">
-      <div class="food-cat-title"><span>${esc(cat.name)}</span>${canEdit?`<button class="btn-icon ghost" style="width:24px;height:24px;font-size:14px" onclick="openAddFoodItem('${cat.id}')">+</button>`:''}</div>
-      ${items||'<div class="empty-hint" style="text-align:left;padding:6px 0;margin:0">Nenhum item</div>'}
-    </div>`;
-  }).join('');
-  html+=`<div class="section-header"><span class="section-label">alimentos diversos (equivalências)</span></div>`;
+  let html=`<div class="options-intro">
+    <div class="options-intro-title">Opções de alimentos</div>
+    <div class="options-intro-subtitle">Cada alimento na tabela representa 1 porção do mesmo</div>
+  </div>
+  <div class="section-header"><span class="section-label">tabela de substituições por categoria</span><span class="section-label">deslize →</span></div>`;
+  const maxRows=Math.max(0,...FOOD_OPTIONS.categories.map(category=>Array.isArray(category.items)?category.items.length:0));
+  const headers=FOOD_OPTIONS.categories.map(category=>`<th>${esc(category.name)}${canEdit?`<button class="food-table-add" onclick="openAddFoodItem(${jsArg(category.id)})" aria-label="Adicionar alimento em ${esc(category.name)}">+</button>`:''}</th>`).join('');
+  const rows=Array.from({length:maxRows},(_,rowIndex)=>`<tr>${FOOD_OPTIONS.categories.map(category=>{
+    const item=(category.items||[])[rowIndex];
+    if(!item)return'<td class="food-table-empty"></td>';
+    const content=`<span class="food-table-name">${esc(item.name)}</span><span class="food-table-amount">${esc(item.amount)}</span>`;
+    return canEdit
+      ?`<td><button class="food-table-edit" onclick="openEditFoodItem(${jsArg(category.id)},${jsArg(item.id)})">${content}</button></td>`
+      :`<td>${content}</td>`;
+  }).join('')}</tr>`).join('');
+  html+=`<div class="food-table-scroll"><table class="food-options-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  html+=`<div class="section-header"><span class="section-label">alimentos diversos</span></div>`;
   if(canEdit) html+=`<button class="food-add-btn" onclick="openAddFoodMisc()">+ ADICIONAR ITEM</button>`;
   html+=FOOD_OPTIONS.misc.map(m=>`<div class="food-misc-row"${canEdit?` onclick="openEditFoodMisc('${m.id}')" style="cursor:pointer"`:''}>
       <div class="food-misc-name">${esc(m.name)}</div>
@@ -3520,7 +3609,7 @@ function renderFoodOptions(){
 }
 function openAddFoodItem(catId){
   EDIT_FOOD_CAT_ID=catId;EDIT_FOOD_ITEM_ID=null;
-  document.getElementById('modal-food-item-title').textContent='Novo Alimento';
+  document.getElementById('modal-food-item-title').textContent='Novo alimento';
   document.getElementById('input-food-item-name').value='';
   document.getElementById('input-food-item-amount').value='';
   document.getElementById('btn-delete-food-item').style.display='none';
@@ -3531,7 +3620,7 @@ function openEditFoodItem(catId,itemId){
   const cat=FOOD_OPTIONS.categories.find(c=>c.id===catId);if(!cat)return;
   const it=cat.items.find(x=>x.id===itemId);if(!it)return;
   EDIT_FOOD_CAT_ID=catId;EDIT_FOOD_ITEM_ID=itemId;
-  document.getElementById('modal-food-item-title').textContent='Editar Alimento';
+  document.getElementById('modal-food-item-title').textContent='Editar alimento';
   document.getElementById('input-food-item-name').value=it.name;
   document.getElementById('input-food-item-amount').value=it.amount;
   document.getElementById('btn-delete-food-item').style.display='block';
@@ -3554,7 +3643,7 @@ async function saveFoodItem(){
 }
 function deleteFoodItemFromModal(){
   const cat=FOOD_OPTIONS.categories.find(c=>c.id===EDIT_FOOD_CAT_ID);if(!cat)return;
-  showConfirm('Excluir Alimento','Remover este alimento da lista?',async function(){
+  showConfirm('Excluir alimento','Remover este alimento da lista?',async function(){
     cat.items=cat.items.filter(x=>x.id!==EDIT_FOOD_ITEM_ID);
     await persistFoodOptions();
     closeModal('modal-food-item');
@@ -3563,7 +3652,7 @@ function deleteFoodItemFromModal(){
 }
 function openAddFoodMisc(){
   EDIT_FOOD_MISC_ID=null;
-  document.getElementById('modal-food-misc-title').textContent='Novo Item (Diversos)';
+  document.getElementById('modal-food-misc-title').textContent='Novo item (diversos)';
   document.getElementById('input-food-misc-name').value='';
   document.getElementById('input-food-misc-note').value='';
   document.getElementById('btn-delete-food-misc').style.display='none';
@@ -3573,7 +3662,7 @@ function openAddFoodMisc(){
 function openEditFoodMisc(id){
   const m=FOOD_OPTIONS.misc.find(x=>x.id===id);if(!m)return;
   EDIT_FOOD_MISC_ID=id;
-  document.getElementById('modal-food-misc-title').textContent='Editar Item';
+  document.getElementById('modal-food-misc-title').textContent='Editar item';
   document.getElementById('input-food-misc-name').value=m.name;
   document.getElementById('input-food-misc-note').value=m.note;
   document.getElementById('btn-delete-food-misc').style.display='block';
@@ -3594,7 +3683,7 @@ async function saveFoodMisc(){
   renderFoodOptions();
 }
 function deleteFoodMiscFromModal(){
-  showConfirm('Excluir Item','Remover este item da lista?',async function(){
+  showConfirm('Excluir item','Remover este item da lista?',async function(){
     FOOD_OPTIONS.misc=FOOD_OPTIONS.misc.filter(x=>x.id!==EDIT_FOOD_MISC_ID);
     await persistFoodOptions();
     closeModal('modal-food-misc');
@@ -3609,14 +3698,20 @@ function deleteFoodMiscFromModal(){
    os GRUPOS, não só os itens dentro deles)
 ══════════════════════════════════════════════════ */
 async function loadExerciseOptions(){
-  if(MODE==='local'){EXERCISE_OPTIONS={groups:[]};return;}
+  if(MODE==='local'){EXERCISE_OPTIONS=defaultExerciseOptions();return;}
   try{
     const doc=await db.collection('exerciseOptions').doc('main').get();
     if(doc.exists){
-      EXERCISE_OPTIONS=doc.data();
-      EXERCISE_OPTIONS.groups=EXERCISE_OPTIONS.groups||[];
+      const stored=doc.data()||{};
+      if(Number(stored.catalogVersion)!==EXERCISE_CATALOG_VERSION){
+        EXERCISE_OPTIONS=defaultExerciseOptions();
+        if(CURRENT_USER?.role==='trainer')await db.collection('exerciseOptions').doc('main').set(EXERCISE_OPTIONS);
+      }else{
+        EXERCISE_OPTIONS=stored;
+        EXERCISE_OPTIONS.groups=Array.isArray(EXERCISE_OPTIONS.groups)?EXERCISE_OPTIONS.groups:[];
+      }
     }else if(CURRENT_USER?.role==='trainer'){
-      // Primeira vez: semeia a tabela padrão pra já começar populada.
+      // Primeira abertura do treinador: registra os grupos na ordem do PDF.
       EXERCISE_OPTIONS=defaultExerciseOptions();
       await db.collection('exerciseOptions').doc('main').set(EXERCISE_OPTIONS);
     }else{
@@ -3649,7 +3744,11 @@ function renderExerciseOptions(){
     wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">🔄</div><div class="empty-label">Nenhum grupo cadastrado</div><div class="empty-hint">${canEdit?'Toque em + NOVO GRUPO para adicionar':'Seu treinador ainda não cadastrou as substituições de exercícios'}</div></div>`;
     return;
   }
-  let html=`<div class="section-header"><span class="section-label">trocas por grupo de exercício</span></div>`;
+  const exerciseCount=EXERCISE_OPTIONS.groups.reduce((total,group)=>total+(Array.isArray(group.items)?group.items.length:0),0);
+  let html=`<div class="options-intro">
+    <div class="options-intro-title">Opções de exercícios</div>
+    <div class="options-intro-subtitle">${exerciseCount} exercícios organizados em ${EXERCISE_OPTIONS.groups.length} grupos, na ordem da lista de montagem de treino.</div>
+  </div><div class="section-header"><span class="section-label">catálogo por grupo de exercício</span></div>`;
   if(canEdit) html+=`<button class="food-add-btn" onclick="openAddExerciseGroup()">+ NOVO GRUPO</button>`;
   html+=EXERCISE_OPTIONS.groups.map(gr=>{
     const items=gr.items.map(it=>`<div class="food-item-row">
@@ -3670,7 +3769,7 @@ function renderExerciseOptions(){
 // Grupo (ex: "Supino Reto")
 function openAddExerciseGroup(){
   EDIT_EXOPT_GROUP_ID=null;
-  document.getElementById('modal-exercise-group-title').textContent='Novo Grupo';
+  document.getElementById('modal-exercise-group-title').textContent='Novo grupo';
   document.getElementById('input-exercise-group-name').value='';
   document.getElementById('input-exercise-group-note').value=OQM;
   document.getElementById('btn-delete-exercise-group').style.display='none';
@@ -3680,7 +3779,7 @@ function openAddExerciseGroup(){
 function openEditExerciseGroup(gid){
   const gr=EXERCISE_OPTIONS.groups.find(g=>g.id===gid);if(!gr)return;
   EDIT_EXOPT_GROUP_ID=gid;
-  document.getElementById('modal-exercise-group-title').textContent='Editar Grupo';
+  document.getElementById('modal-exercise-group-title').textContent='Editar grupo';
   document.getElementById('input-exercise-group-name').value=gr.name;
   document.getElementById('input-exercise-group-note').value=gr.note||'';
   document.getElementById('btn-delete-exercise-group').style.display='block';
@@ -3701,7 +3800,7 @@ async function saveExerciseGroup(){
   renderExerciseOptions();
 }
 function deleteExerciseGroupFromModal(){
-  showConfirm('Excluir Grupo','Excluir este grupo e todas as opções dentro dele?',async function(){
+  showConfirm('Excluir grupo','Excluir este grupo e todas as opções dentro dele?',async function(){
     EXERCISE_OPTIONS.groups=EXERCISE_OPTIONS.groups.filter(g=>g.id!==EDIT_EXOPT_GROUP_ID);
     await persistExerciseOptions();
     closeModal('modal-exercise-group');
@@ -3711,7 +3810,7 @@ function deleteExerciseGroupFromModal(){
 // Item dentro de um grupo (ex: "Supino reto barra")
 function openAddExOptItem(gid){
   EDIT_EXOPT_GROUP_ID=gid;EDIT_EXOPT_ITEM_ID=null;
-  document.getElementById('modal-exercise-option-item-title').textContent='Nova Opção';
+  document.getElementById('modal-exercise-option-item-title').textContent='Nova opção';
   document.getElementById('input-exercise-option-item-name').value='';
   document.getElementById('btn-delete-exercise-option-item').style.display='none';
   openModal('modal-exercise-option-item');
@@ -3721,7 +3820,7 @@ function openEditExOptItem(gid,itemId){
   const gr=EXERCISE_OPTIONS.groups.find(g=>g.id===gid);if(!gr)return;
   const it=gr.items.find(x=>x.id===itemId);if(!it)return;
   EDIT_EXOPT_GROUP_ID=gid;EDIT_EXOPT_ITEM_ID=itemId;
-  document.getElementById('modal-exercise-option-item-title').textContent='Editar Opção';
+  document.getElementById('modal-exercise-option-item-title').textContent='Editar opção';
   document.getElementById('input-exercise-option-item-name').value=it.name;
   document.getElementById('btn-delete-exercise-option-item').style.display='block';
   openModal('modal-exercise-option-item');
@@ -3742,7 +3841,7 @@ async function saveExOptItem(){
 }
 function deleteExOptItemFromModal(){
   const gr=EXERCISE_OPTIONS.groups.find(g=>g.id===EDIT_EXOPT_GROUP_ID);if(!gr)return;
-  showConfirm('Excluir Opção','Remover esta opção da lista?',async function(){
+  showConfirm('Excluir opção','Remover esta opção da lista?',async function(){
     gr.items=gr.items.filter(x=>x.id!==EDIT_EXOPT_ITEM_ID);
     await persistExerciseOptions();
     closeModal('modal-exercise-option-item');
@@ -3880,7 +3979,9 @@ async function handlePhotoSelected(ev){
       }
     }
     if(failure){
-      const partial=uploaded?uploaded+' de '+files.length+' foto(s) foram enviadas antes da falha.\n\n':'';
+      const partial=uploaded
+        ?(uploaded===1?'1 de '+files.length+' foto foi enviada antes da falha.\n\n':uploaded+' de '+files.length+' fotos foram enviadas antes da falha.\n\n')
+        :'';
       alert(partial+cloudWriteError(failure,'enviar as fotos'));
     }else{
       showToast(uploaded===1?'✓ Evidência arquivada':'✓ '+uploaded+' evidências arquivadas');
@@ -3900,7 +4001,7 @@ async function deleteCurrentPhoto(){
   if(!CUR_PHOTO_ID)return;
   const pid=CUR_PHOTO_ID;
   closeModal('modal-photo-view');
-  showConfirm('Excluir Foto','Apagar esta foto de progresso?',async function(){
+  showConfirm('Excluir foto','Apagar esta foto de progresso?',async function(){
     try{await db.collection('progressPhotos').doc(pid).delete();}
     catch(e){alert('Erro ao excluir foto: '+e.message);return;}
     await loadPhotos();
@@ -3945,7 +4046,7 @@ let QUESTIONNAIRE_TARGET_NAME='';
 
 /* ── Questionário padrão (fixo) ────────────────────────────────────────
    Modelo semanal de acompanhamento. Fica agrupado em seções para o aluno
-   preencher; ao salvar, vira um array plano de perguntas (compatível com
+   preencher; ao salvar, transforma-se em um array plano de perguntas (compatível com
    o restante do fluxo) + um mapa `sectionAt` indicando em qual índice
    cada seção começa, usado só para exibir os títulos ao responder/ver. */
 const DEFAULT_QUESTIONNAIRE_SECTIONS=[
@@ -4053,7 +4154,7 @@ function renderQuestList(cache,listId,emptyId,fromTrainer){
     const tap=q.answered?`viewQuestionnaire('${esc(q.id)}',${fromTrainer})`:(fromTrainer?'':`openAnswerQuestionnaire('${esc(q.id)}')`);
     return`<div class="quest-card" onclick="${tap}">
       <div class="quest-card-top"><span class="quest-card-date">${d}</span><span class="quest-status ${q.answered?'answered':'pending'}">${q.answered?'Respondido':'Aguardando'}</span></div>
-      <div class="quest-card-preview">${q.questions.length} pergunta(s)</div>
+      <div class="quest-card-preview">${q.questions.length} ${q.questions.length===1?'pergunta':'perguntas'}</div>
     </div>`;
   }).join('');
 }
@@ -4161,13 +4262,13 @@ function buildSessions(e,elId,readonly,homeWid,ws){
       const below=target&&Number(s.reps)<target.targetMin;
       return`<tr><td><span class="set-idx">${i+1}</span></td><td><span class="set-chip">${target?esc(prescribedRangeLabel(target)):'—'}</span></td><td><span class="ger-pill">${target?formatGerLevel(target.ger)+' '+renderGerMeter(target.ger):'—'}</span></td><td><span class="set-chip">${Number(s.weight)||0} kg</span></td><td><span class="set-chip ${inRange?'set-performance-ok':below?'set-performance-low':''}">${Number(s.reps)||0}×</span></td></tr>`;
     }).join('');
-    // Séries de treino/exercício já excluído não têm "dono" pra resolver edição/exclusão —
+    // Séries de treino/exercício já excluído não têm "dono" para resolver edição/exclusão —
     // ficam visíveis (histórico preservado) mas só leitura.
     const del=(readonly||sess._archived)?'':
       `<button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px;margin-right:2px"
         onclick="openEditSession('${esc(sess.id)}')">✏️</button>
        <button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px"
-        onclick="showConfirm('Excluir Sessão','Apagar este registro?',function(){deleteSession('${esc(sess.id)}');})">🗑</button>`;
+        onclick="showConfirm('Excluir sessão','Apagar este registro?',function(){deleteSession('${esc(sess.id)}');})">🗑</button>`;
     const srcBadge=sess._archived
       ?`<span style="font-size:10px;color:var(--text-muted);background:rgba(255,255,255,.06);border-radius:4px;padding:2px 7px;margin-left:5px;font-family:'DM Mono',monospace;">treino anterior</span>`
       :(homeWid&&sess._wid&&sess._wid!==homeWid)
@@ -4264,7 +4365,7 @@ function deleteCurrentExercise(){
   const msg=MODE==='local'
     ?'Excluir "'+exerciseName+'"? Todo o histórico será apagado.'
     :'Excluir "'+exerciseName+'"? O histórico de séries fica preservado e volta a aparecer se você recriar um exercício com o mesmo nome.';
-  showConfirm('Excluir Exercício',msg,async()=>{
+  showConfirm('Excluir exercício',msg,async()=>{
     if(!beginAction('delete-exercise-'+eid))return;
     try{
       if(MODE==='local'){
@@ -4351,12 +4452,12 @@ function buildColorPicker(){
   ).join('');
 }
 function pickColor(c){SEL_COLOR=c;document.querySelectorAll('.color-swatch').forEach(d=>d.classList.toggle('active',d.dataset.color===c));}
-function openAddWorkoutModal(){MODAL_TARGET='self';EDIT_W=null;WORKOUT_CREATE_ID=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo Protocolo';document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
-function openEditWorkout(id){const w=getW(id);if(!w)return;MODAL_TARGET='self';EDIT_W=id;WORKOUT_CREATE_ID=null;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar Protocolo';document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
+function openAddWorkoutModal(){MODAL_TARGET='self';EDIT_W=null;WORKOUT_CREATE_ID=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo protocolo';document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
+function openEditWorkout(id){const w=getW(id);if(!w)return;MODAL_TARGET='self';EDIT_W=id;WORKOUT_CREATE_ID=null;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar protocolo';document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
 
 // Versões usadas pelo treinador para montar o treino do aluno (VIEW_STUDENT)
-function openAddWorkoutModalTs(){if(!VIEW_STUDENT)return;MODAL_TARGET='student';EDIT_W=null;WORKOUT_CREATE_ID=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo Protocolo — '+VIEW_STUDENT.name;document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
-function openEditWorkoutTs(id){if(!VIEW_STUDENT)return;const w=VIEW_STUDENT.workouts.find(x=>x.id===id);if(!w)return;MODAL_TARGET='student';EDIT_W=id;WORKOUT_CREATE_ID=null;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar Protocolo — '+VIEW_STUDENT.name;document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
+function openAddWorkoutModalTs(){if(!VIEW_STUDENT)return;MODAL_TARGET='student';EDIT_W=null;WORKOUT_CREATE_ID=null;SEL_COLOR=PALETTE[0];document.getElementById('modal-workout-title').textContent='Novo protocolo — '+VIEW_STUDENT.name;document.getElementById('input-workout-name').value='';buildColorPicker();openModal('modal-workout');setTimeout(()=>document.getElementById('input-workout-name').focus(),300);}
+function openEditWorkoutTs(id){if(!VIEW_STUDENT)return;const w=VIEW_STUDENT.workouts.find(x=>x.id===id);if(!w)return;MODAL_TARGET='student';EDIT_W=id;WORKOUT_CREATE_ID=null;SEL_COLOR=w.color;document.getElementById('modal-workout-title').textContent='Editar protocolo — '+VIEW_STUDENT.name;document.getElementById('input-workout-name').value=w.name;buildColorPicker();openModal('modal-workout');}
 
 async function saveWorkout(){
   const name=document.getElementById('input-workout-name').value.trim();
@@ -4423,13 +4524,88 @@ async function saveWorkout(){
 }
 
 // Exercise
-function openAddExerciseModal(){MODAL_TARGET='self';EXERCISE_CREATE_ID=null;document.getElementById('modal-exercise-title').textContent='Novo Exercício';document.getElementById('input-exercise-name').value='';openModal('modal-exercise');setTimeout(()=>document.getElementById('input-exercise-name').focus(),300);}
-// Versão usada pelo treinador para adicionar exercício ao treino do aluno (VIEW_STUDENT_WORKOUT)
-function openAddExerciseModalTs(){if(!VIEW_STUDENT_WORKOUT)return;MODAL_TARGET='student';EXERCISE_CREATE_ID=null;document.getElementById('modal-exercise-title').textContent='Novo Exercício — '+(VIEW_STUDENT?.name||'aluno');document.getElementById('input-exercise-name').value='';openModal('modal-exercise');setTimeout(()=>document.getElementById('input-exercise-name').focus(),300);}
+function resetExerciseCatalogPicker(){
+  SELECTED_EXERCISE_CATALOG=null;
+  const groupSelect=document.getElementById('input-exercise-catalog-group');
+  const itemSelect=document.getElementById('input-exercise-catalog-item');
+  groupSelect.disabled=true;
+  groupSelect.innerHTML='<option value="">Carregando grupos...</option>';
+  itemSelect.disabled=true;
+  itemSelect.innerHTML='<option value="">Selecione primeiro um grupo</option>';
+  document.getElementById('exercise-catalog-help').textContent='Carregando o catálogo registrado no banco de dados...';
+}
+async function prepareExerciseCatalogPicker(){
+  const sequence=++EXERCISE_PICKER_SEQ;
+  resetExerciseCatalogPicker();
+  try{
+    await loadExerciseOptions();
+    if(sequence!==EXERCISE_PICKER_SEQ||!document.getElementById('modal-exercise').classList.contains('open'))return;
+    const groups=Array.isArray(EXERCISE_OPTIONS.groups)?EXERCISE_OPTIONS.groups:[];
+    const groupSelect=document.getElementById('input-exercise-catalog-group');
+    groupSelect.innerHTML='<option value="">Selecione um grupo</option>'+groups.map(group=>`<option value="${esc(group.id)}">${esc(group.name)}</option>`).join('');
+    groupSelect.disabled=!groups.length;
+    const exerciseCount=groups.reduce((total,group)=>total+(Array.isArray(group.items)?group.items.length:0),0);
+    document.getElementById('exercise-catalog-help').textContent=groups.length
+      ?exerciseCount+' exercícios em '+groups.length+' grupos, na ordem do PDF.'
+      :'Nenhum exercício foi cadastrado no catálogo.';
+  }catch(error){
+    console.error('prepareExerciseCatalogPicker',error);
+    document.getElementById('exercise-catalog-help').textContent='Não foi possível carregar o catálogo. Você ainda pode digitar o exercício manualmente.';
+  }
+}
+function renderExerciseCatalogItems(){
+  SELECTED_EXERCISE_CATALOG=null;
+  const groupId=document.getElementById('input-exercise-catalog-group').value;
+  const itemSelect=document.getElementById('input-exercise-catalog-item');
+  const group=(EXERCISE_OPTIONS.groups||[]).find(entry=>entry.id===groupId);
+  if(!group){
+    itemSelect.disabled=true;
+    itemSelect.innerHTML='<option value="">Selecione primeiro um grupo</option>';
+    return;
+  }
+  itemSelect.disabled=false;
+  itemSelect.innerHTML='<option value="">Selecione um exercício</option>'+group.items.map(item=>`<option value="${esc(item.id)}">${esc(item.name)}</option>`).join('');
+}
+function selectCatalogExercise(){
+  const groupId=document.getElementById('input-exercise-catalog-group').value;
+  const itemId=document.getElementById('input-exercise-catalog-item').value;
+  const group=(EXERCISE_OPTIONS.groups||[]).find(entry=>entry.id===groupId);
+  const item=group?.items?.find(entry=>entry.id===itemId);
+  if(!group||!item){SELECTED_EXERCISE_CATALOG=null;return;}
+  SELECTED_EXERCISE_CATALOG={groupId:group.id,itemId:item.id,name:item.name};
+  document.getElementById('input-exercise-name').value=item.name;
+}
+function syncCatalogSelectionWithName(){
+  if(!SELECTED_EXERCISE_CATALOG)return;
+  const typed=document.getElementById('input-exercise-name').value;
+  if(normalizedName(typed)!==normalizedName(SELECTED_EXERCISE_CATALOG.name)){
+    SELECTED_EXERCISE_CATALOG=null;
+    document.getElementById('input-exercise-catalog-item').value='';
+  }
+}
+async function openAddExerciseModal(){
+  MODAL_TARGET='self';EXERCISE_CREATE_ID=null;
+  document.getElementById('modal-exercise-title').textContent='Novo exercício';
+  document.getElementById('input-exercise-name').value='';
+  openModal('modal-exercise');
+  await prepareExerciseCatalogPicker();
+}
+// Versão usada pelo treinador para adicionar um exercício ao treino do aluno.
+async function openAddExerciseModalTs(){
+  if(!VIEW_STUDENT_WORKOUT)return;
+  MODAL_TARGET='student';EXERCISE_CREATE_ID=null;
+  document.getElementById('modal-exercise-title').textContent='Novo exercício — '+(VIEW_STUDENT?.name||'aluno');
+  document.getElementById('input-exercise-name').value='';
+  openModal('modal-exercise');
+  await prepareExerciseCatalogPicker();
+}
 
 async function saveExercise(){
   const name=document.getElementById('input-exercise-name').value.trim();
   if(!name){alert('Digite o nome do exercício!');return;}
+  const catalogSelection=SELECTED_EXERCISE_CATALOG&&normalizedName(SELECTED_EXERCISE_CATALOG.name)===normalizedName(name)
+    ?{catalogGroupId:SELECTED_EXERCISE_CATALOG.groupId,catalogItemId:SELECTED_EXERCISE_CATALOG.itemId}
+    :{catalogGroupId:'',catalogItemId:''};
   const targetWorkout=MODAL_TARGET==='student'?VIEW_STUDENT_WORKOUT:getW(CUR_WORKOUT);
   if(!targetWorkout)return;
   if((targetWorkout.exercises||[]).some(e=>normalizedName(e.name)===normalizedName(name))){
@@ -4443,7 +4619,7 @@ async function saveExercise(){
       if(!VIEW_STUDENT||!VIEW_STUDENT_WORKOUT)return;
       const wid=VIEW_STUDENT_WORKOUT.id;
       const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=stableEntityId('e',VIEW_STUDENT.uid,wid,normalizedName(name)));
-      await db.collection('exercises').doc(docId).set({userId:VIEW_STUDENT.uid,workoutId:wid,name,videoUrl:'',weeklyPlan:{},createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await db.collection('exercises').doc(docId).set({userId:VIEW_STUDENT.uid,workoutId:wid,name,videoUrl:'',weeklyPlan:{},...catalogSelection,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       EXERCISE_CREATE_ID=null;
       closeModal('modal-exercise');
       showToast('✓ Exercício salvo');
@@ -4455,15 +4631,15 @@ async function saveExercise(){
     if(MODE==='local'){
       const w=lw(CUR_WORKOUT);if(!w)return;
       const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=uid());
-      if(!w.exercises.some(e=>e.id===docId))w.exercises.push({id:docId,name,sessions:[],videoUrl:'',weeklyPlan:{}});
+      if(!w.exercises.some(e=>e.id===docId))w.exercises.push({id:docId,name,sessions:[],videoUrl:'',weeklyPlan:{},...catalogSelection});
       EXERCISE_CREATE_ID=null;
       localSave();showToast('✓ Exercício salvo offline');closeModal('modal-exercise');renderWorkout();
     }else{
       const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=stableEntityId('e',CURRENT_USER.uid,CUR_WORKOUT,normalizedName(name)));
-      await db.collection('exercises').doc(docId).set({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,videoUrl:'',weeklyPlan:{},createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await db.collection('exercises').doc(docId).set({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,videoUrl:'',weeklyPlan:{},...catalogSelection,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       const w=getW(CUR_WORKOUT);
       if(w&&!w.exercises.some(e=>e.id===docId)){
-        w.exercises.push({id:docId,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[],videoUrl:'',weeklyPlan:{}});
+        w.exercises.push({id:docId,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,sessions:[],videoUrl:'',weeklyPlan:{},...catalogSelection});
         w.exercises.sort(stableCreatedOrder);
       }
       EXERCISE_CREATE_ID=null;
@@ -4683,6 +4859,9 @@ async function saveSession(){
 ══════════════════════════════════════════════════ */
 let TRAINER_LIST_LOAD_SEQ=0;
 async function renderTrainer(){
+  // Garante que os catálogos globais existam no Firestore assim que o
+  // treinador entrar, antes mesmo de abrir o seletor de exercícios.
+  ensureGlobalCatalogs();
   const loadSeq=++TRAINER_LIST_LOAD_SEQ;
   document.getElementById('trainer-chip-name').textContent=CURRENT_USER?.name||'treinador';
   try{
@@ -4761,16 +4940,16 @@ async function renderTrainerStudent(s){
     const nameCounts={};
     workouts.forEach(w=>{const key=normalizedName(w.name);nameCounts[key]=(nameCounts[key]||0)+1;});
     const duplicateCount=Object.values(nameCounts).reduce((sum,n)=>sum+Math.max(0,n-1),0);
-    const duplicateWarning=duplicateCount?`<div class="session-block" style="border-color:var(--warn);margin-bottom:12px"><div style="font-size:13px;color:var(--warn);margin-bottom:8px">⚠ ${duplicateCount} treino(s) duplicado(s) encontrado(s)</div><button class="btn-add-set" onclick="showConfirm('Corrigir Duplicatas','Unir treinos de mesmo nome sem apagar o histórico de séries?',cleanDuplicates)">CORRIGIR DUPLICATAS</button></div>`:'';
+    const duplicateWarning=duplicateCount?`<div class="session-block" style="border-color:var(--warn);margin-bottom:12px"><div style="font-size:13px;color:var(--warn);margin-bottom:8px">⚠ ${duplicateCount===1?'1 treino duplicado encontrado':duplicateCount+' treinos duplicados encontrados'}</div><button class="btn-add-set" onclick="showConfirm('Corrigir duplicatas','Unir treinos com o mesmo nome sem apagar o histórico de séries?',cleanDuplicates)">CORRIGIR DUPLICATAS</button></div>`:'';
     list.innerHTML=duplicateWarning+workouts.map(w=>{
       const last=lastDate(w);
-      const meta=last?'Último: '+fmt(last):w.exercises.length+' exercício(s)';
+      const meta=last?'Último: '+fmt(last):w.exercises.length+' '+(w.exercises.length===1?'exercício':'exercícios');
       const wid=esc(w.id);
       return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openTsWorkout('${wid}')">
         <div class="workout-card-info"><div class="archive-file-kicker">PROTOCOLO PRESCRITO</div><div class="workout-card-name">${esc(w.name)}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
         <div class="workout-card-actions">
           <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkoutTs('${wid}')" title="Editar">✏️</button>
-          <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir Treino','Excluir este treino? O histórico de séries dos exercícios fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsWorkout('${wid}');})" title="Excluir">🗑</button>
+          <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino? O histórico de séries dos exercícios fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsWorkout('${wid}');})" title="Excluir">🗑</button>
         </div>
       </div>`;
     }).join('');
@@ -4799,7 +4978,7 @@ function renderTsWorkout(w){
     return`<div class="exercise-row" onclick="openTsExercise('${eid}')">
       <div class="exercise-row-dot"></div>
       <div class="exercise-row-info"><div class="exercise-row-name">${esc(e.name)}</div><div class="exercise-row-last">${info}</div></div>
-      <button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px" onclick="event.stopPropagation();showConfirm('Excluir Exercício','Excluir este exercício? O histórico de séries fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsExercise('${eid}');})" title="Excluir">🗑</button>
+      <button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px" onclick="event.stopPropagation();showConfirm('Excluir exercício','Excluir este exercício? O histórico de séries fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsExercise('${eid}');})" title="Excluir">🗑</button>
       <div class="exercise-row-arrow">›</div>
     </div>`;
   }).join('');
@@ -4955,7 +5134,24 @@ async function saveEditSession(){
 function showConfirm(title,text,cb){
   document.getElementById('confirm-title').textContent=title;
   document.getElementById('confirm-text').textContent=text;
-  document.getElementById('confirm-ok-btn').onclick=function(){cb();closeModal('modal-confirm');};
+  const button=document.getElementById('confirm-ok-btn');
+  button.disabled=false;
+  button.textContent='CONFIRMAR';
+  button.onclick=async function(){
+    if(button.disabled)return;
+    button.disabled=true;
+    button.textContent='PROCESSANDO...';
+    try{
+      const completed=await cb();
+      if(completed!==false)closeModal('modal-confirm');
+    }catch(error){
+      console.error('confirm action',error);
+      alert('Não foi possível concluir a ação: '+error.message);
+    }finally{
+      button.disabled=false;
+      button.textContent='CONFIRMAR';
+    }
+  };
   openModal('modal-confirm');
 }
 
@@ -5051,7 +5247,7 @@ else initApp();
 // ── Registra o Service Worker (PWA / cache offline) ──────────
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw_3.js',{updateViaCache:'none'})
+    navigator.serviceWorker.register('sw_4.js',{updateViaCache:'none'})
       .then(r=>{r.update().catch(()=>{});console.log('SW registrado:', r.scope);})
       .catch(e=>console.warn('SW falhou:', e));
   });
