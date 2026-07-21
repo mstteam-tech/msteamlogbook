@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v9.5: inicialização resiliente, recuperação de cache, segurança reforçada e playlist local aleatória. -->
+<!-- Team Bulls v9.6: abertura imediata, sessão em segundo plano, recuperação de cache, segurança reforçada e playlist local aleatória. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -14,7 +14,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"/>
 <title>Team Bulls</title>
-<link href="manifest_9.json" rel="manifest"/>
+<link href="manifest_10.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v8-2.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="icon-192-v8-2.png" rel="apple-touch-icon"/>
@@ -45,14 +45,24 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
       if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.allSettled(regs.filter(r=>location.href.startsWith(r.scope)).map(r=>r.unregister()));}
       if('caches' in window){const keys=await caches.keys();await Promise.allSettled(keys.filter(k=>k.startsWith('team-bulls-')).map(k=>caches.delete(k)));}
     }catch(error){console.warn('Falha ao limpar atualização antiga:',error);}
-    location.replace('./index.html?recuperado='+Date.now());
+    location.replace('./recuperar.html?auto=1&t='+Date.now());
   }
   function localMode(){
     try{localStorage.setItem('teamms_offline_mode','guest');localStorage.setItem('teamms_offline_pref','1');}catch(error){}
     location.replace('./index.html?local='+Date.now());
   }
   window.TeamBullsRecovery={reveal,hide,retry:()=>location.reload(),clearCachesAndReload,localMode};
-  revealTimer=setTimeout(()=>{if(loadingActive())reveal('A inicialização está demorando. Você pode tentar novamente ou corrigir o cache do aplicativo.');},9000);
+  revealTimer=setTimeout(()=>{if(loadingActive())reveal('A sessão está sendo restaurada em segundo plano. Você já pode entrar ou usar o modo local.');},2500);
+  // Última barreira contra carregamento infinito, inclusive se outro trecho do
+  // aplicativo falhar antes de registrar os próprios timeouts.
+  setTimeout(()=>{
+    if(!loadingActive())return;
+    const loading=document.getElementById('screen-loading');
+    const auth=document.getElementById('screen-auth');
+    loading?.classList.remove('active');
+    auth?.classList.add('active');
+    reveal('A verificação demorou, mas a tela foi liberada. A sessão continuará sendo restaurada em segundo plano.');
+  },1600);
   window.addEventListener('error',event=>{
     window.__teamBullsBootErrors.push(String(event?.message||'erro de inicialização'));
     if(loadingActive())reveal('O aplicativo encontrou uma falha ao iniciar. Seus registros locais foram preservados.');
@@ -83,6 +93,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     /* SCREENS */
     .screen{display:none;min-height:100vh;padding-bottom:100px;}
     .screen.active{display:block;animation:fadeSlide .22s ease;}
+    #screen-loading.active~.fab-wrap{display:none!important;}
     @keyframes fadeSlide{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
@@ -685,7 +696,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 </head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V9.5</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V9.6</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
@@ -1485,27 +1496,42 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 /* ══════════════════════════════════════════════════
    INICIALIZAÇÃO RESILIENTE E LIMITES DE REDE
 ══════════════════════════════════════════════════ */
-const APP_VERSION='9.5';
-const BOOT_TIMEOUT_MS=14000;
-const PROFILE_READ_TIMEOUT_MS=4500;
-const CLOUD_READ_TIMEOUT_MS=12000;
-const CLOUD_WRITE_TIMEOUT_MS=10000;
+const APP_VERSION='9.6';
+const AUTH_UI_FALLBACK_MS=850;
+const BOOT_TIMEOUT_MS=3200;
+const PROFILE_READ_TIMEOUT_MS=2500;
+const CLOUD_READ_TIMEOUT_MS=9000;
+const CLOUD_WRITE_TIMEOUT_MS=9000;
 let BOOT_STARTED=false;
 let BOOT_SETTLED=false;
 let BOOT_WATCHDOG=null;
+let AUTH_UI_FALLBACK_TIMER=null;
 function storageGet(key){try{return localStorage.getItem(key);}catch(error){return null;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(error){return false;}}
 function storageRemove(key){try{localStorage.removeItem(key);return true;}catch(error){return false;}}
 function setLoadingMessage(message){const el=document.querySelector('#screen-loading .loading-label');if(el)el.textContent=message||'carregando...';}
-function finishBoot(){BOOT_SETTLED=true;clearTimeout(BOOT_WATCHDOG);window.TeamBullsRecovery?.hide?.();}
+function finishBoot(){
+  BOOT_SETTLED=true;
+  clearTimeout(BOOT_WATCHDOG);
+  clearTimeout(AUTH_UI_FALLBACK_TIMER);
+  window.TeamBullsRecovery?.hide?.();
+}
 function startBootWatchdog(){
-  BOOT_SETTLED=false;clearTimeout(BOOT_WATCHDOG);
+  BOOT_SETTLED=false;
+  clearTimeout(BOOT_WATCHDOG);
+  clearTimeout(AUTH_UI_FALLBACK_TIMER);
+  // A tela de autenticação é utilizável mesmo enquanto o Firebase termina de
+  // restaurar a sessão. Assim o aluno nunca fica bloqueado por uma consulta lenta.
+  AUTH_UI_FALLBACK_TIMER=setTimeout(()=>{
+    if(BOOT_SETTLED||!document.getElementById('screen-loading')?.classList.contains('active'))return;
+    showScreen('screen-auth');
+  },AUTH_UI_FALLBACK_MS);
+  // Proteção independente para qualquer erro inesperado durante a inicialização.
   BOOT_WATCHDOG=setTimeout(()=>{
     if(BOOT_SETTLED||!document.getElementById('screen-loading')?.classList.contains('active'))return;
     AUTH_HANDLED=false;
     showScreen('screen-auth');
-    showAuthError('login-error','O servidor demorou para responder. Tente novamente, use o acesso offline validado ou o modo local.');
-    window.TeamBullsRecovery?.reveal?.('A conexão não respondeu no tempo esperado. O aplicativo saiu do carregamento para não ficar travado.');
+    window.TeamBullsRecovery?.reveal?.('A sessão continuará sendo verificada em segundo plano. Você já pode entrar ou usar o modo local.');
   },BOOT_TIMEOUT_MS);
 }
 function withTimeout(task,ms,label='operação'){
@@ -2341,7 +2367,7 @@ function populateHistoryFromWorkouts(workouts){
   const sessions=[];(workouts||[]).forEach(w=>(w.exercises||[]).forEach(ex=>(ex.sessions||[]).forEach(session=>sessions.push({...session,exerciseName:session.exerciseName||ex.name}))));
   HISTORY_BY_NAME=buildHistoryByName(sessions);
 }
-function restoreCachedStudentAccess(user,reason){
+function restoreCachedStudentAccess(user,reason,{silent=false}={}){
   const profile=loadCachedUserProfile(user?.uid||'');
   if(!profile||profile.role!=='student')return false;
   const previousLastUid=storageGet('teamms_last_user_uid')||'';
@@ -2358,7 +2384,7 @@ function restoreCachedStudentAccess(user,reason){
   const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent=inactive?'// protocolo pausado · modo local':'// sessão recuperada · sem conexão';
   const chip=document.getElementById('user-chip-name');if(chip)chip.textContent=profile.name||'aluno';
   renderHome();showScreen('screen-home');
-  showToast(inactive?'Consultoria pausada — usando o último plano salvo.':'Servidor indisponível — usando os últimos dados salvos neste aparelho.',true);
+  if(!silent)showToast(inactive?'Consultoria pausada — usando o último plano salvo.':'Servidor indisponível — usando os últimos dados salvos neste aparelho.',true);
   console.warn('Acesso restaurado do cache local:',reason?.code||reason?.message||reason||'sem rede');
   return true;
 }
@@ -2618,79 +2644,97 @@ async function getUserProfileWithRetry(userId){
   return null;
 }
 
+let AUTH_CALLBACK_SEEN=false;
+let AUTH_PROCESSING_UID='';
+async function handleAuthStateUser(user){
+  AUTH_CALLBACK_SEEN=true;
+  if(!user){
+    AUTH_HANDLED=false;
+    AUTH_PROCESSING_UID='';
+    if(AUTH_EXPECTED_LOCAL_SIGNOUT)return;
+    stopProfileGuard();CURRENT_USER=null;document.body.classList.remove('trainer-desktop');VIEW_STUDENT=null;VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_EXERCISE=null;
+    if(!['local-inactive','local-guest','offline-registered'].includes(ACCESS_MODE))showScreen('screen-auth');
+    return;
+  }
+  if(AUTH_PROCESSING_UID===user.uid)return;
+  if(AUTH_HANDLED&&CURRENT_USER?.uid===user.uid&&ACCESS_MODE!=='offline-registered')return;
+  AUTH_PROCESSING_UID=user.uid;
+  AUTH_HANDLED=true;
+  setLoadingMessage('validando perfil...');
+
+  // Assim que o Firebase confirma qual usuário está autenticado, o aluno pode
+  // abrir imediatamente o último plano local. Vídeos e gravações na nuvem só são
+  // liberados depois que o perfil remoto é validado.
+  const cachedShellOpened=restoreCachedStudentAccess(user,{code:'team-bulls/fast-session'},{silent:true});
+  try{
+    let snap;
+    try{snap=await getUserProfileWithRetry(user.uid);}
+    catch(profileError){if(cachedShellOpened||restoreCachedStudentAccess(user,profileError))return;throw profileError;}
+    if(!snap){
+      AUTH_HANDLED=false;
+      await withTimeout(auth.signOut(),2500,'saída de conta sem perfil').catch(()=>{});
+      bootToAuth('O cadastro desta conta está incompleto. Entre em contato com o treinador.');
+      return;
+    }
+    CURRENT_USER={...snap.data(),uid:user.uid};
+    if(!['trainer','student'].includes(CURRENT_USER.role))throw new Error('Perfil sem função válida.');
+    CURRENT_USER.status=CURRENT_USER.status==='inactive'?'inactive':'active';
+    cacheUserProfile(CURRENT_USER);updateOfflineCredentialProfile(CURRENT_USER);
+    configureAuthPersistence(CURRENT_USER.role);
+
+    if(CURRENT_USER.role==='trainer'){
+      MODE='cloud';ACCESS_MODE='trainer';INACTIVE_NAME='';INACTIVE_UID='';
+      document.body.classList.add('trainer-desktop');
+      showScreen('screen-trainer');startProfileGuard(user.uid);
+      renderTrainer();
+      return;
+    }
+
+    const previousLastUid=storageGet('teamms_last_user_uid')||'';
+    const pendingOwner=storageGet('teamms_migration_owner')||'';
+    const allowLegacy=!previousLastUid||previousLastUid===user.uid||pendingOwner===user.uid;
+    selectLocalOwner(user.uid,allowLegacy);storageSet('teamms_last_user_uid',user.uid);
+
+    if(CURRENT_USER.status==='inactive'){
+      await enterInactiveLocalMode(CURRENT_USER,{preserveCloud:false});
+      return;
+    }
+
+    MODE='cloud';ACCESS_MODE='cloud-active';document.body.classList.remove('trainer-desktop');INACTIVE_NAME='';INACTIVE_UID='';
+    storageRemove('teamms_offline_pref');storageRemove(OFFLINE_MODE_KEY);
+    const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent='// sistema online · protocolo ativo';
+    const chip=document.getElementById('user-chip-name');if(chip)chip.textContent=CURRENT_USER.name||'aluno';
+
+    const cached=loadCloudBackup(user.uid);
+    CLOUD_WORKOUTS=cached;populateHistoryFromWorkouts(cached);renderHome();showScreen('screen-home');startProfileGuard(user.uid);
+
+    const hasOffline=hasStoredLocal();
+    const hasPending=storageGet('teamms_migration_pending')==='1'&&(!pendingOwner||pendingOwner===user.uid);
+    const legacyNeedsCheck=hasOffline&&!storageGet('teamms_cloud_mirror_'+user.uid)&&(!pendingOwner||pendingOwner===user.uid);
+    (async()=>{
+      if(hasPending||legacyNeedsCheck)await migrateLocalToCloud(user.uid,{background:true});
+      await loadCloudHome();
+    })().catch(error=>console.warn('Sincronização pós-login:',error));
+  }catch(error){
+    console.error('Auth handler error:',error);
+    AUTH_HANDLED=false;
+    if(cachedShellOpened||restoreCachedStudentAccess(user,error))return;
+    bootToAuth(isNetworkLikeError(error)?'O servidor não respondeu. Treinadores precisam de conexão; alunos podem usar o acesso offline já validado.':'Não foi possível validar este perfil. Entre novamente.');
+  }finally{
+    if(AUTH_PROCESSING_UID===user.uid)AUTH_PROCESSING_UID='';
+  }
+}
 function startAuthListener(){
   if(!auth){bootToAuth('O serviço de autenticação não foi carregado. Tente corrigir a atualização.');return;}
   if(AUTH_UNSUBSCRIBE){AUTH_UNSUBSCRIBE();AUTH_UNSUBSCRIBE=null;}
-  AUTH_UNSUBSCRIBE=auth.onAuthStateChanged(async user=>{
-    if(!user){
-      AUTH_HANDLED=false;
-      if(AUTH_EXPECTED_LOCAL_SIGNOUT)return;
-      stopProfileGuard();CURRENT_USER=null;document.body.classList.remove('trainer-desktop');VIEW_STUDENT=null;VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_EXERCISE=null;
-      if(!['local-inactive','local-guest','offline-registered'].includes(ACCESS_MODE))showScreen('screen-auth');
-      return;
-    }
-    if(AUTH_HANDLED&&CURRENT_USER?.uid===user.uid)return;
-    AUTH_HANDLED=true;
-    setLoadingMessage('validando perfil...');
-    try{
-      let snap;
-      try{snap=await getUserProfileWithRetry(user.uid);}
-      catch(profileError){if(restoreCachedStudentAccess(user,profileError))return;throw profileError;}
-      if(!snap){
-        AUTH_HANDLED=false;
-        await withTimeout(auth.signOut(),3000,'saída de conta sem perfil').catch(()=>{});
-        bootToAuth('O cadastro desta conta está incompleto. Entre em contato com o treinador.');
-        return;
-      }
-      CURRENT_USER={...snap.data(),uid:user.uid};
-      if(!['trainer','student'].includes(CURRENT_USER.role))throw new Error('Perfil sem função válida.');
-      CURRENT_USER.status=CURRENT_USER.status==='inactive'?'inactive':'active';
-      cacheUserProfile(CURRENT_USER);updateOfflineCredentialProfile(CURRENT_USER);
-      configureAuthPersistence(CURRENT_USER.role);
-
-      if(CURRENT_USER.role==='trainer'){
-        MODE='cloud';ACCESS_MODE='trainer';INACTIVE_NAME='';INACTIVE_UID='';
-        document.body.classList.add('trainer-desktop');
-        showScreen('screen-trainer');startProfileGuard(user.uid);
-        renderTrainer();
-        return;
-      }
-
-      const previousLastUid=storageGet('teamms_last_user_uid')||'';
-      const pendingOwner=storageGet('teamms_migration_owner')||'';
-      const allowLegacy=!previousLastUid||previousLastUid===user.uid||pendingOwner===user.uid;
-      selectLocalOwner(user.uid,allowLegacy);storageSet('teamms_last_user_uid',user.uid);
-
-      if(CURRENT_USER.status==='inactive'){
-        await enterInactiveLocalMode(CURRENT_USER,{preserveCloud:false});
-        return;
-      }
-
-      MODE='cloud';ACCESS_MODE='cloud-active';document.body.classList.remove('trainer-desktop');INACTIVE_NAME='';INACTIVE_UID='';
-      storageRemove('teamms_offline_pref');storageRemove(OFFLINE_MODE_KEY);
-      const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent='// sistema online · protocolo ativo';
-      const chip=document.getElementById('user-chip-name');if(chip)chip.textContent=CURRENT_USER.name||'aluno';
-
-      const cached=loadCloudBackup(user.uid);
-      CLOUD_WORKOUTS=cached;populateHistoryFromWorkouts(cached);renderHome();showScreen('screen-home');startProfileGuard(user.uid);
-
-      const hasOffline=hasStoredLocal();
-      const hasPending=storageGet('teamms_migration_pending')==='1'&&(!pendingOwner||pendingOwner===user.uid);
-      const legacyNeedsCheck=hasOffline&&!storageGet('teamms_cloud_mirror_'+user.uid)&&(!pendingOwner||pendingOwner===user.uid);
-      (async()=>{
-        if(hasPending||legacyNeedsCheck)await migrateLocalToCloud(user.uid,{background:true});
-        await loadCloudHome();
-      })().catch(error=>console.warn('Sincronização pós-login:',error));
-    }catch(error){
-      console.error('Auth handler error:',error);
-      AUTH_HANDLED=false;
-      if(restoreCachedStudentAccess(user,error))return;
-      bootToAuth(isNetworkLikeError(error)?'O servidor não respondeu. Treinadores precisam de conexão; alunos podem usar o acesso offline já validado.':'Não foi possível validar este perfil. Entre novamente.');
-    }
-  },error=>{
-    console.error('Auth state error:',error);AUTH_HANDLED=false;
-    bootToAuth('Falha ao consultar a sessão. Tente novamente ou corrija a atualização.');
+  AUTH_CALLBACK_SEEN=false;
+  AUTH_UNSUBSCRIBE=auth.onAuthStateChanged(handleAuthStateUser,error=>{
+    console.error('Auth state error:',error);AUTH_HANDLED=false;AUTH_PROCESSING_UID='';
+    bootToAuth('Falha ao consultar a sessão. Você já pode tentar entrar novamente ou usar o modo local.');
   });
+  // Em alguns navegadores currentUser já está restaurado antes do primeiro
+  // callback. Usá-lo reduz uma espera desnecessária sem liberar dados de treinador.
+  queueMicrotask(()=>{if(!AUTH_CALLBACK_SEEN&&auth.currentUser)handleAuthStateUser(auth.currentUser);});
 }
 
 /* ══════════════════════════════════════════════════
@@ -2798,7 +2842,7 @@ function pdfEscape(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':
 function workoutPdfHtml(workout,studentName){
   const days=groupExercisesByDay(workout.exercises||[]);
   const sections=days.map(([day,items])=>`<section><h2>${pdfEscape(day)}</h2>${items.map(ex=>`<article><h3>${pdfEscape(ex.name)}</h3><table><thead><tr><th>Semana</th><th>Prescrição</th></tr></thead><tbody>${[1,2,3,4,5,6,7,8].map(week=>{const rx=resolveWeekPrescription(ex,week);const text=rx.sets.length?rx.sets.map((set,i)=>`${i+1}ª: ${set.targetMin}-${set.targetMax} reps · GER ${String(set.ger).padStart(2,'0')}`).join('<br>'):'Sem exercício';return`<tr><td>Semana ${week}</td><td>${text}</td></tr>`;}).join('')}</tbody></table></article>`).join('')}</section>`).join('');
-  return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${pdfEscape(workout.name)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#161616}header{border-bottom:3px solid #9b2024;padding-bottom:10px;margin-bottom:18px}h1{font-size:25px;margin:0;text-transform:uppercase}header p{margin:5px 0 0;color:#555}h2{font-size:19px;background:#111;color:#fff;padding:8px 10px;margin:18px 0 8px}article{break-inside:avoid;margin-bottom:14px}h3{font-size:16px;margin:0 0 6px;color:#8f1e22}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#eee}footer{margin-top:20px;font-size:9px;color:#777;text-align:center}</style></head><body><header><h1>TEAM BULLS — ${pdfEscape(workout.name)}</h1><p>Aluno: ${pdfEscape(studentName||'Modo local')} · Treino completo organizado por dias</p></header>${sections||'<p>Nenhum exercício cadastrado.</p>'}<footer>Gerado pelo Team Bulls v9.5. No diálogo de impressão, escolha “Salvar como PDF”.</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
+  return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${pdfEscape(workout.name)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#161616}header{border-bottom:3px solid #9b2024;padding-bottom:10px;margin-bottom:18px}h1{font-size:25px;margin:0;text-transform:uppercase}header p{margin:5px 0 0;color:#555}h2{font-size:19px;background:#111;color:#fff;padding:8px 10px;margin:18px 0 8px}article{break-inside:avoid;margin-bottom:14px}h3{font-size:16px;margin:0 0 6px;color:#8f1e22}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#eee}footer{margin-top:20px;font-size:9px;color:#777;text-align:center}</style></head><body><header><h1>TEAM BULLS — ${pdfEscape(workout.name)}</h1><p>Aluno: ${pdfEscape(studentName||'Modo local')} · Treino completo organizado por dias</p></header>${sections||'<p>Nenhum exercício cadastrado.</p>'}<footer>Gerado pelo Team Bulls v9.6. No diálogo de impressão, escolha “Salvar como PDF”.</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
 }
 function exportWorkoutPdf(workout,studentName){if(!workout)return;const popup=window.open('','_blank');if(!popup){alert('Permita pop-ups para gerar o PDF.');return;}try{popup.opener=null;}catch(e){}popup.document.open();popup.document.write(workoutPdfHtml(workout,studentName));popup.document.close();}
 function exportWorkoutPdfById(id,trainerMode){const w=trainerMode?VIEW_STUDENT?.workouts?.find(x=>x.id===id):getW(id);exportWorkoutPdf(w,trainerMode?VIEW_STUDENT?.name:(CURRENT_USER?.name||INACTIVE_NAME||'Modo local'));}
@@ -5819,26 +5863,23 @@ function initApp(){
 // depois do parse, quando Firebase e todos os elementos do DOM já estão prontos.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});
 else initApp();
+window.addEventListener('pageshow',event=>{
+  if(event.persisted&&document.getElementById('screen-loading')?.classList.contains('active'))showScreen('screen-auth');
+});
 
-// ── Service Worker: atualização sem loop e recuperação de versões antigas ──
+// ── Service Worker: atualização silenciosa, sem recarregar a página ──
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    const hadController=!!navigator.serviceWorker.controller;
-    let reloaded=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(!hadController||reloaded)return;
-      reloaded=true;
-      try{if(sessionStorage.getItem('team_bulls_sw_reload_v9_5')==='1')return;sessionStorage.setItem('team_bulls_sw_reload_v9_5','1');}catch(error){}
-      location.reload();
-    });
-    navigator.serviceWorker.register('sw_10.js',{updateViaCache:'none'}).then(registration=>{
+    navigator.serviceWorker.register('sw_11.js',{updateViaCache:'none'}).then(registration=>{
       if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
         worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)worker.postMessage({type:'SKIP_WAITING'});});
       });
+      // A atualização ocorre em segundo plano. Não há location.reload() no
+      // controllerchange, evitando ciclos de recarga durante a autenticação.
       registration.update().catch(()=>{});
-      console.log('SW v9.5 registrado:',registration.scope);
+      console.log('SW v9.6 registrado:',registration.scope);
     }).catch(error=>console.warn('SW falhou:',error));
   });
 }
