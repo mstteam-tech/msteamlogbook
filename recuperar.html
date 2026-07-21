@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#070706">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Recuperar Team Bulls</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#070706;color:#e8e0d3;font:16px system-ui,sans-serif;padding:20px}.card{width:min(460px,100%);background:#171513;border:1px solid #51453a;border-top:3px solid #a51e20;padding:22px;box-shadow:0 20px 70px #000}.tag{font:11px monospace;color:#a51e20;letter-spacing:1.3px}.title{font-size:28px;font-weight:900;margin:8px 0}.text{color:#aaa095;line-height:1.5}.status{margin:16px 0;padding:12px;background:#0d0c0b;border:1px solid #342e29;font:12px monospace;color:#c8bda9;min-height:44px}.btn{width:100%;border:1px solid #c43a3c;background:#8f181a;color:#fff;padding:13px;font-weight:800;cursor:pointer}.btn:disabled{opacity:.55}.note{font-size:12px;color:#766d63;margin-top:12px;line-height:1.45}
+</style>
+</head>
+<body>
+<main class="card">
+<div class="tag">TEAM BULLS // RECUPERAÇÃO</div>
+<div class="title">Corrigir atualização</div>
+<p class="text">Esta página remove somente o Service Worker e os caches antigos do aplicativo. Treinos e registros salvos no armazenamento local são preservados.</p>
+<div id="status" class="status">Pronto para corrigir.</div>
+<button id="run" class="btn" type="button">CORRIGIR E ABRIR O APP</button>
+<p class="note">Use esta página quando o aplicativo ficar preso na tela de carregamento após uma atualização.</p>
+</main>
+<script>
+(function(){
+ const button=document.getElementById('run'),status=document.getElementById('status');
+ async function run(){
+  button.disabled=true;status.textContent='Removendo atualização antiga...';
+  try{
+   if('serviceWorker' in navigator){
+    const registrations=await Promise.race([navigator.serviceWorker.getRegistrations(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('tempo esgotado')),5000))]);
+    await Promise.allSettled(registrations.filter(reg=>location.href.startsWith(reg.scope)).map(reg=>reg.unregister()));
+   }
+   if('caches' in window){
+    const keys=await Promise.race([caches.keys(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('tempo esgotado')),5000))]);
+    await Promise.allSettled(keys.filter(key=>key.startsWith('team-bulls-')).map(key=>caches.delete(key)));
+   }
+   try{sessionStorage.clear();}catch(error){}
+   status.textContent='Correção concluída. Abrindo a versão nova...';
+   setTimeout(()=>location.replace('./index.html?recuperado='+Date.now()),500);
+  }catch(error){
+   status.textContent='Não foi possível concluir automaticamente. Limpe os dados do site no navegador e tente novamente.';
+   button.disabled=false;
+  }
+ }
+ button.addEventListener('click',run);
+})();
+</script>
+</body>
+</html>

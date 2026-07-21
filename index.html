@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v9.4: playlist local aleatória, três músicas, fades entre faixas e painel opcional oculto por padrão. -->
+<!-- Team Bulls v9.5: inicialização resiliente, recuperação de cache, segurança reforçada e playlist local aleatória. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -11,8 +11,10 @@
 <meta content="Team Bulls" name="apple-mobile-web-app-title"/>
 <meta content="#0c0c0c" name="theme-color"/>
 <meta content="Treinos, dietas e evolução — Team Bulls" name="description"/>
+<meta content="strict-origin-when-cross-origin" name="referrer"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"/>
 <title>Team Bulls</title>
-<link href="manifest_8.json" rel="manifest"/>
+<link href="manifest_9.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v8-2.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="icon-192-v8-2.png" rel="apple-touch-icon"/>
@@ -20,7 +22,47 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&amp;family=DM+Mono:wght@400;500&amp;family=Barlow:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <!-- Firebase SDK -->
-<script>window.__fbLoadErrors=0;</script>
+<script>
+window.__fbLoadErrors=0;
+window.__teamBullsBootErrors=[];
+try{if(window.top!==window.self)window.top.location=window.self.location.href;}catch(error){document.documentElement.style.display='none';}
+(function(){
+  let revealTimer=null;
+  function loadingActive(){return !!document.getElementById('screen-loading')?.classList.contains('active');}
+  function reveal(message){
+    const run=()=>{
+      const box=document.getElementById('loading-recovery');
+      const text=document.getElementById('loading-recovery-text');
+      if(text&&message)text.textContent=message;
+      if(box)box.hidden=false;
+    };
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
+  }
+  function hide(){clearTimeout(revealTimer);const box=document.getElementById('loading-recovery');if(box)box.hidden=true;}
+  async function clearCachesAndReload(){
+    const btn=document.getElementById('loading-clear-cache');if(btn){btn.disabled=true;btn.textContent='CORRIGINDO...';}
+    try{
+      if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.allSettled(regs.filter(r=>location.href.startsWith(r.scope)).map(r=>r.unregister()));}
+      if('caches' in window){const keys=await caches.keys();await Promise.allSettled(keys.filter(k=>k.startsWith('team-bulls-')).map(k=>caches.delete(k)));}
+    }catch(error){console.warn('Falha ao limpar atualização antiga:',error);}
+    location.replace('./index.html?recuperado='+Date.now());
+  }
+  function localMode(){
+    try{localStorage.setItem('teamms_offline_mode','guest');localStorage.setItem('teamms_offline_pref','1');}catch(error){}
+    location.replace('./index.html?local='+Date.now());
+  }
+  window.TeamBullsRecovery={reveal,hide,retry:()=>location.reload(),clearCachesAndReload,localMode};
+  revealTimer=setTimeout(()=>{if(loadingActive())reveal('A inicialização está demorando. Você pode tentar novamente ou corrigir o cache do aplicativo.');},9000);
+  window.addEventListener('error',event=>{
+    window.__teamBullsBootErrors.push(String(event?.message||'erro de inicialização'));
+    if(loadingActive())reveal('O aplicativo encontrou uma falha ao iniciar. Seus registros locais foram preservados.');
+  });
+  window.addEventListener('unhandledrejection',event=>{
+    window.__teamBullsBootErrors.push(String(event?.reason?.message||event?.reason||'falha assíncrona'));
+    if(loadingActive())reveal('O servidor demorou para responder. Seus registros locais foram preservados.');
+  });
+})();
+</script>
 <script defer="" onerror="window.__fbLoadErrors++" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script defer="" onerror="window.__fbLoadErrors++" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script defer="" onerror="window.__fbLoadErrors++" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -49,7 +91,13 @@
     /* LOADING */
     #screen-loading{display:none;min-height:100vh;}#screen-loading.active{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
     .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-    .loading-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:1px;}
+    .loading-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:1px;text-align:center;padding:0 20px;}
+    .loading-recovery{width:min(360px,calc(100vw - 36px));background:var(--card);border:1px solid var(--border-l);border-left:3px solid var(--accent);padding:14px;margin-top:4px;text-align:center;}
+    .loading-recovery[hidden]{display:none!important;}
+    .loading-recovery p{font-size:12px;color:var(--text-dim);line-height:1.45;margin-bottom:10px;}
+    .loading-recovery-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+    .loading-recovery-actions button{margin:0;padding:9px 6px;font-size:12px;}
+    .loading-recovery-actions .full{grid-column:1/-1;}
 
     /* HEADER */
     .header{position:sticky;top:0;z-index:30;background:rgba(12,12,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;gap:10px;}
@@ -637,7 +685,7 @@
 </head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V9.4</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V9.5</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
@@ -650,6 +698,14 @@
 <div class="screen active" id="screen-loading" style="padding-bottom:0">
 <div class="spinner"></div>
 <div class="loading-label">carregando...</div>
+<div class="loading-recovery" hidden id="loading-recovery">
+<p id="loading-recovery-text">A inicialização está demorando. Seus registros locais continuam preservados.</p>
+<div class="loading-recovery-actions">
+<button class="btn-ghost" onclick="TeamBullsRecovery.retry()">TENTAR NOVAMENTE</button>
+<button class="btn-ghost" onclick="TeamBullsRecovery.localMode()">MODO LOCAL</button>
+<button class="btn-primary full" id="loading-clear-cache" onclick="TeamBullsRecovery.clearCachesAndReload()">CORRIGIR ATUALIZAÇÃO</button>
+</div>
+</div>
 </div>
 <!-- AUTH -->
 <div class="screen" id="screen-auth" style="padding-bottom:0">
@@ -1427,6 +1483,48 @@
 <script>
 
 /* ══════════════════════════════════════════════════
+   INICIALIZAÇÃO RESILIENTE E LIMITES DE REDE
+══════════════════════════════════════════════════ */
+const APP_VERSION='9.5';
+const BOOT_TIMEOUT_MS=14000;
+const PROFILE_READ_TIMEOUT_MS=4500;
+const CLOUD_READ_TIMEOUT_MS=12000;
+const CLOUD_WRITE_TIMEOUT_MS=10000;
+let BOOT_STARTED=false;
+let BOOT_SETTLED=false;
+let BOOT_WATCHDOG=null;
+function storageGet(key){try{return localStorage.getItem(key);}catch(error){return null;}}
+function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(error){return false;}}
+function storageRemove(key){try{localStorage.removeItem(key);return true;}catch(error){return false;}}
+function setLoadingMessage(message){const el=document.querySelector('#screen-loading .loading-label');if(el)el.textContent=message||'carregando...';}
+function finishBoot(){BOOT_SETTLED=true;clearTimeout(BOOT_WATCHDOG);window.TeamBullsRecovery?.hide?.();}
+function startBootWatchdog(){
+  BOOT_SETTLED=false;clearTimeout(BOOT_WATCHDOG);
+  BOOT_WATCHDOG=setTimeout(()=>{
+    if(BOOT_SETTLED||!document.getElementById('screen-loading')?.classList.contains('active'))return;
+    AUTH_HANDLED=false;
+    showScreen('screen-auth');
+    showAuthError('login-error','O servidor demorou para responder. Tente novamente, use o acesso offline validado ou o modo local.');
+    window.TeamBullsRecovery?.reveal?.('A conexão não respondeu no tempo esperado. O aplicativo saiu do carregamento para não ficar travado.');
+  },BOOT_TIMEOUT_MS);
+}
+function withTimeout(task,ms,label='operação'){
+  return new Promise((resolve,reject)=>{
+    let settled=false;
+    const timer=setTimeout(()=>{if(settled)return;settled=true;const error=new Error('Tempo esgotado: '+label);error.code='team-bulls/timeout';reject(error);},Math.max(250,Number(ms)||10000));
+    Promise.resolve(task).then(value=>{if(settled)return;settled=true;clearTimeout(timer);resolve(value);},error=>{if(settled)return;settled=true;clearTimeout(timer);reject(error);});
+  });
+}
+function cloudGet(reference,label='consulta'){return withTimeout(reference.get(),CLOUD_READ_TIMEOUT_MS,label);}
+function cloudWrite(task,label='gravação'){return withTimeout(task,CLOUD_WRITE_TIMEOUT_MS,label);}
+function isNetworkLikeError(error){return !navigator.onLine||error?.code==='team-bulls/timeout'||error?.code==='auth/network-request-failed'||error?.code==='unavailable'||error?.code==='deadline-exceeded';}
+function bootToAuth(message){
+  AUTH_HANDLED=false;
+  showScreen('screen-auth');
+  if(message)showAuthError('login-error',message);
+}
+
+/* ══════════════════════════════════════════════════
    CONFIGURAÇÃO — preencha com seus dados do Firebase
 ══════════════════════════════════════════════════ */
 const CFG = {
@@ -1775,7 +1873,7 @@ function cloudWriteError(error,action){
   const code=String(error?.code||'');
   const message=String(error?.message||'Falha desconhecida');
   if(code.includes('permission-denied')||/missing or insufficient permissions/i.test(message)){
-    return 'Permissão recusada pelo Firebase ao '+action+'. Publique também o arquivo firestore_10.rules no Firebase Console; atualizar apenas o HTML não altera as permissões do servidor.';
+    return 'Permissão recusada pelo Firebase ao '+action+'. Publique também o arquivo firestore_11.rules no Firebase Console; atualizar apenas o HTML não altera as permissões do servidor.';
   }
   if(code.includes('unavailable')||/network|offline|failed to fetch/i.test(message)){
     return 'O servidor está indisponível no momento. Verifique a conexão e tente novamente.';
@@ -1913,21 +2011,19 @@ function openGerInfo(){
    Chamada ao logar se houver dados locais no cache do aluno
    Escrita item a item (sem batch) para máxima compatibilidade
 ══════════════════════════════════════════════════ */
-async function migrateLocalToCloud(userId){
-  if(MIGRATION_RUNNING)return;
+async function migrateLocalToCloud(userId,{background=true}={}){
+  if(MIGRATION_RUNNING)return false;
   localLoad();
   const workouts=(LOCAL_DB.workouts||[]).filter(w=>!w.userId||w.userId===userId);
-  if(!workouts.length){localStorage.removeItem('teamms_migration_pending');localStorage.removeItem('teamms_migration_owner');return;}
-  MIGRATION_RUNNING=true;localStorage.setItem('teamms_migrating',String(Date.now()));
-  const loadingLabel=document.querySelector('#screen-loading .loading-label');
-  if(loadingLabel)loadingLabel.textContent='sincronizando dados offline...';
-  showScreen('screen-loading');
+  if(!workouts.length){storageRemove('teamms_migration_pending');storageRemove('teamms_migration_owner');return true;}
+  MIGRATION_RUNNING=true;storageSet('teamms_migrating',String(Date.now()));
+  if(!background)setLoadingMessage('sincronizando dados offline...');
   try{
-    const [workoutSnap,exerciseSnap,sessionSnap]=await Promise.all([
+    const [workoutSnap,exerciseSnap,sessionSnap]=await withTimeout(Promise.all([
       db.collection('workouts').where('userId','==',userId).get(),
       db.collection('exercises').where('userId','==',userId).get(),
       db.collection('sessions').where('userId','==',userId).get()
-    ]);
+    ]),CLOUD_READ_TIMEOUT_MS,'consulta para sincronização');
     const cloudWorkouts=workoutSnap.docs.map(doc=>({...doc.data(),id:doc.id}));
     const cloudExercises=exerciseSnap.docs.map(doc=>({...doc.data(),id:doc.id,_ref:doc.ref}));
     const cloudSessions=sessionSnap.docs.map(doc=>({...doc.data(),id:doc.id,_ref:doc.ref}));
@@ -1936,60 +2032,41 @@ async function migrateLocalToCloud(userId){
       let cloudWorkout=cloudWorkouts.find(w=>localWorkout.id&&w.id===localWorkout.id);
       if(!cloudWorkout)cloudWorkout=uniqueCandidateByKey(cloudWorkouts,workoutIdentityKey(localWorkout),workoutIdentityKey);
       if(!cloudWorkout){allMatched=false;continue;}
-      if(loadingLabel)loadingLabel.textContent='sincronizando: '+localWorkout.name+'...';
       const availableExercises=cloudExercises.filter(e=>e.workoutId===cloudWorkout.id);
       for(const localExercise of (localWorkout.exercises||[])){
         let cloudExercise=availableExercises.find(e=>localExercise.id&&e.id===localExercise.id);
         if(!cloudExercise)cloudExercise=uniqueCandidateByKey(availableExercises,exerciseIdentityKey(localExercise),exerciseIdentityKey);
         if(!cloudExercise){allMatched=false;continue;}
-        const existingSessions=cloudSessions.filter(s=>s.exerciseId===cloudExercise.id);
-        const cloudById=new Map(existingSessions.map(s=>[String(s.id),s]));
-        const cloudByMigration=new Map(existingSessions.filter(s=>s.migrationKey).map(s=>[String(s.migrationKey),s]));
+        const existingSessions=cloudSessions.filter(session=>session.exerciseId===cloudExercise.id);
+        const cloudById=new Map(existingSessions.map(session=>[String(session.id),session]));
+        const cloudByMigration=new Map(existingSessions.filter(session=>session.migrationKey).map(session=>[String(session.migrationKey),session]));
         const legacyFingerprints={};
-        existingSessions.filter(s=>!s.migrationKey).forEach(s=>{const fp=sessionFingerprint(s);legacyFingerprints[fp]=(legacyFingerprints[fp]||0)+1;});
+        existingSessions.filter(session=>!session.migrationKey).forEach(session=>{const fp=sessionFingerprint(session);legacyFingerprints[fp]=(legacyFingerprints[fp]||0)+1;});
         for(const localSession of (localExercise.sessions||[])){
-          const date=String(localSession.date||'');
-          const sets=normalizePerformedSets(localSession.sets);
-          const week=Number(localSession.week);
-          const note=String(localSession.note||'').slice(0,2000);
-          const exerciseName=String(localExercise.name||'').slice(0,100);
-          const performedExerciseItemId=String(localSession.performedExerciseItemId||'').slice(0,100);
-          const performedExerciseName=String(localSession.performedExerciseName||exerciseName).slice(0,100);
+          const date=String(localSession.date||''),sets=normalizePerformedSets(localSession.sets),week=Number(localSession.week),note=String(localSession.note||'').slice(0,2000);
+          const exerciseName=String(localExercise.name||'').slice(0,100),performedExerciseItemId=String(localSession.performedExerciseItemId||'').slice(0,100),performedExerciseName=String(localSession.performedExerciseName||exerciseName).slice(0,100);
           if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!sets||!Number.isInteger(week)||week<1||week>8){allMatched=false;continue;}
           const clean={date,week,note,sets,exerciseName,performedExerciseItemId,performedExerciseName};
-          const fp=sessionFingerprint(clean);
-          const migrationKey=userId+'|'+cloudWorkout.id+'|'+cloudExercise.id+'|'+(localSession.id||fp);
+          const fp=sessionFingerprint(clean),migrationKey=userId+'|'+cloudWorkout.id+'|'+cloudExercise.id+'|'+(localSession.id||fp);
           const existing=(localSession.id&&cloudById.get(String(localSession.id)))||cloudByMigration.get(migrationKey);
-          if(existing){
-            if(sessionFingerprint(existing)!==fp||String(existing.exerciseName||'')!==exerciseName){await existing._ref.update(clean);totalSessions++;}
-            continue;
-          }
+          if(existing){if(sessionFingerprint(existing)!==fp||String(existing.exerciseName||'')!==exerciseName){await withTimeout(existing._ref.update(clean),CLOUD_WRITE_TIMEOUT_MS,'atualização de sessão');totalSessions++;}continue;}
           if((legacyFingerprints[fp]||0)>0){legacyFingerprints[fp]--;continue;}
           const ref=db.collection('sessions').doc('m_'+stableHash(migrationKey)+'_'+stableHash([...migrationKey].reverse().join('')));
-          await ref.set({userId,workoutId:cloudWorkout.id,exerciseId:cloudExercise.id,...clean,migrationKey,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+          await withTimeout(ref.set({userId,workoutId:cloudWorkout.id,exerciseId:cloudExercise.id,...clean,migrationKey,createdAt:firebase.firestore.FieldValue.serverTimestamp()}),CLOUD_WRITE_TIMEOUT_MS,'envio de sessão');
           totalSessions++;
         }
       }
     }
     if(allMatched){
-      LOCAL_DB={...LOCAL_DB,workouts:[]};
-      localStorage.removeItem(localKeyFor());
-      localStorage.setItem('teamms_local_initialized_'+userId,'1');
-      localStorage.removeItem('teamms_migration_pending');localStorage.removeItem('teamms_migration_owner');
-      if(loadingLabel)loadingLabel.textContent='dados sincronizados ✓';
-    }else{
-      localStorage.setItem('teamms_migration_pending','1');localStorage.setItem('teamms_migration_owner',userId);
-      if(loadingLabel)loadingLabel.textContent=totalSessions?'parte dos dados sincronizada ✓':'aguardando correspondência com o plano...';
-    }
-    await new Promise(r=>setTimeout(r,700));
-  }catch(err){
-    console.error('Migração falhou:',err);
-    localStorage.setItem('teamms_migration_pending','1');localStorage.setItem('teamms_migration_owner',userId);
-    if(loadingLabel)loadingLabel.textContent='erro na sincronização (dados preservados)';
-    await new Promise(r=>setTimeout(r,1200));
-  }finally{
-    localStorage.removeItem('teamms_migrating');MIGRATION_RUNNING=false;
-  }
+      LOCAL_DB={...LOCAL_DB,workouts:[]};storageRemove(localKeyFor());storageSet('teamms_local_initialized_'+userId,'1');storageRemove('teamms_migration_pending');storageRemove('teamms_migration_owner');
+    }else{storageSet('teamms_migration_pending','1');storageSet('teamms_migration_owner',userId);}
+    if(totalSessions)showToast(totalSessions===1?'1 registro offline sincronizado.':totalSessions+' registros offline sincronizados.');
+    return allMatched;
+  }catch(error){
+    console.error('Migração falhou:',error);storageSet('teamms_migration_pending','1');storageSet('teamms_migration_owner',userId);
+    if(!background)showToast('Não foi possível sincronizar agora. Os dados foram preservados.',true);
+    return false;
+  }finally{storageRemove('teamms_migrating');MIGRATION_RUNNING=false;}
 }
 
 // Reparo manual para duplicatas antigas. Só aparece ao treinador e nunca apaga
@@ -2197,6 +2274,7 @@ function mergeIntoLocal(incoming,userUid=LOCAL_OWNER_UID){
   }catch(e){console.warn('mergeIntoLocal error:',e);return false;}
 }
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function safePhotoDataUrl(value){const raw=String(value||'');return raw.length<=900000&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(raw)?raw:'';}
 const jsArg=s=>esc(JSON.stringify(String(s)));
 // Usa a data LOCAL do aparelho. toISOString() usa UTC e virava o dia às 21h
 // no Brasil em parte do ano, registrando sessões/refeições na data errada.
@@ -2243,6 +2321,48 @@ function showAuthError(id,msg){const el=document.getElementById(id);el.textConte
 function clearAuthError(id){document.getElementById(id).classList.remove('show');}
 
 
+const PROFILE_CACHE_PREFIX='team_bulls_profile_v9_5_';
+function sanitizeCachedProfile(value,uid=''){
+  if(!value||typeof value!=='object')return null;
+  const role=value.role==='trainer'?'trainer':'student';
+  const status=value.status==='inactive'?'inactive':'active';
+  const safe={uid:String(uid||value.uid||''),name:String(value.name||'').slice(0,100),email:String(value.email||'').slice(0,320),role,status,cachedAt:Date.now()};
+  return safe.uid?safe:null;
+}
+function cacheUserProfile(profile){const safe=sanitizeCachedProfile(profile,profile?.uid);if(safe)storageSet(PROFILE_CACHE_PREFIX+safe.uid,JSON.stringify(safe));}
+function loadCachedUserProfile(uid){try{return sanitizeCachedProfile(JSON.parse(storageGet(PROFILE_CACHE_PREFIX+uid)||'null'),uid);}catch(error){return null;}}
+function configureAuthPersistence(role){
+  try{
+    const persistence=role==='trainer'?firebase.auth.Auth.Persistence.SESSION:firebase.auth.Auth.Persistence.LOCAL;
+    return auth?.setPersistence?auth.setPersistence(persistence).catch(()=>{}):Promise.resolve();
+  }catch(error){return Promise.resolve();}
+}
+function populateHistoryFromWorkouts(workouts){
+  const sessions=[];(workouts||[]).forEach(w=>(w.exercises||[]).forEach(ex=>(ex.sessions||[]).forEach(session=>sessions.push({...session,exerciseName:session.exerciseName||ex.name}))));
+  HISTORY_BY_NAME=buildHistoryByName(sessions);
+}
+function restoreCachedStudentAccess(user,reason){
+  const profile=loadCachedUserProfile(user?.uid||'');
+  if(!profile||profile.role!=='student')return false;
+  const previousLastUid=storageGet('teamms_last_user_uid')||'';
+  selectLocalOwner(profile.uid,!previousLastUid||previousLastUid===profile.uid);
+  storageSet('teamms_last_user_uid',profile.uid);
+  const backup=loadCloudBackup(profile.uid);
+  if(!(LOCAL_DB.workouts||[]).length&&backup.length)replaceLocalForUser(profile.uid,backup);
+  localLoad();
+  const inactive=profile.status==='inactive';
+  MODE='local';ACCESS_MODE=inactive?'local-inactive':'offline-registered';
+  INACTIVE_UID=profile.uid;INACTIVE_NAME=inactive?(profile.name||'aluno'):'';
+  CURRENT_USER=inactive?null:{...profile,status:'offline',offlineRegistered:true};
+  document.body.classList.remove('trainer-desktop');
+  const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent=inactive?'// protocolo pausado · modo local':'// sessão recuperada · sem conexão';
+  const chip=document.getElementById('user-chip-name');if(chip)chip.textContent=profile.name||'aluno';
+  renderHome();showScreen('screen-home');
+  showToast(inactive?'Consultoria pausada — usando o último plano salvo.':'Servidor indisponível — usando os últimos dados salvos neste aparelho.',true);
+  console.warn('Acesso restaurado do cache local:',reason?.code||reason?.message||reason||'sem rede');
+  return true;
+}
+
 async function credentialDigest(email,password){
   const raw=normalizedName(email)+'|'+password+'|TEAM-BULLS-V9';
   if(window.crypto?.subtle&&window.TextEncoder){
@@ -2260,6 +2380,22 @@ async function deriveOfflineVerifier(email,password,saltB64,iterations=150000){
   return bytesToBase64(new Uint8Array(bits));
 }
 function offlineCredentialMap(){try{return JSON.parse(localStorage.getItem('team_bulls_offline_credentials')||'{}');}catch(e){return{};}}
+function offlineAttemptKey(email){return 'team_bulls_offline_attempt_'+stableHash(normalizedName(email));}
+function offlineAttemptState(email){try{return JSON.parse(localStorage.getItem(offlineAttemptKey(email))||'{}');}catch(error){return{};}}
+function offlineAttemptWait(email){const state=offlineAttemptState(email),until=Number(state.lockedUntil)||0;return Math.max(0,until-Date.now());}
+function registerOfflineFailure(email){
+  try{
+    const key=offlineAttemptKey(email),current=offlineAttemptState(email),count=(Number(current.count)||0)+1;
+    const lockedUntil=count>=5?Date.now()+Math.min(300000,30000*Math.pow(2,Math.min(3,count-5))):0;
+    localStorage.setItem(key,JSON.stringify({count,lockedUntil}));
+  }catch(error){}
+}
+function clearOfflineFailures(email){try{localStorage.removeItem(offlineAttemptKey(email));}catch(error){}}
+function constantTimeEqual(a,b){
+  const left=String(a||''),right=String(b||'');let diff=left.length^right.length,max=Math.max(left.length,right.length);
+  for(let index=0;index<max;index++)diff|=(left.charCodeAt(index)||0)^(right.charCodeAt(index)||0);
+  return diff===0;
+}
 async function rememberOfflineCredential(email,password,uid,profile={}){
   try{
     const map=offlineCredentialMap();
@@ -2270,15 +2406,18 @@ async function rememberOfflineCredential(email,password,uid,profile={}){
   }catch(e){console.warn('offline credential',e);}
 }
 function updateOfflineCredentialProfile(profile){
-  if(!profile?.email)return;try{const map=offlineCredentialMap(),key=normalizedName(profile.email);if(map[key]){map[key]={...map[key],uid:profile.uid,name:profile.name||map[key].name,status:profile.status||'active'};localStorage.setItem('team_bulls_offline_credentials',JSON.stringify(map));}}catch(e){}
+  if(!profile?.email)return;cacheUserProfile(profile);try{const map=offlineCredentialMap(),key=normalizedName(profile.email);if(map[key]){map[key]={...map[key],uid:profile.uid,name:profile.name||map[key].name,status:profile.status||'active'};localStorage.setItem('team_bulls_offline_credentials',JSON.stringify(map));}}catch(e){}
 }
 async function offlineRegisteredLogin(email,password){
   try{
+    const wait=offlineAttemptWait(email);
+    if(wait>0){showAuthError('login-error','Muitas tentativas offline. Aguarde '+Math.ceil(wait/1000)+' segundos e tente novamente.');return false;}
     const key=normalizedName(email),map=offlineCredentialMap(),record=map[key];
     let valid=false;
-    if(record?.version===2&&record.salt&&record.verifier){valid=record.verifier===await deriveOfflineVerifier(email,password,record.salt,Number(record.iterations)||150000);}
-    else if(record?.hash){valid=record.hash===await credentialDigest(email,password);}
-    if(!record||!valid){showAuthError('login-error','Este aparelho ainda não possui uma autenticação offline válida para essa conta. Entre uma vez com internet.');return false;}
+    if(record?.version===2&&record.salt&&record.verifier){valid=constantTimeEqual(record.verifier,await deriveOfflineVerifier(email,password,record.salt,Number(record.iterations)||150000));}
+    else if(record?.hash){valid=constantTimeEqual(record.hash,await credentialDigest(email,password));}
+    if(!record||!valid){registerOfflineFailure(email);showAuthError('login-error','Este aparelho ainda não possui uma autenticação offline válida para essa conta. Entre uma vez com internet.');return false;}
+    clearOfflineFailures(email);
     if(record.version!==2)await rememberOfflineCredential(email,password,record.uid,record);
     selectLocalOwner(record.uid,true);localStorage.setItem('teamms_last_user_uid',record.uid);
     localStorage.setItem(OFFLINE_MODE_KEY,'registered');localStorage.removeItem('teamms_offline_pref');
@@ -2307,18 +2446,16 @@ async function doLogin(){
     btn.disabled=false;btn.textContent='ACESSAR SISTEMA';return;
   }
   try{
-    AUTH_HANDLED = false;
-    const cred=await auth.signInWithEmailAndPassword(email,pass);
+    AUTH_HANDLED=false;startBootWatchdog();setLoadingMessage('validando acesso...');
+    const cred=await withTimeout(auth.signInWithEmailAndPassword(email,pass),12000,'login');
     await rememberOfflineCredential(email,pass,cred.user.uid);
-    btn.disabled=false;btn.textContent='ACESSAR SISTEMA';
   }catch(e){
-    if(e.code==='auth/network-request-failed'||!navigator.onLine){await offlineRegisteredLogin(email,pass);}
+    if(isNetworkLikeError(e)){await offlineRegisteredLogin(email,pass);}
     else{
       const msgs={'auth/user-not-found':'Conta não encontrada.','auth/wrong-password':'Senha incorreta.','auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde.','auth/invalid-credential':'E-mail ou senha incorretos.'};
-      showAuthError('login-error',msgs[e.code]||('Erro: '+e.code));
+      showAuthError('login-error',msgs[e.code]||'Não foi possível entrar. Tente novamente.');
     }
-    btn.disabled=false;btn.textContent='ACESSAR SISTEMA';
-  }
+  }finally{btn.disabled=false;btn.textContent='ACESSAR SISTEMA';}
 }
 
 async function doRegister(){
@@ -2328,26 +2465,25 @@ async function doRegister(){
   const pass=document.getElementById('reg-pass').value;
   const code=document.getElementById('reg-code').value.trim();
   if(!name||!email||!pass){showAuthError('reg-error','Preencha todos os campos.');return;}
-  if(pass.length<6){showAuthError('reg-error','A senha deve ter ao menos 6 caracteres.');return;}
-  if(code!==CFG.studentCode){
-    showAuthError('reg-error','Código inválido. Peça o código ao seu treinador.');return;
-  }
-  const role='student'; // Cadastro pelo app sempre cria aluno. Conta de treinador é promovida manualmente no Firebase Console (ver comentário em CFG).
+  if(name.length>100){showAuthError('reg-error','O nome deve ter no máximo 100 caracteres.');return;}
+  if(pass.length<8){showAuthError('reg-error','Use uma senha com pelo menos 8 caracteres.');return;}
+  if(code!==CFG.studentCode){showAuthError('reg-error','Código inválido. Peça o código ao seu treinador.');return;}
+  if(!auth||!db||!navigator.onLine){showAuthError('reg-error','O cadastro inicial exige conexão com a internet.');return;}
   const btn=document.getElementById('btn-register');
   if(btn.disabled)return;
   btn.disabled=true;btn.textContent='CRIANDO...';
   try{
-    AUTH_HANDLED = false; // reseta para que o listener processe o cadastro
-    const cred=await auth.createUserWithEmailAndPassword(email,pass);
-    const userData={name,email,role,status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-    await db.collection('users').doc(cred.user.uid).set(userData);
+    AUTH_HANDLED=false;startBootWatchdog();
+    const cred=await withTimeout(auth.createUserWithEmailAndPassword(email,pass),12000,'criação da conta');
+    const userData={name:name.slice(0,100),email,role:'student',status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+    await withTimeout(db.collection('users').doc(cred.user.uid).set(userData),CLOUD_WRITE_TIMEOUT_MS,'gravação do perfil');
+    cacheUserProfile({...userData,uid:cred.user.uid});
     await rememberOfflineCredential(email,pass,cred.user.uid,userData);
-    btn.disabled=false;btn.textContent='CRIAR NOVO REGISTRO';
   }catch(e){
-    btn.disabled=false;btn.textContent='CRIAR NOVO REGISTRO';
-    const msgs={'auth/email-already-in-use':'E-mail já cadastrado.','auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.'};
-    showAuthError('reg-error',msgs[e.code]||('Erro: '+e.code+' — '+e.message));
-  }
+    AUTH_HANDLED=false;
+    const msgs={'auth/email-already-in-use':'E-mail já cadastrado.','auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.','team-bulls/timeout':'O servidor demorou para concluir o cadastro. Tente entrar com a mesma conta antes de cadastrar novamente.'};
+    showAuthError('reg-error',msgs[e.code]||'Não foi possível criar a conta. Tente novamente.');
+  }finally{btn.disabled=false;btn.textContent='CRIAR NOVO REGISTRO';}
 }
 
 function goOffline(){
@@ -2365,13 +2501,8 @@ function handleChipTap(){
       localStorage.removeItem('teamms_offline_pref');
       localStorage.removeItem(OFFLINE_MODE_KEY);
       if(!auth || !db) initFirebase();
-      AUTH_HANDLED = false; // permite que o listener rode após login
-      const safetyTimer = setTimeout(()=>{
-        if(document.getElementById('screen-loading').classList.contains('active')){
-          showScreen('screen-auth');
-        }
-      }, 5000);
-      startAuthListener(safetyTimer);
+      AUTH_HANDLED=false;
+      startAuthListener();
       showScreen('screen-auth');
     });
   }else{
@@ -2381,6 +2512,7 @@ function handleChipTap(){
 
 async function confirmLogout(){
   showConfirm('Sair','Deseja sair da sua conta?',async()=>{
+    stopProfileGuard();
     // ── Antes de deslogar: atualiza a cópia offline deste aluno ──
     // Garante que o aluno tenha acesso aos dados mesmo sem conta
     if(CURRENT_USER && CLOUD_WORKOUTS && CLOUD_WORKOUTS.length > 0){
@@ -2390,7 +2522,7 @@ async function confirmLogout(){
       }catch(e){ console.warn('Erro ao copiar dados cloud para offline:', e); }
     }
     try{
-      if(auth) await auth.signOut();
+      if(auth) await withTimeout(auth.signOut(),4000,'saída da conta').catch(()=>{});
     }catch(e){}
     localStorage.removeItem('teamms_offline_pref');
     localStorage.removeItem(OFFLINE_MODE_KEY);
@@ -2432,113 +2564,132 @@ async function confirmLogout(){
 let AUTH_HANDLED=false;
 let AUTH_UNSUBSCRIBE=null;
 let AUTH_EXPECTED_LOCAL_SIGNOUT=false;
+let PROFILE_UNSUBSCRIBE=null;
+function stopProfileGuard(){if(PROFILE_UNSUBSCRIBE){try{PROFILE_UNSUBSCRIBE();}catch(error){}PROFILE_UNSUBSCRIBE=null;}}
+async function enterInactiveLocalMode(profile,{preserveCloud=false}={}){
+  const uid=String(profile?.uid||'');if(!uid)return false;
+  if(preserveCloud&&CURRENT_USER?.uid===uid&&CLOUD_WORKOUTS.length)replaceLocalForUser(uid,CLOUD_WORKOUTS);
+  else selectLocalOwner(uid,true);
+  stopProfileGuard();AUTH_EXPECTED_LOCAL_SIGNOUT=true;
+  await withTimeout(auth?.signOut?.()||Promise.resolve(),3500,'saída para modo inativo').catch(()=>{});
+  AUTH_EXPECTED_LOCAL_SIGNOUT=false;
+  CURRENT_USER=null;MODE='local';ACCESS_MODE='local-inactive';document.body.classList.remove('trainer-desktop');
+  INACTIVE_NAME=String(profile.name||'aluno').slice(0,100);INACTIVE_UID=uid;localLoad();
+  const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent='// protocolo pausado · modo local';
+  const chip=document.getElementById('user-chip-name');if(chip)chip.textContent=INACTIVE_NAME;
+  const banner=document.getElementById('inactive-banner');if(banner)banner.textContent='⏸ Consultoria pausada — o último plano salvo continua disponível localmente. Vídeos online permanecem bloqueados.';
+  renderHome();showScreen('screen-home');showToast('Acesso online pausado pelo treinador. O último plano continua disponível localmente.',true);
+  return true;
+}
+function startProfileGuard(userId){
+  stopProfileGuard();
+  if(!db||!userId)return;
+  try{
+    PROFILE_UNSUBSCRIBE=db.collection('users').doc(userId).onSnapshot(async snapshot=>{
+      if(!snapshot.exists){await withTimeout(auth?.signOut?.()||Promise.resolve(),3000,'encerramento de perfil removido').catch(()=>{});return;}
+      const next=sanitizeCachedProfile({...snapshot.data(),uid:userId},userId);if(!next)return;
+      cacheUserProfile(next);
+      if(CURRENT_USER?.role==='trainer'&&next.role!=='trainer'){
+        stopProfileGuard();await withTimeout(auth.signOut(),3000,'encerramento de acesso do treinador').catch(()=>{});return;
+      }
+      if(CURRENT_USER?.role==='student'){
+        CURRENT_USER={...CURRENT_USER,name:next.name,email:next.email,status:next.status};updateOfflineCredentialProfile(CURRENT_USER);
+        if(next.status==='inactive'&&ACCESS_MODE==='cloud-active')await enterInactiveLocalMode(next,{preserveCloud:true});
+      }
+    },error=>console.warn('Profile guard:',error?.code||error?.message));
+  }catch(error){console.warn('Profile guard init:',error);}
+}
 
 // createUserWithEmailAndPassword dispara o listener antes de o documento do
 // perfil terminar de ser gravado. Um retry curto evita deslogar uma conta nova
 // por confundir essa janela de poucos milissegundos com "perfil inexistente".
 async function getUserProfileWithRetry(userId){
-  for(let attempt=0;attempt<10;attempt++){
-    const snap=await db.collection('users').doc(userId).get();
-    if(snap.exists)return snap;
-    await new Promise(r=>{setTimeout(r,150);});
+  let lastError=null;
+  const attempts=navigator.onLine?2:1;
+  for(let attempt=0;attempt<attempts;attempt++){
+    try{
+      const snap=await withTimeout(db.collection('users').doc(userId).get(),PROFILE_READ_TIMEOUT_MS,'leitura do perfil');
+      if(snap.exists)return snap;
+      if(attempt===attempts-1)return null;
+    }catch(error){lastError=error;if(!navigator.onLine||error?.code==='team-bulls/timeout')break;}
+    await new Promise(resolve=>setTimeout(resolve,250));
   }
+  if(lastError)throw lastError;
   return null;
 }
 
-function startAuthListener(safetyTimer){
-  if(AUTH_UNSUBSCRIBE){ AUTH_UNSUBSCRIBE(); AUTH_UNSUBSCRIBE=null; }
-  AUTH_UNSUBSCRIBE = auth.onAuthStateChanged(async user=>{
-    if(safetyTimer)clearTimeout(safetyTimer);
+function startAuthListener(){
+  if(!auth){bootToAuth('O serviço de autenticação não foi carregado. Tente corrigir a atualização.');return;}
+  if(AUTH_UNSUBSCRIBE){AUTH_UNSUBSCRIBE();AUTH_UNSUBSCRIBE=null;}
+  AUTH_UNSUBSCRIBE=auth.onAuthStateChanged(async user=>{
     if(!user){
       AUTH_HANDLED=false;
       if(AUTH_EXPECTED_LOCAL_SIGNOUT)return;
-      CURRENT_USER=null;
-      if(ACCESS_MODE!=='local-inactive'&&ACCESS_MODE!=='local-guest'&&ACCESS_MODE!=='offline-registered')showScreen('screen-auth');
+      stopProfileGuard();CURRENT_USER=null;document.body.classList.remove('trainer-desktop');VIEW_STUDENT=null;VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_EXERCISE=null;
+      if(!['local-inactive','local-guest','offline-registered'].includes(ACCESS_MODE))showScreen('screen-auth');
       return;
     }
     if(AUTH_HANDLED&&CURRENT_USER?.uid===user.uid)return;
     AUTH_HANDLED=true;
-
-    // ── Usuário logado ────────────────────────────────────────────
+    setLoadingMessage('validando perfil...');
     try{
-      const snap = await getUserProfileWithRetry(user.uid);
-      if(!snap){ await auth.signOut(); showScreen('screen-auth'); return; }
-      CURRENT_USER = {...snap.data(),uid:user.uid};
-      updateOfflineCredentialProfile(CURRENT_USER);
+      let snap;
+      try{snap=await getUserProfileWithRetry(user.uid);}
+      catch(profileError){if(restoreCachedStudentAccess(user,profileError))return;throw profileError;}
+      if(!snap){
+        AUTH_HANDLED=false;
+        await withTimeout(auth.signOut(),3000,'saída de conta sem perfil').catch(()=>{});
+        bootToAuth('O cadastro desta conta está incompleto. Entre em contato com o treinador.');
+        return;
+      }
+      CURRENT_USER={...snap.data(),uid:user.uid};
+      if(!['trainer','student'].includes(CURRENT_USER.role))throw new Error('Perfil sem função válida.');
+      CURRENT_USER.status=CURRENT_USER.status==='inactive'?'inactive':'active';
+      cacheUserProfile(CURRENT_USER);updateOfflineCredentialProfile(CURRENT_USER);
+      configureAuthPersistence(CURRENT_USER.role);
 
-      // Treinador
-      if(CURRENT_USER.role === 'trainer'){
-        MODE = 'cloud';
-        ACCESS_MODE='trainer';
+      if(CURRENT_USER.role==='trainer'){
+        MODE='cloud';ACCESS_MODE='trainer';INACTIVE_NAME='';INACTIVE_UID='';
         document.body.classList.add('trainer-desktop');
+        showScreen('screen-trainer');startProfileGuard(user.uid);
         renderTrainer();
-        showScreen('screen-trainer');
         return;
       }
 
-      // Seleciona somente o cache deste aluno. Dados legados sem dono só podem
-      // ser assumidos no primeiro vínculo ou quando uma migração já o identifica.
-      const previousLastUid=localStorage.getItem('teamms_last_user_uid')||'';
-      const pendingOwner=localStorage.getItem('teamms_migration_owner')||'';
+      const previousLastUid=storageGet('teamms_last_user_uid')||'';
+      const pendingOwner=storageGet('teamms_migration_owner')||'';
       const allowLegacy=!previousLastUid||previousLastUid===user.uid||pendingOwner===user.uid;
-      selectLocalOwner(user.uid,allowLegacy);
-      localStorage.setItem('teamms_last_user_uid',user.uid);
+      selectLocalOwner(user.uid,allowLegacy);storageSet('teamms_last_user_uid',user.uid);
 
-      // Aluno INATIVO — entra em modo local (pode editar; dados sobem ao reativar)
-      if(CURRENT_USER.status === 'inactive'){
-        const uname  = CURRENT_USER.name || 'aluno';
-        const ownUid = user.uid;
-        try{
-          // Busca dados do Firebase e mescla sem sobrescrever edições locais.
-          const {workouts:fresh}=await fetchCloudData(ownUid);
-          localStorage.setItem('teamms_cloud_'+ownUid,JSON.stringify(fresh));
-          mergeIntoLocal(fresh,ownUid);
-        }catch(err){ console.warn('Backup inativo falhou:', err.message); }
-
-        AUTH_EXPECTED_LOCAL_SIGNOUT=true;
-        await auth.signOut();
-        CURRENT_USER = null;
-        // ⬇ MODE='local' — pode editar normalmente
-        MODE = 'local';
-        ACCESS_MODE='local-inactive';
-        document.body.classList.remove('trainer-desktop');
-        INACTIVE_NAME = uname;
-        INACTIVE_UID = ownUid;
-        // Recarrega LOCAL_DB com dados frescos
-        localLoad();
-        document.getElementById('hero-eyebrow').textContent = '// protocolo pausado · modo local';
-        document.getElementById('user-chip-name').textContent = uname;
-        // Mostra banner informativo mas SEM bloquear edição
-        const ib = document.getElementById('inactive-banner');
-        if(ib) ib.innerHTML = '⏸ Consultoria pausada — você pode continuar registrando suas séries normalmente. Ao reativar, seus registros sobem para a nuvem automaticamente.';
-        renderHome();
-        showScreen('screen-home');
-        AUTH_EXPECTED_LOCAL_SIGNOUT=false;
+      if(CURRENT_USER.status==='inactive'){
+        await enterInactiveLocalMode(CURRENT_USER,{preserveCloud:false});
         return;
       }
 
-      // Aluno ATIVO
-      MODE = 'cloud';
-      ACCESS_MODE='cloud-active';
-      document.body.classList.remove('trainer-desktop');
-      INACTIVE_NAME='';
-      INACTIVE_UID='';
-      localStorage.removeItem('teamms_offline_pref');
-      localStorage.removeItem(OFFLINE_MODE_KEY);
-      document.getElementById('hero-eyebrow').textContent  = '// sistema online · protocolo ativo';
-      document.getElementById('user-chip-name').textContent = CURRENT_USER.name || 'aluno';
+      MODE='cloud';ACCESS_MODE='cloud-active';document.body.classList.remove('trainer-desktop');INACTIVE_NAME='';INACTIVE_UID='';
+      storageRemove('teamms_offline_pref');storageRemove(OFFLINE_MODE_KEY);
+      const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent='// sistema online · protocolo ativo';
+      const chip=document.getElementById('user-chip-name');if(chip)chip.textContent=CURRENT_USER.name||'aluno';
 
-      // Migração: sempre tenta subir dados offline para cloud ao logar
+      const cached=loadCloudBackup(user.uid);
+      CLOUD_WORKOUTS=cached;populateHistoryFromWorkouts(cached);renderHome();showScreen('screen-home');startProfileGuard(user.uid);
+
       const hasOffline=hasStoredLocal();
-      const hasPending=localStorage.getItem('teamms_migration_pending')==='1'&&(!pendingOwner||pendingOwner===user.uid);
-      const legacyNeedsCheck=hasOffline&&!localStorage.getItem('teamms_cloud_mirror_'+user.uid)&&(!pendingOwner||pendingOwner===user.uid);
-      if(hasPending||legacyNeedsCheck){
-        await migrateLocalToCloud(user.uid);
-      }
-      await loadCloudHome();
-      showScreen('screen-home');
-
-    }catch(e){ console.error('Auth handler error:', e); showScreen('screen-auth'); }
+      const hasPending=storageGet('teamms_migration_pending')==='1'&&(!pendingOwner||pendingOwner===user.uid);
+      const legacyNeedsCheck=hasOffline&&!storageGet('teamms_cloud_mirror_'+user.uid)&&(!pendingOwner||pendingOwner===user.uid);
+      (async()=>{
+        if(hasPending||legacyNeedsCheck)await migrateLocalToCloud(user.uid,{background:true});
+        await loadCloudHome();
+      })().catch(error=>console.warn('Sincronização pós-login:',error));
+    }catch(error){
+      console.error('Auth handler error:',error);
+      AUTH_HANDLED=false;
+      if(restoreCachedStudentAccess(user,error))return;
+      bootToAuth(isNetworkLikeError(error)?'O servidor não respondeu. Treinadores precisam de conexão; alunos podem usar o acesso offline já validado.':'Não foi possível validar este perfil. Entre novamente.');
+    }
+  },error=>{
+    console.error('Auth state error:',error);AUTH_HANDLED=false;
+    bootToAuth('Falha ao consultar a sessão. Tente novamente ou corrija a atualização.');
   });
 }
 
@@ -2565,28 +2716,24 @@ function beginAsyncNavigation(){return ++NAVIGATION_SEQ;}
 function isNavigationCurrent(token){return token===NAVIGATION_SEQ;}
 function showScreen(id,expectedToken=null){
   if(expectedToken!==null&&!isNavigationCurrent(expectedToken))return false;
+  const target=document.getElementById(id);
+  if(!target){console.error('Tela inexistente:',id);window.TeamBullsRecovery?.reveal?.('Uma parte da interface não foi carregada corretamente.');return false;}
   NAVIGATION_SEQ++;
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
-  // FABs visíveis em local e cloud; ocultos apenas para treinador vendo aluno
-  const isReadonly = (CURRENT_USER?.role==='trainer' && VIEW_STUDENT!==null);
-  // Treino e Exercício (a estrutura do plano) só podem ser criados pelo treinador.
-  // Em modo local, só quem NUNCA teve vínculo com um treinador continua se autogerenciando —
-  // um aluno vinculado (mesmo pausado/offline) não pode criar estrutura que nunca vai sincronizar.
-  document.getElementById('fab-home').style.display=id==='screen-home'&&!isReadonly&&canSelfManagePlan()?'flex':'none';
-  document.getElementById('fab-workout').style.display=id==='screen-workout'&&!isReadonly&&canSelfManagePlan()?'flex':'none';
-  // Registrar séries (o que foi feito) continua sendo tarefa do aluno, tanto local quanto na nuvem.
-  document.getElementById('fab-exercise').style.display=id==='screen-exercise'&&!isReadonly?'flex':'none';
-  // FABs do treinador para montar o plano do aluno (adicionar treino / exercício)
-  document.getElementById('fab-ts-workout').style.display=id==='screen-trainer-student'?'flex':'none';
-  document.getElementById('fab-ts-exercise').style.display=id==='screen-ts-workout'?'flex':'none';
-  // Plano alimentar: aluno só edita em modo local (uso solo). Em nuvem, só o treinador edita (fab-ts-meals).
-  document.getElementById('fab-meals').style.display=id==='screen-meals'&&MODE==='local'?'flex':'none';
-  document.getElementById('fab-ts-meals').style.display=id==='screen-ts-meals'?'flex':'none';
-  document.getElementById('fab-photos').style.display=id==='screen-photos'&&!isReadonly?'flex':'none';
-  // Excluir exercício: só quem se autogerencia de verdade. Na nuvem, só o treinador exclui.
-  if(id==='screen-exercise'||id==='screen-ts-exercise') document.getElementById('btn-del-exercise').style.display=id==='screen-exercise'&&!isReadonly&&canSelfManagePlan()?'flex':'none';
+  document.querySelectorAll('.screen').forEach(screen=>screen.classList.remove('active'));
+  target.classList.add('active');
+  try{window.scrollTo(0,0);}catch(error){}
+  const isReadonly=CURRENT_USER?.role==='trainer'&&VIEW_STUDENT!==null;
+  const display=(elementId,visible)=>{const element=document.getElementById(elementId);if(element)element.style.display=visible?'flex':'none';};
+  display('fab-home',id==='screen-home'&&!isReadonly&&canSelfManagePlan());
+  display('fab-workout',id==='screen-workout'&&!isReadonly&&canSelfManagePlan());
+  display('fab-exercise',id==='screen-exercise'&&!isReadonly);
+  display('fab-ts-workout',id==='screen-trainer-student');
+  display('fab-ts-exercise',id==='screen-ts-workout');
+  display('fab-meals',id==='screen-meals'&&MODE==='local');
+  display('fab-ts-meals',id==='screen-ts-meals');
+  display('fab-photos',id==='screen-photos'&&!isReadonly);
+  if(id==='screen-exercise'||id==='screen-ts-exercise')display('btn-del-exercise',id==='screen-exercise'&&!isReadonly&&canSelfManagePlan());
+  if(id!=='screen-loading')finishBoot();
   return true;
 }
 
@@ -2633,11 +2780,11 @@ function renderHome(){
   list.innerHTML=ws.map(w=>{
     const last=lastDate(w);
     const meta=last?'Último: '+fmt(last):w.exercises.length+' '+(w.exercises.length===1?'exercício':'exercícios');
-    const wid=esc(w.id),wn=esc(w.name);
+    const wid=jsArg(w.id),wn=esc(w.name);
     // Editar/excluir treino: só quem se autogerencia de verdade (ver canSelfManagePlan). Na nuvem, o treino é montado pelo treinador.
-    const editActions=canSelfManagePlan()?`<button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout('${wid}')" title="Editar">✏️</button><button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino e todos os seus dados?',function(){deleteWorkout('${wid}');})" title="Excluir">🗑</button>`:'';
-    const actions=`<div class="workout-card-actions"><button class="btn-icon ghost" onclick="event.stopPropagation();exportWorkoutPdfById('${wid}',false)" title="Salvar PDF">PDF</button>${editActions}</div>`;
-    return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openWorkout('${wid}')">
+    const editActions=canSelfManagePlan()?`<button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout(${wid})" title="Editar">✏️</button><button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino e todos os seus dados?',function(){deleteWorkout(${wid});})" title="Excluir">🗑</button>`:'';
+    const actions=`<div class="workout-card-actions"><button class="btn-icon ghost" onclick="event.stopPropagation();exportWorkoutPdfById(${wid},false)" title="Salvar PDF">PDF</button>${editActions}</div>`;
+    return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openWorkout(${wid})">
       <div class="workout-card-info"><div class="archive-file-kicker">PROTOCOLO ATIVO</div><div class="workout-card-name">${wn}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
       ${actions}
     </div>`;
@@ -2651,7 +2798,7 @@ function pdfEscape(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':
 function workoutPdfHtml(workout,studentName){
   const days=groupExercisesByDay(workout.exercises||[]);
   const sections=days.map(([day,items])=>`<section><h2>${pdfEscape(day)}</h2>${items.map(ex=>`<article><h3>${pdfEscape(ex.name)}</h3><table><thead><tr><th>Semana</th><th>Prescrição</th></tr></thead><tbody>${[1,2,3,4,5,6,7,8].map(week=>{const rx=resolveWeekPrescription(ex,week);const text=rx.sets.length?rx.sets.map((set,i)=>`${i+1}ª: ${set.targetMin}-${set.targetMax} reps · GER ${String(set.ger).padStart(2,'0')}`).join('<br>'):'Sem exercício';return`<tr><td>Semana ${week}</td><td>${text}</td></tr>`;}).join('')}</tbody></table></article>`).join('')}</section>`).join('');
-  return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${pdfEscape(workout.name)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#161616}header{border-bottom:3px solid #9b2024;padding-bottom:10px;margin-bottom:18px}h1{font-size:25px;margin:0;text-transform:uppercase}header p{margin:5px 0 0;color:#555}h2{font-size:19px;background:#111;color:#fff;padding:8px 10px;margin:18px 0 8px}article{break-inside:avoid;margin-bottom:14px}h3{font-size:16px;margin:0 0 6px;color:#8f1e22}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#eee}footer{margin-top:20px;font-size:9px;color:#777;text-align:center}</style></head><body><header><h1>TEAM BULLS — ${pdfEscape(workout.name)}</h1><p>Aluno: ${pdfEscape(studentName||'Modo local')} · Treino completo organizado por dias</p></header>${sections||'<p>Nenhum exercício cadastrado.</p>'}<footer>Gerado pelo Team Bulls v9.4. No diálogo de impressão, escolha “Salvar como PDF”.</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
+  return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${pdfEscape(workout.name)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#161616}header{border-bottom:3px solid #9b2024;padding-bottom:10px;margin-bottom:18px}h1{font-size:25px;margin:0;text-transform:uppercase}header p{margin:5px 0 0;color:#555}h2{font-size:19px;background:#111;color:#fff;padding:8px 10px;margin:18px 0 8px}article{break-inside:avoid;margin-bottom:14px}h3{font-size:16px;margin:0 0 6px;color:#8f1e22}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#eee}footer{margin-top:20px;font-size:9px;color:#777;text-align:center}</style></head><body><header><h1>TEAM BULLS — ${pdfEscape(workout.name)}</h1><p>Aluno: ${pdfEscape(studentName||'Modo local')} · Treino completo organizado por dias</p></header>${sections||'<p>Nenhum exercício cadastrado.</p>'}<footer>Gerado pelo Team Bulls v9.5. No diálogo de impressão, escolha “Salvar como PDF”.</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
 }
 function exportWorkoutPdf(workout,studentName){if(!workout)return;const popup=window.open('','_blank');if(!popup){alert('Permita pop-ups para gerar o PDF.');return;}try{popup.opener=null;}catch(e){}popup.document.open();popup.document.write(workoutPdfHtml(workout,studentName));popup.document.close();}
 function exportWorkoutPdfById(id,trainerMode){const w=trainerMode?VIEW_STUDENT?.workouts?.find(x=>x.id===id):getW(id);exportWorkoutPdf(w,trainerMode?VIEW_STUDENT?.name:(CURRENT_USER?.name||INACTIVE_NAME||'Modo local'));}
@@ -2746,11 +2893,11 @@ function stableCreatedOrder(a,b){
 // Além de reduzir bastante o tempo de entrada, evita que arrays globais sejam
 // preenchidos aos poucos por duas respostas concorrentes.
 async function fetchCloudData(userId){
-  const [workoutSnap,exerciseSnap,sessionSnap]=await Promise.all([
+  const [workoutSnap,exerciseSnap,sessionSnap]=await withTimeout(Promise.all([
     db.collection('workouts').where('userId','==',userId).get(),
     db.collection('exercises').where('userId','==',userId).get(),
     db.collection('sessions').where('userId','==',userId).get()
-  ]);
+  ]),CLOUD_READ_TIMEOUT_MS,'carregamento dos treinos');
   const workouts=workoutSnap.docs.map(d=>{const data=d.data();return{...data,id:d.id,name:String(data.name||'Treino').slice(0,60),color:PALETTE.includes(data.color)?data.color:PALETTE[0],exercises:[]};});
   const workoutMap=new Map(workouts.map(w=>[w.id,w])),exerciseMap=new Map();
   for(const d of exerciseSnap.docs){
@@ -2805,13 +2952,13 @@ async function checkFeedback(){
   try{
     let docs;
     try{
-      const ordered=await db.collection('feedback')
+      const ordered=await cloudGet(db.collection('feedback')
         .where('studentId','==',studentUid).where('read','==',false)
-        .orderBy('createdAt','desc').limit(1).get();
+        .orderBy('createdAt','desc').limit(1),'feedback pendente');
       docs=ordered.docs;
     }catch(indexError){
       // Funciona mesmo antes de o índice composto ser criado.
-      const fallback=await db.collection('feedback').where('studentId','==',studentUid).get();
+      const fallback=await cloudGet(db.collection('feedback').where('studentId','==',studentUid),'feedback do aluno');
       docs=fallback.docs.filter(doc=>!doc.data().read).sort((a,b)=>createdMillis(b.data())-createdMillis(a.data())).slice(0,1);
     }
     if(CURRENT_USER?.uid!==studentUid)return;
@@ -3195,7 +3342,7 @@ function renderExerciseVideo(e,elId,context='student'){
   }
   const id=extractYouTubeId(e.videoUrl);
   if(id){
-    el.innerHTML=`<div class="video-box"><iframe title="Vídeo de execução de ${esc(e.name)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/${esc(id)}?rel=0" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>${canEdit?`<div class="video-box-link"><span>Vídeo incorporado do YouTube</span><button class="video-box-edit-btn" onclick="openExerciseVideoModal(${jsArg(e.id)},${jsArg(e.videoUrl||'')})">EDITAR</button></div>`:''}</div>`;
+    el.innerHTML=`<div class="video-box"><iframe title="Vídeo de execução de ${esc(e.name)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/${esc(id)}?rel=0" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>${canEdit?`<div class="video-box-link"><span>Vídeo incorporado do YouTube</span><button class="video-box-edit-btn" onclick="openExerciseVideoModal(${jsArg(e.id)},${jsArg(e.videoUrl||'')})">EDITAR</button></div>`:''}</div>`;
   }else if(canEdit){
     el.innerHTML=`<div class="video-box"><div class="video-box-empty"><div class="video-box-empty-label">Nenhum vídeo cadastrado</div><button class="video-box-add-btn" onclick="openExerciseVideoModal(${jsArg(e.id)},'')">+ ADICIONAR</button></div></div>`;
   }else el.innerHTML='';
@@ -3257,7 +3404,7 @@ async function loadMealPlan(uidOverride){
   }
   const targetUid=uidOverride||CURRENT_USER.uid;
   try{
-    const doc=await db.collection('mealPlans').doc(targetUid).get();
+    const doc=await cloudGet(db.collection('mealPlans').doc(targetUid),'plano alimentar');
     const meals=doc.exists?(doc.data().meals||[]):[];
     cacheOwnMealPlan(targetUid,meals);
     return meals;
@@ -3268,10 +3415,10 @@ async function fetchCompletionsToday(uid){
   try{
     let docs;
     try{
-      const snap=await db.collection('mealCompletions').where('studentUid','==',uid).where('date','==',today()).get();
+      const snap=await cloudGet(db.collection('mealCompletions').where('studentUid','==',uid).where('date','==',today()),'refeições concluídas');
       docs=snap.docs;
     }catch(indexError){
-      const fallback=await db.collection('mealCompletions').where('studentUid','==',uid).get();
+      const fallback=await cloudGet(db.collection('mealCompletions').where('studentUid','==',uid),'histórico de refeições');
       docs=fallback.docs.filter(d=>d.data().date===today());
     }
     docs.forEach(d=>completions.add(d.data().mealId));
@@ -3650,7 +3797,7 @@ function cachedFoodCatalog(){try{const raw=JSON.parse(localStorage.getItem('team
 async function loadFoodOptions(){
   if(MODE==='local'){FOOD_OPTIONS=cachedFoodCatalog()||mergeFoodCatalogWithDefaults(null);return FOOD_OPTIONS;}
   try{
-    const doc=await db.collection('foodOptions').doc('main').get();
+    const doc=await cloudGet(db.collection('foodOptions').doc('main'),'catálogo de alimentos');
     if(doc.exists){
       const stored=doc.data()||{};FOOD_OPTIONS=mergeFoodCatalogWithDefaults(stored);
       if(CURRENT_USER?.role==='trainer'&&Number(stored.catalogVersion)!==FOOD_CATALOG_VERSION)await db.collection('foodOptions').doc('main').set(FOOD_OPTIONS);
@@ -3860,7 +4007,7 @@ function openCatalogVideo(url,title){
   if(!canUseCatalogVideos()&&CURRENT_USER?.role!=='trainer'){showToast('Vídeos disponíveis somente para alunos ativos online.',true);return;}
   const id=extractYouTubeId(url);if(!id){showToast('Use um link válido do YouTube.',true);return;}
   document.getElementById('catalog-video-title').textContent=title||'Vídeo de execução';
-  document.getElementById('catalog-video-body').innerHTML=`<iframe title="${esc(title||'Vídeo de execução')}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/${esc(id)}?rel=0" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0"></iframe>`;
+  document.getElementById('catalog-video-body').innerHTML=`<iframe title="${esc(title||'Vídeo de execução')}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/${esc(id)}?rel=0" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-same-origin allow-presentation" style="width:100%;aspect-ratio:16/9;border:0"></iframe>`;
   openModal('modal-catalog-video');
 }
 function closeCatalogVideo(){document.getElementById('catalog-video-body').innerHTML='';closeModal('modal-catalog-video');}
@@ -3883,7 +4030,7 @@ async function loadExerciseOptions(force=false){
   if(!force&&EXERCISE_OPTIONS.groups?.length&&Date.now()-EXERCISE_OPTIONS_LOADED_AT<60000)return EXERCISE_OPTIONS;
   EXERCISE_OPTIONS_LOAD_PROMISE=(async()=>{
     try{
-      const doc=await db.collection('exerciseOptions').doc('main').get();
+      const doc=await cloudGet(db.collection('exerciseOptions').doc('main'),'catálogo de exercícios');
       if(doc.exists){
         const stored=doc.data()||{};EXERCISE_OPTIONS=mergeExerciseCatalogWithDefaults(stored);
         if(CURRENT_USER?.role==='trainer'&&Number(stored.catalogVersion)!==EXERCISE_CATALOG_VERSION)await db.collection('exerciseOptions').doc('main').set(EXERCISE_OPTIONS);
@@ -4079,7 +4226,7 @@ async function loadPhotos(uidOverride){
   const targetUid=uidOverride||CURRENT_USER.uid;
   const loadSeq=++PHOTOS_LOAD_SEQ;
   try{
-    const snap=await db.collection('progressPhotos').where('userId','==',targetUid).get();
+    const snap=await cloudGet(db.collection('progressPhotos').where('userId','==',targetUid),'fotos de evolução');
     const photos=snap.docs.map(d=>({...d.data(),id:d.id})).filter(p=>/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(String(p.dataUrl||'')));
     photos.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
     if(loadSeq!==PHOTOS_LOAD_SEQ)return PHOTOS_CACHE;
@@ -4100,7 +4247,7 @@ function renderPhotosGallery(gridId,emptyId,readonly){
   if(!PHOTOS_CACHE.length){grid.innerHTML='';if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';
   grid.innerHTML=PHOTOS_CACHE.map(p=>
-    `<div class="photo-thumb" onclick="openPhotoView(${jsArg(p.id)},${readonly})"><img src="${p.dataUrl}" loading="lazy" decoding="async" alt="Evidência de ${fmt(p.date)}"><div class="photo-thumb-date">${fmt(p.date)}${Number(p.weight)>0?'<br>'+esc(Number(p.weight).toLocaleString('pt-BR',{maximumFractionDigits:1}))+' kg':''}</div></div>`
+    `<div class="photo-thumb" onclick="openPhotoView(${jsArg(p.id)},${readonly})"><img src="${esc(safePhotoDataUrl(p.dataUrl))}" loading="lazy" decoding="async" alt="Evidência de ${esc(fmt(p.date))}"><div class="photo-thumb-date">${esc(fmt(p.date))}${Number(p.weight)>0?'<br>'+esc(Number(p.weight).toLocaleString('pt-BR',{maximumFractionDigits:1}))+' kg':''}</div></div>`
   ).join('');
 }
 function triggerPhotoUpload(){
@@ -4333,7 +4480,7 @@ async function openTsQuestionnaires(){
   const navigation=beginAsyncNavigation(),studentUid=VIEW_STUDENT.uid;
   let questionnaires=[];
   try{
-    const snap=await db.collection('questionnaires').where('studentId','==',studentUid).get();
+    const snap=await cloudGet(db.collection('questionnaires').where('studentId','==',studentUid),'questionários');
     questionnaires=snap.docs.map(d=>({...d.data(),id:d.id}));
     questionnaires.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   }catch(e){questionnaires=[];}
@@ -4348,10 +4495,10 @@ async function checkQuestionnaires(){
   try{
     let docs;
     try{
-      const snap=await db.collection('questionnaires').where('studentId','==',studentUid).where('answered','==',false).limit(1).get();
+      const snap=await cloudGet(db.collection('questionnaires').where('studentId','==',studentUid).where('answered','==',false).limit(1),'questionário pendente');
       docs=snap.docs;
     }catch(indexError){
-      const fallback=await db.collection('questionnaires').where('studentId','==',studentUid).get();
+      const fallback=await cloudGet(db.collection('questionnaires').where('studentId','==',studentUid),'questionários');
       docs=fallback.docs.filter(d=>!d.data().answered).slice(0,1);
     }
     if(CURRENT_USER?.uid!==studentUid)return;
@@ -4367,7 +4514,7 @@ async function checkQuestionnaires(){
 async function openAnswerQuestionnaire(qid){
   if(!qid)return;
   try{
-    const doc=await db.collection('questionnaires').doc(qid).get();
+    const doc=await cloudGet(db.collection('questionnaires').doc(qid),'questionário');
     if(!doc.exists)return;
     const q={...doc.data(),id:doc.id};
     CUR_ANSWER_QUEST_ID=qid;
@@ -4396,7 +4543,7 @@ async function openMyQuestionnaires(){
   const navigation=beginAsyncNavigation(),studentUid=CURRENT_USER.uid;
   let questionnaires=[];
   try{
-    const snap=await db.collection('questionnaires').where('studentId','==',studentUid).get();
+    const snap=await cloudGet(db.collection('questionnaires').where('studentId','==',studentUid),'questionários');
     questionnaires=snap.docs.map(d=>({...d.data(),id:d.id}));
     questionnaires.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   }catch(e){questionnaires=[];}
@@ -4566,7 +4713,7 @@ async function cloudDeleteWorkout(id){
   // e voltam a aparecer se um exercício de mesmo nome for criado depois.
   try{
     const batch=db.batch();
-    const exs=await db.collection('exercises').where('workoutId','==',id).get();
+    const exs=await cloudGet(db.collection('exercises').where('workoutId','==',id),'exercícios do treino');
     exs.docs.forEach(ex=>batch.delete(ex.ref));
     batch.delete(db.collection('workouts').doc(id));
     await batch.commit();
@@ -4586,7 +4733,7 @@ async function deleteTsWorkout(wid){
     // Não apaga as sessões — ficam preservadas em HISTORY_BY_NAME e voltam a
     // aparecer se você recriar um exercício de mesmo nome, mesmo em outro treino.
     const batch=db.batch();
-    const exs=await db.collection('exercises').where('workoutId','==',wid).get();
+    const exs=await cloudGet(db.collection('exercises').where('workoutId','==',wid),'exercícios do treino');
     exs.docs.forEach(ex=>batch.delete(ex.ref));
     batch.delete(db.collection('workouts').doc(wid));
     await batch.commit();
@@ -4649,7 +4796,7 @@ async function saveWorkout(){
   try{
     if(MODE==='cloud'){
       const targetUid=MODAL_TARGET==='student'?VIEW_STUDENT?.uid:CURRENT_USER?.uid;
-      const serverWorkouts=await db.collection('workouts').where('userId','==',targetUid).get();
+      const serverWorkouts=await cloudGet(db.collection('workouts').where('userId','==',targetUid),'treinos existentes');
       if(serverWorkouts.docs.some(d=>d.id!==EDIT_W&&normalizedName(d.data().name)===normalizedName(name))){
         alert('Esse treino já foi salvo. A lista será atualizada para evitar uma duplicação.');
         if(MODAL_TARGET==='student')await renderTrainerStudent(VIEW_STUDENT);else await loadCloudHome();
@@ -5061,7 +5208,7 @@ async function renderTrainer(){
   const loadSeq=++TRAINER_LIST_LOAD_SEQ;
   document.getElementById('trainer-chip-name').textContent=CURRENT_USER?.name||'treinador';
   try{
-    const snap=await db.collection('users').where('role','==','student').get();
+    const snap=await withTimeout(db.collection('users').where('role','==','student').get(),CLOUD_READ_TIMEOUT_MS,'lista de alunos');
     const students=snap.docs.map(d=>({...d.data(),uid:d.id}));
     if(loadSeq!==TRAINER_LIST_LOAD_SEQ||CURRENT_USER?.role!=='trainer')return;
     students.sort((a,b)=>normalizedName(a.name).localeCompare(normalizedName(b.name),'pt-BR')||a.uid.localeCompare(b.uid));
@@ -5093,7 +5240,14 @@ async function renderTrainer(){
         </div>
       </div>`;
     }).join('');
-  }catch(e){if(loadSeq===TRAINER_LIST_LOAD_SEQ)console.error('renderTrainer',e);}
+  }catch(e){
+    if(loadSeq===TRAINER_LIST_LOAD_SEQ){
+      console.error('renderTrainer',e);
+      const list=document.getElementById('student-list');const empty=document.getElementById('student-empty');
+      if(list)list.innerHTML='<div class="session-block" style="border-color:var(--warn)"><div style="color:var(--warn);font-size:13px;margin-bottom:8px">Não foi possível carregar os alunos.</div><button class="btn-add-set" onclick="renderTrainer()">TENTAR NOVAMENTE</button></div>';
+      if(empty)empty.style.display='none';
+    }
+  }
 }
 
 async function toggleStudent(suid,isActive){
@@ -5140,13 +5294,13 @@ async function renderTrainerStudent(s){
     list.innerHTML=duplicateWarning+workouts.map(w=>{
       const last=lastDate(w);
       const meta=last?'Último: '+fmt(last):w.exercises.length+' '+(w.exercises.length===1?'exercício':'exercícios');
-      const wid=esc(w.id);
-      return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openTsWorkout('${wid}')">
+      const wid=jsArg(w.id);
+      return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openTsWorkout(${wid})">
         <div class="workout-card-info"><div class="archive-file-kicker">PROTOCOLO PRESCRITO</div><div class="workout-card-name">${esc(w.name)}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
         <div class="workout-card-actions">
-          <button class="btn-icon ghost" onclick="event.stopPropagation();exportWorkoutPdfById('${wid}',true)" title="Salvar PDF">PDF</button>
-          <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkoutTs('${wid}')" title="Editar">✏️</button>
-          <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino? O histórico de séries dos exercícios fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsWorkout('${wid}');})" title="Excluir">🗑</button>
+          <button class="btn-icon ghost" onclick="event.stopPropagation();exportWorkoutPdfById(${wid},true)" title="Salvar PDF">PDF</button>
+          <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkoutTs(${wid})" title="Editar">✏️</button>
+          <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino? O histórico de séries dos exercícios fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsWorkout(${wid});})" title="Excluir">🗑</button>
         </div>
       </div>`;
     }).join('');
@@ -5610,7 +5764,9 @@ function scheduleMusicOfflineCache(url){
   const connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
   if(connection?.saveData||/2g/.test(connection?.effectiveType||''))return;
   MUSIC_CACHE_REQUESTED.add(url);
-  const send=()=>navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:'CACHE_AUDIO',url})).catch(()=>MUSIC_CACHE_REQUESTED.delete(url));
+  const send=()=>withTimeout(navigator.serviceWorker.ready,5000,'service worker para áudio')
+    .then(reg=>{if(reg?.active)reg.active.postMessage({type:'CACHE_AUDIO',url});else MUSIC_CACHE_REQUESTED.delete(url);})
+    .catch(()=>MUSIC_CACHE_REQUESTED.delete(url));
   if('requestIdleCallback' in window)requestIdleCallback(()=>setTimeout(send,12000),{timeout:25000});
   else setTimeout(send,20000);
 }
@@ -5633,40 +5789,57 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('online',()=>{if(ACCESS_MODE==='offline-registered')showToast('Internet disponível. Entre novamente para sincronizar.');});
 
 function initApp(){
-  applyAppSettings();
-  const restoreGuest=localStorage.getItem(OFFLINE_MODE_KEY)==='guest'||localStorage.getItem('teamms_offline_pref')==='1';
-  if(restoreGuest){
-    MODE='local';ACCESS_MODE='local-guest';CURRENT_USER=null;INACTIVE_NAME='';INACTIVE_UID='';
-    selectLocalOwner(LOCAL_GUEST_OWNER,!localStorage.getItem('teamms_last_user_uid'));
-    document.getElementById('hero-eyebrow').textContent='// modo local independente';
-    document.getElementById('user-chip-name').textContent='local';
-    updateDebugBar();renderHome();showScreen('screen-home');return;
-  }
-  const firebaseUnavailable=(window.__fbLoadErrors>0)||(typeof firebase==='undefined');
-  if(firebaseUnavailable){
-    MODE='local';ACCESS_MODE='local-guest';LOCAL_OWNER_UID='';LOCAL_DB={workouts:[]};
-    showScreen('screen-auth');showAuthError('login-error','Sem acesso ao servidor. Use sua conta offline já validada neste aparelho ou entre no modo local.');return;
-  }
-  const firebaseOK=initFirebase();
-  if(firebaseOK&&CFG.firebase.apiKey!=='COLE_AQUI'){
-    const safetyTimer=setTimeout(()=>{if(document.getElementById('screen-loading').classList.contains('active')){AUTH_HANDLED=false;showScreen('screen-auth');}},8000);
-    try{startAuthListener(safetyTimer);}catch(e){clearTimeout(safetyTimer);showScreen('screen-auth');}
-  }else{
-    showScreen('screen-auth');showAuthError('login-error','Firebase não configurado. O modo local continua disponível.');
+  if(BOOT_STARTED)return;
+  BOOT_STARTED=true;startBootWatchdog();setLoadingMessage('iniciando sistema...');
+  try{
+    applyAppSettings();
+    const restoreGuest=storageGet(OFFLINE_MODE_KEY)==='guest'||storageGet('teamms_offline_pref')==='1';
+    if(restoreGuest){
+      MODE='local';ACCESS_MODE='local-guest';CURRENT_USER=null;INACTIVE_NAME='';INACTIVE_UID='';
+      selectLocalOwner(LOCAL_GUEST_OWNER,!storageGet('teamms_last_user_uid'));
+      const eyebrow=document.getElementById('hero-eyebrow');if(eyebrow)eyebrow.textContent='// modo local independente';
+      const chip=document.getElementById('user-chip-name');if(chip)chip.textContent='local';
+      updateDebugBar();renderHome();showScreen('screen-home');return;
+    }
+    const firebaseUnavailable=window.__fbLoadErrors>0||typeof firebase==='undefined';
+    if(firebaseUnavailable){
+      MODE='local';ACCESS_MODE='local-guest';LOCAL_OWNER_UID='';LOCAL_DB={workouts:[]};
+      bootToAuth('Sem acesso ao servidor. Use sua conta offline já validada, o modo local ou corrija a atualização.');return;
+    }
+    const firebaseOK=initFirebase();
+    if(firebaseOK&&CFG.firebase.apiKey!=='COLE_AQUI'){setLoadingMessage('verificando sessão...');startAuthListener();}
+    else bootToAuth('Firebase não configurado. O modo local continua disponível.');
+  }catch(error){
+    console.error('Falha na inicialização:',error);
+    bootToAuth('O aplicativo encontrou uma falha ao iniciar. Tente corrigir a atualização; seus dados locais foram preservados.');
+    window.TeamBullsRecovery?.reveal?.('Falha durante a inicialização. Use “Corrigir atualização” para remover apenas o cache antigo.');
   }
 }
-
 // Os SDKs usam `defer` para não bloquear a primeira pintura. O app inicializa
 // depois do parse, quando Firebase e todos os elementos do DOM já estão prontos.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});
 else initApp();
 
-// ── Registra o Service Worker (PWA / cache offline) ──────────
+// ── Service Worker: atualização sem loop e recuperação de versões antigas ──
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw_9.js',{updateViaCache:'none'})
-      .then(r=>{r.update().catch(()=>{});console.log('SW registrado:', r.scope);})
-      .catch(e=>console.warn('SW falhou:', e));
+  window.addEventListener('load',()=>{
+    const hadController=!!navigator.serviceWorker.controller;
+    let reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(!hadController||reloaded)return;
+      reloaded=true;
+      try{if(sessionStorage.getItem('team_bulls_sw_reload_v9_5')==='1')return;sessionStorage.setItem('team_bulls_sw_reload_v9_5','1');}catch(error){}
+      location.reload();
+    });
+    navigator.serviceWorker.register('sw_10.js',{updateViaCache:'none'}).then(registration=>{
+      if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});
+      registration.addEventListener('updatefound',()=>{
+        const worker=registration.installing;if(!worker)return;
+        worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)worker.postMessage({type:'SKIP_WAITING'});});
+      });
+      registration.update().catch(()=>{});
+      console.log('SW v9.5 registrado:',registration.scope);
+    }).catch(error=>console.warn('SW falhou:',error));
   });
 }
 
