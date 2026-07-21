@@ -1,0 +1,18 @@
+{
+  "name": "Team Bulls v9.4",
+  "short_name": "Team Bulls",
+  "description": "Plataforma Team Bulls v9.4 — painel de treino, dieta, evolução, modo offline e playlist local aleatória",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "lang": "pt-BR",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0c0c0c",
+  "theme_color": "#0c0c0c",
+  "orientation": "any",
+  "icons": [
+    {"src":"icon-192-v8-2.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icon-512-v8-2.png","sizes":"512x512","type":"image/png","purpose":"any"}
+  ]
+}
