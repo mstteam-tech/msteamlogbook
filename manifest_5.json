@@ -1,7 +1,7 @@
 {
-  "name": "Team Bulls v9",
+  "name": "Team Bulls v9.1",
   "short_name": "Team Bulls",
-  "description": "Plataforma de treinos, dietas, relatórios e evolução — Team Bulls v9",
+  "description": "Plataforma Team Bulls v9.1 — correção do player de música, treinos, dietas e evolução",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Team Bulls v9.0: painel desktop, dias de treino, cópia em massa, substituições com vídeo, modos offline, PDF e configurações. -->
+<!-- Team Bulls v9.1: correção do player de música/playlist, painel desktop, offline, PDF e configurações. -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -614,14 +614,17 @@
     .catalog-video-btn.locked{opacity:.45;cursor:not-allowed;}
     .pdf-note{font-family:'DM Mono',monospace;font-size:8px;color:#807369;line-height:1.6;margin-top:7px;}
     .trainer-desktop-nav{display:none;}
-    .music-dock{display:none;position:fixed;right:12px;bottom:12px;width:224px;z-index:110;background:#080706;border:1px solid #4a3e35;box-shadow:0 10px 35px #000;padding:6px;}
+    .music-dock{display:none;position:fixed;right:12px;bottom:12px;width:330px;z-index:110;background:#080706;border:1px solid #4a3e35;box-shadow:0 10px 35px #000;padding:6px;}
     .music-dock.active{display:block;}
-    .music-dock.minimized{width:170px;}
-    .music-dock.minimized #youtube-music-player{height:0!important;overflow:hidden;}
+    .music-dock.minimized{width:190px;}
+    .music-dock.minimized #youtube-music-player,.music-dock.minimized .music-status{height:0!important;min-height:0!important;padding:0!important;margin:0!important;overflow:hidden;border:0;}
     .music-dock-head{display:flex;gap:6px;align-items:center;font-family:'DM Mono',monospace;font-size:7px;color:#9a8b7c;letter-spacing:.8px;margin-bottom:5px;}
     .music-dock-head span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .music-dock-head button{background:none;border:0;color:#a99a8b;cursor:pointer;padding:3px;}
-    #youtube-music-player{width:210px;height:118px;max-width:100%;}
+    #youtube-music-player{width:316px;height:200px;max-width:100%;min-height:200px;}
+    .music-status{min-height:25px;padding:6px 7px;border-top:1px solid #302923;font-family:'DM Mono',monospace;font-size:8px;line-height:1.4;color:#8f8173;}
+    .music-status.error{color:#d88989;}
+    .music-status.ready{color:#9db491;}
     .music-dock.minimized .music-mini-controls{display:flex;}
     .music-mini-controls{display:none;gap:5px;}
     .music-mini-controls button{flex:1;border:1px solid #42382f;background:#111;color:#a59686;padding:6px;font-size:10px;cursor:pointer;}
@@ -653,8 +656,8 @@
       body.trainer-desktop .music-dock{right:16px;bottom:16px;}
     }
     @media(max-width:899px){
-      .music-dock{right:7px;bottom:74px;width:184px;}
-      #youtube-music-player{width:170px;height:96px;}
+      .music-dock{right:7px;bottom:74px;width:min(296px,calc(100vw - 14px));}
+      #youtube-music-player{width:100%;height:200px;min-height:200px;}
       .setting-row{grid-template-columns:1fr;gap:6px;}
     }
 
@@ -1106,6 +1109,7 @@
 <div class="music-dock" id="music-dock" aria-label="Música de fundo">
   <div class="music-dock-head"><span>♫ TEAM BULLS // PLAYLIST</span><button onclick="musicNext()" title="Próxima">⏭</button><button onclick="toggleMusicDock(true)" title="Minimizar">—</button></div>
   <div id="youtube-music-player"></div>
+  <div class="music-status" id="music-status">Clique em ▶ para iniciar a playlist.</div>
   <div class="music-mini-controls"><button onclick="toggleMusicPlayback()">▶/Ⅱ</button><button onclick="musicNext()">⏭</button></div>
 </div>
 
@@ -5507,23 +5511,73 @@ function updateSettingsFromUi(){
 function setClickEnabled(enabled){APP_SETTINGS.clickEnabled=!!enabled;saveAppSettings();applyAppSettings();if(enabled)playSurvivalTone(120,.06);}
 function setMusicEnabled(enabled){APP_SETTINGS.musicEnabled=!!enabled;APP_SETTINGS.musicDock=!!enabled;saveAppSettings();applyAppSettings();if(enabled){initYouTubeMusic();musicPlay();}else musicPause(true);}
 function resetAppSettings(){APP_SETTINGS={...SETTINGS_DEFAULTS};saveAppSettings();applyAppSettings();showToast('Configurações restauradas');}
+const YT_PLAYLIST_ID='PLdOF-ysn3gLo';
+const YT_FIRST_VIDEO_ID='lcIgABpUhco';
 let YT_PLAYER=null,YT_API_LOADING=false,YT_READY=false,MUSIC_MONITOR=null,MUSIC_FADING=false,MUSIC_WAS_PLAYING=false;
+let YT_FAILED_VIDEOS=new Set(),YT_ERROR_ATTEMPTS=0;
+function setMusicStatus(message,type=''){
+  const el=document.getElementById('music-status');if(!el)return;
+  el.textContent=message;el.classList.toggle('error',type==='error');el.classList.toggle('ready',type==='ready');
+}
 function initYouTubeMusic(){
   if(YT_PLAYER||YT_API_LOADING||!APP_SETTINGS.musicEnabled)return;YT_API_LOADING=true;
+  setMusicStatus('Carregando o player do YouTube…');
   if(window.YT?.Player){createYouTubePlayer();return;}
-  const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.async=true;document.head.appendChild(script);
+  const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.async=true;
+  script.onerror=()=>{YT_API_LOADING=false;setMusicStatus('Não foi possível carregar o YouTube. Verifique a internet e os bloqueadores do navegador.','error');};
+  document.head.appendChild(script);
 }
 window.onYouTubeIframeAPIReady=createYouTubePlayer;
 function createYouTubePlayer(){
   if(YT_PLAYER||!document.getElementById('youtube-music-player'))return;YT_API_LOADING=false;
-  YT_PLAYER=new YT.Player('youtube-music-player',{height:'118',width:'210',playerVars:{listType:'playlist',list:'PLdOF-ysn3gLo',autoplay:0,controls:0,disablekb:1,modestbranding:1,playsinline:1,rel:0},events:{onReady:event=>{YT_READY=true;event.target.setLoop(true);event.target.setShuffle(true);event.target.setVolume(0);if(APP_SETTINGS.musicEnabled){event.target.playVideo();setTimeout(()=>{event.target.nextVideo();fadeMusicTo(APP_SETTINGS.musicVolume,1400);},250);}startMusicMonitor();},onStateChange:event=>{if(event.data===YT.PlayerState.PLAYING)fadeMusicTo(APP_SETTINGS.musicVolume,900);if(event.data===YT.PlayerState.ENDED){event.target.nextVideo();fadeMusicTo(APP_SETTINGS.musicVolume,900);}}}});
+  const playerVars={
+    listType:'playlist',list:YT_PLAYLIST_ID,autoplay:0,controls:1,disablekb:0,
+    playsinline:1,rel:0,loop:1,enablejsapi:1
+  };
+  if(location.protocol==='http:'||location.protocol==='https:')playerVars.origin=location.origin;
+  YT_PLAYER=new YT.Player('youtube-music-player',{
+    height:'200',width:'316',videoId:YT_FIRST_VIDEO_ID,playerVars,
+    events:{
+      onReady:event=>{
+        YT_READY=true;YT_ERROR_ATTEMPTS=0;YT_FAILED_VIDEOS.clear();
+        try{event.target.setLoop(true);event.target.setShuffle(true);event.target.setVolume(0);}catch(e){}
+        setMusicStatus('Playlist pronta. Clique em ▶ para iniciar.','ready');
+        startMusicMonitor();
+      },
+      onStateChange:event=>{
+        if(event.data===YT.PlayerState.PLAYING){
+          YT_ERROR_ATTEMPTS=0;setMusicStatus('Reproduzindo a playlist Team Bulls.','ready');fadeMusicTo(APP_SETTINGS.musicVolume,900);
+        }else if(event.data===YT.PlayerState.PAUSED){setMusicStatus('Música pausada. Clique em ▶ para continuar.');}
+        else if(event.data===YT.PlayerState.BUFFERING){setMusicStatus('Carregando a próxima faixa…');}
+        else if(event.data===YT.PlayerState.ENDED){event.target.nextVideo();fadeMusicTo(APP_SETTINGS.musicVolume,900);}
+      },
+      onError:event=>handleYouTubeMusicError(event),
+      onAutoplayBlocked:()=>setMusicStatus('O navegador bloqueou o início automático. Clique em ▶ para tocar.','error')
+    }
+  });
+}
+function handleYouTubeMusicError(event){
+  const code=Number(event?.data||0);YT_ERROR_ATTEMPTS++;
+  let current='';try{current=YT_PLAYER?.getVideoData?.().video_id||'';}catch(e){}
+  if(current)YT_FAILED_VIDEOS.add(current);
+  if([5,100,101,150].includes(code)&&YT_ERROR_ATTEMPTS<=12){
+    setMusicStatus('Esta faixa não permite reprodução incorporada. Pulando para a próxima…','error');
+    setTimeout(()=>{try{YT_PLAYER?.nextVideo();}catch(e){}},550);return;
+  }
+  if(code===153){setMusicStatus('O YouTube recusou a identificação do site. Publique no GitHub Pages e atualize a página.','error');return;}
+  if(code===2){setMusicStatus('O link da playlist ou do vídeo está inválido.','error');return;}
+  setMusicStatus('A playlist não pôde ser reproduzida. Confirme se ela está Pública/Não listada e se os vídeos permitem incorporação.','error');
 }
 function fadeMusicTo(target,duration=900){if(!YT_PLAYER||!YT_READY)return;MUSIC_FADING=true;const start=Number(YT_PLAYER.getVolume?.()||0),end=Math.max(0,Math.min(100,target)),started=Date.now();const timer=setInterval(()=>{const p=Math.min(1,(Date.now()-started)/duration),v=Math.round(start+(end-start)*p);try{YT_PLAYER.setVolume(v);}catch(e){}if(p>=1){clearInterval(timer);MUSIC_FADING=false;}},80);}
 function startMusicMonitor(){clearInterval(MUSIC_MONITOR);MUSIC_MONITOR=setInterval(()=>{if(!YT_PLAYER||!YT_READY||MUSIC_FADING)return;try{const duration=YT_PLAYER.getDuration(),current=YT_PLAYER.getCurrentTime();if(duration>5&&duration-current<3&&YT_PLAYER.getVolume()>2)fadeMusicTo(0,2200);}catch(e){}},500);}
-function musicPlay(){initYouTubeMusic();try{YT_PLAYER?.playVideo();fadeMusicTo(APP_SETTINGS.musicVolume,1000);}catch(e){}}
+function musicPlay(){
+  initYouTubeMusic();
+  if(!YT_READY){setMusicStatus('Aguarde o carregamento do player e toque novamente.');return;}
+  try{YT_PLAYER.playVideo();fadeMusicTo(APP_SETTINGS.musicVolume,1000);}catch(e){setMusicStatus('Não foi possível iniciar. Toque diretamente no botão ▶ do player.','error');}
+}
 function musicPause(fade=true){if(!YT_PLAYER)return;if(fade){fadeMusicTo(0,500);setTimeout(()=>YT_PLAYER?.pauseVideo(),550);}else YT_PLAYER.pauseVideo();}
-function musicNext(){if(!APP_SETTINGS.musicEnabled){setMusicEnabled(true);return;}initYouTubeMusic();try{fadeMusicTo(0,350);setTimeout(()=>{YT_PLAYER?.nextVideo();fadeMusicTo(APP_SETTINGS.musicVolume,850);},400);}catch(e){}}
-function toggleMusicPlayback(){if(!YT_PLAYER){musicPlay();return;}try{if(YT_PLAYER.getPlayerState()===YT.PlayerState.PLAYING)musicPause(true);else musicPlay();}catch(e){musicPlay();}}
+function musicNext(){if(!APP_SETTINGS.musicEnabled){setMusicEnabled(true);return;}initYouTubeMusic();if(!YT_READY){setMusicStatus('Carregando a playlist…');return;}try{fadeMusicTo(0,350);setTimeout(()=>{YT_PLAYER?.nextVideo();fadeMusicTo(APP_SETTINGS.musicVolume,850);},400);}catch(e){setMusicStatus('Não foi possível avançar a faixa.','error');}}
+function toggleMusicPlayback(){if(!YT_PLAYER||!YT_READY){musicPlay();return;}try{if(YT_PLAYER.getPlayerState()===YT.PlayerState.PLAYING)musicPause(true);else musicPlay();}catch(e){musicPlay();}}
 function toggleMusicDock(minimize=false){const dock=document.getElementById('music-dock');if(!dock)return;if(minimize){dock.classList.toggle('minimized');return;}APP_SETTINGS.musicDock=!APP_SETTINGS.musicDock;saveAppSettings();applyAppSettings();}
 document.addEventListener('pointerdown',()=>{if(APP_SETTINGS.musicEnabled)initYouTubeMusic();},{once:true});
 document.addEventListener('visibilitychange',()=>{if(!YT_PLAYER)return;if(document.hidden){try{MUSIC_WAS_PLAYING=YT_PLAYER.getPlayerState()===YT.PlayerState.PLAYING;}catch(e){}musicPause(true);}else if(MUSIC_WAS_PLAYING&&APP_SETTINGS.musicEnabled)musicPlay();});
@@ -5598,7 +5652,7 @@ else initApp();
 // ── Registra o Service Worker (PWA / cache offline) ──────────
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw_5.js',{updateViaCache:'none'})
+    navigator.serviceWorker.register('sw_6.js',{updateViaCache:'none'})
       .then(r=>{r.update().catch(()=>{});console.log('SW registrado:', r.scope);})
       .catch(e=>console.warn('SW falhou:', e));
   });
