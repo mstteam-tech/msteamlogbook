@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v9.6: abertura imediata, sessão em segundo plano, recuperação de cache, segurança reforçada e playlist local aleatória. -->
+<!-- Team Bulls v9.8.1: recuperação e preservação do histórico de séries, ordem manual, treino ativo, ícones PWA pretos e segurança reforçada. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -9,15 +9,16 @@
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="Team Bulls" name="apple-mobile-web-app-title"/>
-<meta content="#0c0c0c" name="theme-color"/>
+<meta content="#000000" name="theme-color"/>
+<meta content="#000000" name="msapplication-TileColor"/>
 <meta content="Treinos, dietas e evolução — Team Bulls" name="description"/>
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"/>
 <title>Team Bulls</title>
-<link href="manifest_10.json" rel="manifest"/>
+<link href="manifest_13.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
-<link href="icon-192-v8-2.png" rel="icon" sizes="192x192" type="image/png"/>
-<link href="icon-192-v8-2.png" rel="apple-touch-icon"/>
+<link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
+<link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&amp;family=DM+Mono:wght@400;500&amp;family=Barlow:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
@@ -170,7 +171,20 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     .workout-card-info{flex:1;min-width:0;}
     .workout-card-name{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:19px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .workout-card-meta{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:3px;}
-    .workout-card-actions{display:flex;gap:4px;flex-shrink:0;}
+    .workout-card-actions{display:flex;gap:4px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+    .workout-card.is-active{border-color:rgba(165,30,32,.92);background:linear-gradient(145deg,rgba(116,18,20,.24),#171310 70%);box-shadow:0 0 0 1px rgba(165,30,32,.15),0 10px 28px rgba(0,0,0,.28);}
+    .workout-card.is-active::before{width:5px;box-shadow:0 0 14px rgba(202,48,48,.42);}
+    .workout-card.is-inactive{background:#0e0d0c;border-color:#27231f;opacity:.62;filter:grayscale(.72);}
+    .workout-card.is-inactive:hover,.workout-card.is-inactive:focus-within{opacity:.82;filter:grayscale(.35);}
+    .protocol-state-badge{display:inline-flex;align-items:center;gap:5px;width:max-content;margin-bottom:5px;padding:3px 7px;border:1px solid #4a4037;background:#11100f;color:#81766b;font-family:'DM Mono',monospace;font-size:8px;line-height:1;letter-spacing:1px;text-transform:uppercase;}
+    .protocol-state-badge.active{border-color:rgba(202,48,48,.72);background:rgba(130,24,26,.2);color:#e2c8b8;}
+    .protocol-state-badge.inactive{border-color:#332e2a;background:#0b0a09;color:#625b54;}
+    .workout-order-controls,.exercise-order-controls{display:flex;gap:3px;align-items:center;flex-shrink:0;}
+    .order-btn{width:28px;height:28px;border:1px solid #433a33;background:#11100f;color:#9d8f82;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .order-btn:hover:not(:disabled){border-color:var(--accent);color:#ead7c5;background:#1d1111;}
+    .order-btn:disabled{opacity:.22;cursor:not-allowed;}
+    .activate-workout-btn{border:1px solid rgba(202,48,48,.62);background:rgba(130,24,26,.16);color:#d8b8a6;padding:7px 9px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.7px;cursor:pointer;white-space:nowrap;}
+    .activate-workout-btn:hover{background:rgba(150,25,27,.28);color:#fff;}
 
     /* EXERCISE ROW */
     .exercise-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;cursor:pointer;transition:border-color .15s;gap:10px;user-select:none;}
@@ -180,6 +194,8 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     .exercise-row-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .exercise-row-last{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:2px;}
     .exercise-row-arrow{color:var(--text-muted);font-size:18px;flex-shrink:0;}
+    .exercise-row.trainer-orderable{padding-right:9px;}
+    .exercise-row.trainer-orderable .exercise-row-info{padding-right:4px;}
 
     /* SESSION BLOCK */
     .session-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;}
@@ -527,7 +543,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     #screen-auth{position:relative;overflow:hidden;background:
       linear-gradient(180deg,rgba(4,4,4,.28),rgba(4,4,4,.84) 58%,#050505 100%),
       linear-gradient(90deg,rgba(5,5,5,.62),rgba(5,5,5,.1),rgba(5,5,5,.72)),
-      url('team-bulls-survival-bg-v8.webp') center/cover no-repeat;}
+      url('team-bulls-auth-bg-v9-8-2.webp') center/cover no-repeat;}
     #screen-auth::before{content:'CLASSIFICAÇÃO // ACESSO RESTRITO';position:absolute;top:22px;left:20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.4px;color:#a79888;border-left:3px solid var(--accent);padding-left:8px;}
     #screen-auth::after{content:'BT-SYS 07  •  SURVIVAL FITNESS PROTOCOL';position:absolute;bottom:20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.2px;color:#6f665e;}
     .auth-logo{position:relative;z-index:1;color:var(--paper);font-size:50px;text-shadow:0 3px 22px #000,2px 2px 0 #181411;}
@@ -606,6 +622,21 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     .day-block-head{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding:2px 3px 7px;border-bottom:1px solid #332c27;}
     .day-block-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:.8px;flex:1;color:#d6c8b8;}
     .day-block-count{font-family:'DM Mono',monospace;font-size:8px;color:#817468;letter-spacing:1px;}
+    .day-folder-grid{display:grid;gap:10px;margin-bottom:14px;}
+    .day-folder-card{position:relative;display:flex;align-items:center;gap:13px;border:1px solid #443930;background:linear-gradient(145deg,#1a1714,#0e0d0c);padding:14px 12px;cursor:pointer;overflow:hidden;min-height:82px;transition:border-color .14s,transform .12s;}
+    .day-folder-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--wcard-color,var(--accent));}
+    .day-folder-card:active{transform:scale(.985);border-color:var(--accent);}
+    .day-folder-icon{width:42px;height:34px;flex:0 0 42px;border:1px solid #615246;background:#151210;position:relative;display:flex;align-items:center;justify-content:center;color:#b9a897;font-family:'DM Mono',monospace;font-size:10px;}
+    .day-folder-icon::before{content:'';position:absolute;left:4px;top:-7px;width:18px;height:7px;border:1px solid #615246;border-bottom:0;background:#151210;}
+    .day-folder-info{flex:1;min-width:0;}
+    .day-folder-name{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;color:#ded0c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .day-folder-meta{font-family:'DM Mono',monospace;font-size:8px;color:#877a6f;letter-spacing:.6px;margin-top:4px;line-height:1.5;}
+    .day-folder-actions{display:flex;gap:3px;align-items:center;flex-shrink:0;}
+    .protocol-summary{border:1px solid #40362f;background:linear-gradient(110deg,rgba(145,25,28,.13),#11100f);padding:12px 13px;margin-bottom:14px;}
+    .protocol-summary-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;text-transform:uppercase;color:#ddcfc0;}
+    .protocol-summary-meta{font-family:'DM Mono',monospace;font-size:8px;color:#8b7d70;letter-spacing:.7px;margin-top:4px;}
+    .overview-panel{display:none;margin-top:10px;}
+    .overview-panel.open{display:block;}
     .workout-actions-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
     .workout-actions-row button{flex:1;min-width:150px;}
     .exercise-substitution-box{border:1px solid #493c32;background:#12100f;padding:12px;margin-bottom:12px;}
@@ -660,6 +691,16 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     .music-mini-controls{display:none;gap:5px;}
     .music-mini-controls button{flex:1;border:1px solid #42382f;background:#111;color:#a59686;padding:6px;font-size:10px;cursor:pointer;}
 
+    @media(max-width:560px){
+      .workout-card{align-items:flex-start;flex-wrap:wrap;}
+      .workout-card-info{flex-basis:calc(100% - 10px);}
+      .workout-card-actions{width:100%;justify-content:flex-start;padding-top:4px;border-top:1px solid rgba(81,69,58,.22);}
+      .activate-workout-btn{margin-left:auto;}
+      .exercise-row.trainer-orderable{flex-wrap:wrap;}
+      .exercise-row.trainer-orderable .exercise-row-info{min-width:calc(100% - 50px);}
+      .exercise-row.trainer-orderable .exercise-order-controls{margin-left:18px;}
+    }
+
     @media(min-width:900px){
       body.trainer-desktop{overflow-y:auto;}
       body.trainer-desktop #app{max-width:none;margin:0 0 0 248px;min-height:100vh;}
@@ -678,7 +719,8 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
       body.trainer-desktop .student-card{margin:0;min-height:106px;}
       body.trainer-desktop #ts-workout-list{display:grid;grid-template-columns:repeat(2,minmax(360px,1fr));gap:12px;}
       body.trainer-desktop #ts-workout-list>.workout-card{margin:0;}
-      body.trainer-desktop #screen-ts-workout .weekly-plan-shell{max-width:100%;}
+      body.trainer-desktop #screen-ts-workout .weekly-plan-shell,body.trainer-desktop #screen-ts-day .weekly-plan-shell{max-width:100%;}
+      body.trainer-desktop #trainer-day-folder-list,body.trainer-desktop #day-folder-list{grid-template-columns:repeat(2,minmax(340px,1fr));}
       body.trainer-desktop #ts-exercise-list{display:grid;grid-template-columns:repeat(2,minmax(360px,1fr));gap:12px;align-items:start;}
       body.trainer-desktop .day-block{margin:0;}
       body.trainer-desktop #screen-ts-exercise .content{display:grid;grid-template-columns:minmax(420px,1fr) minmax(420px,1fr);gap:18px;align-items:start;}
@@ -696,7 +738,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 </head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V9.6</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V9.7</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
@@ -814,34 +856,62 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 </div>
 </div>
 </div>
-<!-- WORKOUT DETAIL -->
+<!-- WORKOUT DETAIL: pasta principal do protocolo -->
 <div class="screen" id="screen-workout">
 <div class="header">
 <button class="btn-icon" onclick="goHome()">←</button>
 <div class="header-title" id="workout-screen-title">TREINO</div>
-<button class="btn-icon ghost" onclick="exportCurrentWorkoutPdf()" title="Salvar treino em PDF">PDF</button>
+<button class="btn-icon ghost" onclick="exportCurrentWorkoutPdf()" title="Salvar treino completo em PDF">PDF</button>
 </div>
 <div class="content">
+<div class="protocol-summary" id="student-protocol-summary"></div>
+<div class="section-header"><span class="section-label">Pastas dos dias de treino</span></div>
+<div class="day-folder-grid" id="day-folder-list"></div>
+<div class="empty-state" id="day-folder-empty" style="display:none">
+<div class="empty-icon">📁</div>
+<div class="empty-label">Nenhum dia cadastrado</div>
+<div class="empty-hint">Crie Push, Pull, Legs ou outro dia do protocolo</div>
+</div>
+<button class="btn-add-set" id="student-overview-toggle" onclick="toggleWorkoutOverview(false)" style="margin-top:12px">▤ MOSTRAR VISÃO GERAL DAS 8 SEMANAS</button>
+<div class="overview-panel" id="student-workout-overview">
 <div class="weekly-plan-shell">
 <div class="weekly-plan-head">
-<div><div class="weekly-plan-title">Ciclo de 8 semanas</div><div class="weekly-plan-hint">arquivo de protocolo · toque em uma semana para abrir</div></div>
+<div><div class="weekly-plan-title">Visão geral do protocolo</div><div class="weekly-plan-hint">todos os dias e exercícios · toque em uma semana para abrir</div></div>
 <button class="btn-ger-info" onclick="openGerInfo()">? ENTENDA O GER</button>
 </div>
 <div id="student-weekly-board"></div>
 </div>
-<div class="section-header"><span class="section-label">Procedimentos prescritos</span></div>
+</div>
+</div>
+</div>
+<!-- DAY DETAIL: pasta do dia -->
+<div class="screen" id="screen-day">
+<div class="header">
+<button class="btn-icon" onclick="goWorkout()">←</button>
+<div class="header-title" id="day-screen-title">DIA DO TREINO</div>
+</div>
+<div class="content">
+<div class="protocol-summary" id="student-day-summary"></div>
+<div class="weekly-plan-shell">
+<div class="weekly-plan-head">
+<div><div class="weekly-plan-title">Ciclo de 8 semanas</div><div class="weekly-plan-hint">somente os exercícios desta pasta</div></div>
+<button class="btn-ger-info" onclick="openGerInfo()">? ENTENDA O GER</button>
+</div>
+<div id="student-day-weekly-board"></div>
+</div>
+<div class="section-header"><span class="section-label">Exercícios desta pasta</span></div>
 <div id="exercise-list"></div>
 <div class="empty-state" id="exercise-empty" style="display:none">
 <div class="empty-icon">💪</div>
 <div class="empty-label">Nenhum exercício</div>
-<div class="empty-hint">Adicione o primeiro exercício</div>
+<div class="empty-hint">Adicione o primeiro exercício deste dia</div>
 </div>
 </div>
 </div>
 <!-- EXERCISE DETAIL -->
 <div class="screen" id="screen-exercise">
 <div class="header">
-<button class="btn-icon" onclick="goWorkout()">←</button>
+<button class="btn-icon" onclick="goDay()">←</button>
 <div class="header-title" id="exercise-screen-title">EXERCÍCIO</div>
 <button class="btn-icon ghost" id="btn-del-exercise" onclick="deleteCurrentExercise()" title="Excluir">🗑</button>
 </div>
@@ -981,7 +1051,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 </div>
 </div>
 </div>
-<!-- TRAINER VIEWING STUDENT WORKOUT -->
+<!-- TRAINER VIEWING STUDENT WORKOUT: pasta principal -->
 <div class="screen" id="screen-ts-workout">
 <div class="header">
 <button class="btn-icon" onclick="goTrainerStudent()">←</button>
@@ -990,21 +1060,55 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <button class="btn-icon ghost" onclick="exportTrainerWorkoutPdf()" title="Salvar treino completo em PDF">PDF</button>
 </div>
 <div class="content" style="padding-top:12px">
+<div class="protocol-summary" id="trainer-protocol-summary"></div>
+<div class="section-header"><span class="section-label">Pastas dos dias de treino</span><span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted)">Push · Pull · Legs...</span></div>
+<div class="day-folder-grid" id="trainer-day-folder-list"></div>
+<div class="empty-state" id="trainer-day-folder-empty" style="display:none">
+<div class="empty-icon">📁</div>
+<div class="empty-label">Protocolo sem dias</div>
+<div class="empty-hint">Toque em + NOVO DIA para começar a montagem</div>
+</div>
+<button class="btn-add-set" id="trainer-overview-toggle" onclick="toggleWorkoutOverview(true)" style="margin-top:12px">▤ MOSTRAR VISÃO GERAL DAS 8 SEMANAS</button>
+<div class="overview-panel" id="trainer-workout-overview">
 <div class="weekly-plan-shell">
 <div class="weekly-plan-head">
-<div><div class="weekly-plan-title">Protocolo semanal</div><div class="weekly-plan-hint">nível do treinador · toque para ajustar</div></div>
+<div><div class="weekly-plan-title">Visão geral do protocolo</div><div class="weekly-plan-hint">todos os dias · toque para ajustar</div></div>
 <button class="btn-ger-info" onclick="openGerInfo()">? ESCALA GER</button>
 </div>
 <div id="trainer-weekly-board"></div>
 </div>
-<div class="section-header"><span class="section-label">Procedimentos prescritos</span></div>
+</div>
+</div>
+</div>
+<!-- TRAINER VIEWING STUDENT DAY -->
+<div class="screen" id="screen-ts-day">
+<div class="header">
+<button class="btn-icon" onclick="goTsWorkout()">←</button>
+<div class="header-title" id="ts-day-title">DIA DO TREINO</div>
+<button class="btn-icon ghost" onclick="openBulkPrescriptionModal()" title="Copiar prescrição entre exercícios">⇄</button>
+</div>
+<div class="content" style="padding-top:12px">
+<div class="protocol-summary" id="trainer-day-summary"></div>
+<div class="weekly-plan-shell">
+<div class="weekly-plan-head">
+<div><div class="weekly-plan-title">Protocolo semanal do dia</div><div class="weekly-plan-hint">toque para ajustar séries, repetições e GER</div></div>
+<button class="btn-ger-info" onclick="openGerInfo()">? ESCALA GER</button>
+</div>
+<div id="trainer-day-weekly-board"></div>
+</div>
+<div class="section-header"><span class="section-label">Exercícios desta pasta</span></div>
 <div id="ts-exercise-list"></div>
+<div class="empty-state" id="ts-day-exercise-empty" style="display:none">
+<div class="empty-icon">💪</div>
+<div class="empty-label">Pasta vazia</div>
+<div class="empty-hint">Toque em + EXERCÍCIO para montar este dia</div>
+</div>
 </div>
 </div>
 <!-- TRAINER VIEWING STUDENT EXERCISE -->
 <div class="screen" id="screen-ts-exercise">
 <div class="header">
-<button class="btn-icon" onclick="goTsWorkout()">←</button>
+<button class="btn-icon" onclick="goTsDay()">←</button>
 <div class="header-title" id="ts-exercise-title">EXERCÍCIO</div>
 <button class="btn-icon ghost" onclick="openEditExerciseModalTs()" title="Editar exercício e dia">✏️</button>
 </div>
@@ -1135,9 +1239,11 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 </div>
 <!-- FABs -->
 <div class="fab-wrap" id="fab-home"><button class="fab" onclick="openAddWorkoutModal()"><span class="fab-icon">+</span> NOVO PROTOCOLO</button></div>
-<div class="fab-wrap" id="fab-workout" style="display:none"><button class="fab" onclick="openAddExerciseModal()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
+<div class="fab-wrap" id="fab-workout" style="display:none"><button class="fab" onclick="openAddDayModal('self')"><span class="fab-icon">+</span> NOVO DIA</button></div>
+<div class="fab-wrap" id="fab-day" style="display:none"><button class="fab" onclick="openAddExerciseModal()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
 <div class="fab-wrap" id="fab-exercise" style="display:none"><button class="fab" onclick="openLogSessionModal()"><span class="fab-icon">+</span> REGISTRAR RESULTADO</button></div>
 <div class="fab-wrap" id="fab-ts-workout" style="display:none"><button class="fab" onclick="openAddWorkoutModalTs()"><span class="fab-icon">+</span> NOVO PROTOCOLO</button></div>
+<div class="fab-wrap" id="fab-ts-day-folder" style="display:none"><button class="fab" onclick="openAddDayModal('student')"><span class="fab-icon">+</span> NOVO DIA</button></div>
 <div class="fab-wrap" id="fab-ts-exercise" style="display:none"><button class="fab" onclick="openAddExerciseModalTs()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
 <div class="fab-wrap" id="fab-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
 <div class="fab-wrap" id="fab-ts-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
@@ -1151,6 +1257,17 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <div class="form-group"><label class="form-label">Cor</label><div class="color-row" id="color-picker-row"></div></div>
 <button class="btn-primary" onclick="saveWorkout()">SALVAR</button>
 <button class="btn-ghost" onclick="closeModal('modal-workout')">CANCELAR</button>
+</div>
+</div>
+<!-- MODAL: Day folder -->
+<div class="modal-backdrop" id="modal-day">
+<div class="modal-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title" id="modal-day-title">Novo dia de treino</div>
+<div class="form-group"><label class="form-label">Nome da pasta/dia</label><input class="form-input" id="input-day-name" maxlength="60" placeholder="Ex.: Push, Pull, Legs, Superior..."/></div>
+<div class="plan-help">Cada dia funciona como uma pasta dentro do protocolo completo. Os exercícios ficam organizados dentro dela.</div>
+<button class="btn-primary" onclick="saveDayFolder()">SALVAR DIA</button>
+<button class="btn-ghost" onclick="closeModal('modal-day')">CANCELAR</button>
 </div>
 </div>
 <!-- MODAL: Exercise -->
@@ -1171,7 +1288,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <div class="catalog-picker-help" id="exercise-catalog-help">Os exercícios do PDF ficam registrados no banco de dados e aparecem nesta mesma ordem.</div>
 </div>
 <div class="form-group"><label class="form-label">Nome do exercício</label><input class="form-input" id="input-exercise-name" maxlength="100" oninput="syncCatalogSelectionWithName()" placeholder="Ex.: Supino reto com barra"/></div>
-<div class="form-group"><label class="form-label">Dia do treino</label><input class="form-input" id="input-exercise-day" list="exercise-day-suggestions" maxlength="60" placeholder="Ex.: Superior, Inferior, Treino A"/><datalist id="exercise-day-suggestions"><option value="Superior"><option value="Inferior"><option value="Peito e tríceps"><option value="Costas e bíceps"><option value="Pernas"><option value="Full body"></option></option></option></option></option></option></datalist></div>
+<div class="form-group"><label class="form-label">Pasta/dia do treino</label><select class="form-input" id="input-exercise-day" aria-label="Pasta do dia do treino"></select><div class="plan-help" style="margin-top:7px">Para criar outra pasta, volte ao protocolo e use + NOVO DIA.</div></div>
 <button class="btn-primary" id="btn-save-exercise" onclick="saveExercise()">ADICIONAR</button>
 <button class="btn-ghost" onclick="closeModal('modal-exercise')">CANCELAR</button>
 </div>
@@ -1496,7 +1613,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 /* ══════════════════════════════════════════════════
    INICIALIZAÇÃO RESILIENTE E LIMITES DE REDE
 ══════════════════════════════════════════════════ */
-const APP_VERSION='9.6';
+const APP_VERSION='9.7';
 const AUTH_UI_FALLBACK_MS=850;
 const BOOT_TIMEOUT_MS=3200;
 const PROFILE_READ_TIMEOUT_MS=2500;
@@ -1701,10 +1818,12 @@ let ACCESS_MODE='local-guest'; // local-guest | offline-registered | local-inact
 let CURRENT_USER=null;      // { uid, name, email, role, status }
 let VIEW_STUDENT=null;      // { uid, name } when trainer viewing student
 let VIEW_STUDENT_WORKOUT=null;
+let VIEW_STUDENT_DAY='';
 let VIEW_STUDENT_EXERCISE=null;
 
 // Student nav state
 let CUR_WORKOUT=null;
+let CUR_DAY='';
 let CUR_EX=null;
 let SESSION_WID=null;  // ID do treino travado ao abrir modal de nova sessão
 let SESSION_EID=null;  // ID do exercício travado ao abrir modal de nova sessão
@@ -1719,7 +1838,9 @@ let PLAN_EDIT_EID=null;
 let PLAN_SET_COUNT=0;
 let EDIT_W=null;
 let SEL_COLOR=PALETTE[0];
-let MODAL_TARGET='self'; // 'self' | 'student' — define se o modal de treino/exercício salva para o próprio usuário ou para o aluno (VIEW_STUDENT), definido pelo treinador
+let MODAL_TARGET='self'; // 'self' | 'student' — define o proprietário da edição
+let DAY_MODAL_TARGET='self';
+let EDIT_DAY_NAME='';
 let WORKOUT_CREATE_ID=null; // IDs de rascunho tornam retries idempotentes (sem duplicar documentos)
 let EXERCISE_CREATE_ID=null;
 let EDIT_EXERCISE_ID=null;
@@ -1759,22 +1880,38 @@ let INACTIVE_NAME = '';           // nome do aluno inativo (CURRENT_USER=null)
 let INACTIVE_UID = '';            // uid preservado para marcar alterações offline pendentes
 
 function localGeneratedId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function safeDayName(value){return String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ').slice(0,60)||'Treino geral';}
+function dayIdFromName(value){
+  const source=normalizedName(safeDayName(value));let hash=2166136261;
+  for(let i=0;i<source.length;i++){hash^=source.charCodeAt(i);hash=Math.imul(hash,16777619);}
+  return'day-'+(hash>>>0).toString(36);
+}
+function normalizeWorkoutDays(rawDays,exercises=[]){
+  const result=[],seen=new Set();
+  const add=(entry,index)=>{
+    const name=safeDayName(typeof entry==='string'?entry:entry?.name);
+    const key=normalizedName(name);if(!key||seen.has(key))return;
+    seen.add(key);result.push({id:String((entry&&typeof entry==='object'&&entry.id)||dayIdFromName(name)),name,order:Number.isFinite(Number(entry?.order))?Number(entry.order):index});
+  };
+  (Array.isArray(rawDays)?rawDays:[]).forEach(add);
+  (Array.isArray(exercises)?exercises:[]).forEach((exercise,index)=>add({name:exercise?.dayName||'Treino geral',order:result.length+index},result.length+index));
+  return result.sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'pt-BR')).map((day,index)=>({...day,order:index}));
+}
+function getWorkoutDays(workout){return normalizeWorkoutDays(workout?.days,workout?.exercises||[]);}
+function syncWorkoutDays(workout){if(workout)workout.days=getWorkoutDays(workout);return workout?.days||[];}
 function normalizeLocalDb(value){
   const root=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
   const workouts=Array.isArray(root.workouts)?root.workouts:[];
-  root.workouts=workouts.filter(w=>w&&typeof w==='object').map(w=>({
-    ...w,
-    id:w.id||localGeneratedId(),
-    name:String(w.name||'Treino'),
-    color:PALETTE.includes(w.color)?w.color:PALETTE[0],
-    exercises:(Array.isArray(w.exercises)?w.exercises:[]).filter(e=>e&&typeof e==='object').map(e=>({
+  root.workouts=workouts.filter(w=>w&&typeof w==='object').map((w,workoutIndex)=>{
+    const exercises=(Array.isArray(w.exercises)?w.exercises:[]).filter(e=>e&&typeof e==='object').map((e,index)=>({
       ...e,
       id:e.id||localGeneratedId(),
       name:String(e.name||'Exercício'),
-      dayName:String(e.dayName||'Treino geral'),
+      dayName:safeDayName(e.dayName||'Treino geral'),
       catalogGroupId:String(e.catalogGroupId||''),
       catalogItemId:String(e.catalogItemId||''),
       videoUrl:String(e.videoUrl||''),
+      order:hasManualOrder(e)?Number(e.order):index,
       weeklyPlan:normalizeWeeklyPlan(e.weeklyPlan),
       sessions:(Array.isArray(e.sessions)?e.sessions:[]).filter(s=>s&&typeof s==='object').map(s=>({
         ...s,
@@ -1782,8 +1919,20 @@ function normalizeLocalDb(value){
         date:String(s.date||''),
         sets:Array.isArray(s.sets)?s.sets:[]
       }))
-    }))
-  }));
+    }));
+    return{
+      ...w,
+      id:w.id||localGeneratedId(),
+      name:String(w.name||'Treino'),
+      color:PALETTE.includes(w.color)?w.color:PALETTE[0],
+      order:hasManualOrder(w)?Number(w.order):Math.max(0,workouts.length-1-workoutIndex),
+      isActive:w.isActive===true,
+      days:normalizeWorkoutDays(w.days,exercises),
+      exercises
+    };
+  });
+  root.workouts=normalizeWorkoutCollection(root.workouts);
+  root.workouts.forEach(workout=>{workout.exercises=sortWorkoutExercises(workout);});
   return root;
 }
 
@@ -2115,9 +2264,15 @@ async function cleanDuplicates(){
     for(const docs of Object.values(groups).filter(g=>g.length>1)){
       docs.sort((a,b)=>(exercisesByWorkout[b.id]?.length||0)-(exercisesByWorkout[a.id]?.length||0)||createdMillis(a.data())-createdMillis(b.data()));
       const keep=docs[0];
+      const keptActive=docs.some(doc=>doc.data().isActive===true);
+      const keptOrder=Math.min(...docs.map((doc,index)=>hasManualOrder(doc.data())?Number(doc.data().order):10000+index));
+      let keptDays=normalizeWorkoutDays(keep.data().days,(exercisesByWorkout[keep.id]||[]).map(ex=>ex.data()));
       const keptByName=new Map((exercisesByWorkout[keep.id]||[]).map(ex=>[exerciseIdentityKey(ex.data()),ex]));
       const keptNames=new Set(keptByName.keys());
       for(const duplicate of docs.slice(1)){
+        const duplicateDays=normalizeWorkoutDays(duplicate.data().days,(exercisesByWorkout[duplicate.id]||[]).map(ex=>ex.data()));
+        keptDays=normalizeWorkoutDays([...keptDays,...duplicateDays],[]);
+        await keep.ref.update({days:keptDays,order:Math.max(0,Math.min(10000,keptOrder)),isActive:keptActive});
         for(const ex of (exercisesByWorkout[duplicate.id]||[])){
           const exName=exerciseIdentityKey(ex.data());
           if(keptNames.has(exName)){
@@ -2563,6 +2718,7 @@ async function confirmLogout(){
     INACTIVE_UID='';
     VIEW_STUDENT=null;
     VIEW_STUDENT_WORKOUT=null;
+    VIEW_STUDENT_DAY='';
     VIEW_STUDENT_EXERCISE=null;
     CLOUD_LOAD_SEQ++;
     TRAINER_LIST_LOAD_SEQ++;
@@ -2575,6 +2731,7 @@ async function confirmLogout(){
     const questBanner=document.getElementById('quest-banner');if(questBanner)questBanner.style.display='none';
     HISTORY_BY_NAME={};
     CUR_WORKOUT=null;
+    CUR_DAY='';
     CUR_EX=null;
     const btn=document.getElementById('btn-login');
     if(btn){btn.disabled=false;btn.textContent='ACESSAR SISTEMA';}
@@ -2652,7 +2809,7 @@ async function handleAuthStateUser(user){
     AUTH_HANDLED=false;
     AUTH_PROCESSING_UID='';
     if(AUTH_EXPECTED_LOCAL_SIGNOUT)return;
-    stopProfileGuard();CURRENT_USER=null;document.body.classList.remove('trainer-desktop');VIEW_STUDENT=null;VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_EXERCISE=null;
+    stopProfileGuard();CURRENT_USER=null;document.body.classList.remove('trainer-desktop');VIEW_STUDENT=null;VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_DAY='';VIEW_STUDENT_EXERCISE=null;
     if(!['local-inactive','local-guest','offline-registered'].includes(ACCESS_MODE))showScreen('screen-auth');
     return;
   }
@@ -2770,9 +2927,11 @@ function showScreen(id,expectedToken=null){
   const display=(elementId,visible)=>{const element=document.getElementById(elementId);if(element)element.style.display=visible?'flex':'none';};
   display('fab-home',id==='screen-home'&&!isReadonly&&canSelfManagePlan());
   display('fab-workout',id==='screen-workout'&&!isReadonly&&canSelfManagePlan());
+  display('fab-day',id==='screen-day'&&!isReadonly&&canSelfManagePlan());
   display('fab-exercise',id==='screen-exercise'&&!isReadonly);
   display('fab-ts-workout',id==='screen-trainer-student');
-  display('fab-ts-exercise',id==='screen-ts-workout');
+  display('fab-ts-day-folder',id==='screen-ts-workout');
+  display('fab-ts-exercise',id==='screen-ts-day');
   display('fab-meals',id==='screen-meals'&&MODE==='local');
   display('fab-ts-meals',id==='screen-ts-meals');
   display('fab-photos',id==='screen-photos'&&!isReadonly);
@@ -2781,11 +2940,13 @@ function showScreen(id,expectedToken=null){
   return true;
 }
 
-function goHome(){CUR_WORKOUT=null;CUR_EX=null;if(MODE==='local'){renderHome();}else{loadCloudHome();}showScreen('screen-home');}
-function goWorkout(){renderWorkout();showScreen('screen-workout');}
-function goTrainer(){VIEW_STUDENT=null;renderTrainer();showScreen('screen-trainer');}
-function goTrainerStudent(){renderTrainerStudent(VIEW_STUDENT);showScreen('screen-trainer-student');}
-function goTsWorkout(){renderTsWorkout(VIEW_STUDENT_WORKOUT);showScreen('screen-ts-workout');}
+function goHome(){CUR_WORKOUT=null;CUR_DAY='';CUR_EX=null;if(MODE==='local'){renderHome();}else{loadCloudHome();}showScreen('screen-home');}
+function goWorkout(){CUR_DAY='';renderWorkout();showScreen('screen-workout');}
+function goDay(){if(!CUR_DAY)return goWorkout();renderDay();showScreen('screen-day');}
+function goTrainer(){VIEW_STUDENT=null;VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_DAY='';renderTrainer();showScreen('screen-trainer');}
+function goTrainerStudent(){VIEW_STUDENT_WORKOUT=null;VIEW_STUDENT_DAY='';renderTrainerStudent(VIEW_STUDENT);showScreen('screen-trainer-student');}
+function goTsWorkout(){VIEW_STUDENT_DAY='';renderTsWorkout(VIEW_STUDENT_WORKOUT);showScreen('screen-ts-workout');}
+function goTsDay(){if(!VIEW_STUDENT_DAY)return goTsWorkout();renderTsDay();showScreen('screen-ts-day');}
 let SETTINGS_FROM='home';
 function openSettings(){SETTINGS_FROM=CURRENT_USER?.role==='trainer'?'trainer':'home';syncSettingsUi();showScreen('screen-settings');}
 function goBackFromSettings(){if(SETTINGS_FROM==='trainer')goTrainer();else goHome();}
@@ -2804,7 +2965,10 @@ function renderHome(){
   const inactiveBanner=document.getElementById('inactive-banner');
   if(inactiveBanner) inactiveBanner.style.display=INACTIVE_NAME?'block':'none';
   updateDebugBar();
-  const ws=MODE==='local'?LOCAL_DB.workouts:CLOUD_WORKOUTS;
+  const sourceWorkouts=MODE==='local'?LOCAL_DB.workouts:CLOUD_WORKOUTS;
+  const ws=normalizeWorkoutCollection(sourceWorkouts);
+  if(MODE==='local')LOCAL_DB.workouts=ws;else CLOUD_WORKOUTS=ws;
+  const currentActiveId=activeWorkoutId(ws);
   const list=document.getElementById('workout-list');
   const empty=document.getElementById('workout-empty');
   const stats=document.getElementById('home-stats');
@@ -2823,13 +2987,14 @@ function renderHome(){
   empty.style.display='none';
   list.innerHTML=ws.map(w=>{
     const last=lastDate(w);
-    const meta=last?'Último: '+fmt(last):w.exercises.length+' '+(w.exercises.length===1?'exercício':'exercícios');
-    const wid=jsArg(w.id),wn=esc(w.name);
+    const dayCount=getWorkoutDays(w).length;
+    const meta=(last?'Último: '+fmt(last):dayCount+' '+(dayCount===1?'dia':'dias'));
+    const wid=jsArg(w.id),wn=esc(w.name),isActive=String(w.id)===currentActiveId;
     // Editar/excluir treino: só quem se autogerencia de verdade (ver canSelfManagePlan). Na nuvem, o treino é montado pelo treinador.
     const editActions=canSelfManagePlan()?`<button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkout(${wid})" title="Editar">✏️</button><button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino e todos os seus dados?',function(){deleteWorkout(${wid});})" title="Excluir">🗑</button>`:'';
     const actions=`<div class="workout-card-actions"><button class="btn-icon ghost" onclick="event.stopPropagation();exportWorkoutPdfById(${wid},false)" title="Salvar PDF">PDF</button>${editActions}</div>`;
-    return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openWorkout(${wid})">
-      <div class="workout-card-info"><div class="archive-file-kicker">PROTOCOLO ATIVO</div><div class="workout-card-name">${wn}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
+    return`<div class="workout-card ${isActive?'is-active':'is-inactive'}" style="--wcard-color:${w.color}" onclick="openWorkout(${wid})">
+      <div class="workout-card-info"><div class="protocol-state-badge ${isActive?'active':'inactive'}">${isActive?'● TREINO ATIVO':'○ DESATIVADO'}</div><div class="workout-card-name">${wn}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.${isActive?' · plano atual':' · treino anterior disponível'}</div></div>
       ${actions}
     </div>`;
   }).join('');
@@ -2840,9 +3005,9 @@ function lastDate(w){let b=null;(w.exercises||[]).forEach(e=>(e.sessions||[]).fo
 
 function pdfEscape(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function workoutPdfHtml(workout,studentName){
-  const days=groupExercisesByDay(workout.exercises||[]);
+  const days=groupExercisesByDay(workout.exercises||[],getWorkoutDays(workout));
   const sections=days.map(([day,items])=>`<section><h2>${pdfEscape(day)}</h2>${items.map(ex=>`<article><h3>${pdfEscape(ex.name)}</h3><table><thead><tr><th>Semana</th><th>Prescrição</th></tr></thead><tbody>${[1,2,3,4,5,6,7,8].map(week=>{const rx=resolveWeekPrescription(ex,week);const text=rx.sets.length?rx.sets.map((set,i)=>`${i+1}ª: ${set.targetMin}-${set.targetMax} reps · GER ${String(set.ger).padStart(2,'0')}`).join('<br>'):'Sem exercício';return`<tr><td>Semana ${week}</td><td>${text}</td></tr>`;}).join('')}</tbody></table></article>`).join('')}</section>`).join('');
-  return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${pdfEscape(workout.name)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#161616}header{border-bottom:3px solid #9b2024;padding-bottom:10px;margin-bottom:18px}h1{font-size:25px;margin:0;text-transform:uppercase}header p{margin:5px 0 0;color:#555}h2{font-size:19px;background:#111;color:#fff;padding:8px 10px;margin:18px 0 8px}article{break-inside:avoid;margin-bottom:14px}h3{font-size:16px;margin:0 0 6px;color:#8f1e22}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#eee}footer{margin-top:20px;font-size:9px;color:#777;text-align:center}</style></head><body><header><h1>TEAM BULLS — ${pdfEscape(workout.name)}</h1><p>Aluno: ${pdfEscape(studentName||'Modo local')} · Treino completo organizado por dias</p></header>${sections||'<p>Nenhum exercício cadastrado.</p>'}<footer>Gerado pelo Team Bulls v9.6. No diálogo de impressão, escolha “Salvar como PDF”.</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
+  return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${pdfEscape(workout.name)}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#161616}header{border-bottom:3px solid #9b2024;padding-bottom:10px;margin-bottom:18px}h1{font-size:25px;margin:0;text-transform:uppercase}header p{margin:5px 0 0;color:#555}h2{font-size:19px;background:#111;color:#fff;padding:8px 10px;margin:18px 0 8px}article{break-inside:avoid;margin-bottom:14px}h3{font-size:16px;margin:0 0 6px;color:#8f1e22}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:left;vertical-align:top}th{background:#eee}footer{margin-top:20px;font-size:9px;color:#777;text-align:center}</style></head><body><header><h1>TEAM BULLS — ${pdfEscape(workout.name)}</h1><p>Aluno: ${pdfEscape(studentName||'Modo local')} · Treino completo organizado por dias</p></header>${sections||'<p>Nenhum exercício cadastrado.</p>'}<footer>Gerado pelo Team Bulls v9.8.1. No diálogo de impressão, escolha “Salvar como PDF”.</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
 }
 function exportWorkoutPdf(workout,studentName){if(!workout)return;const popup=window.open('','_blank');if(!popup){alert('Permita pop-ups para gerar o PDF.');return;}try{popup.opener=null;}catch(e){}popup.document.open();popup.document.write(workoutPdfHtml(workout,studentName));popup.document.close();}
 function exportWorkoutPdfById(id,trainerMode){const w=trainerMode?VIEW_STUDENT?.workouts?.find(x=>x.id===id):getW(id);exportWorkoutPdf(w,trainerMode?VIEW_STUDENT?.name:(CURRENT_USER?.name||INACTIVE_NAME||'Modo local'));}
@@ -2923,6 +3088,98 @@ function openCalDay(dateStr){
 let CLOUD_WORKOUTS=[];
 let CLOUD_LOAD_SEQ=0;
 
+// Arquivo local independente do desenho atual dos treinos. Ele preserva as
+// sessões por aluno mesmo quando um exercício é movido, recriado, renomeado ou
+// uma leitura temporária do Firestore volta vazia. Nunca mistura UIDs.
+const SESSION_ARCHIVE_PREFIX='team_bulls_session_archive_v9_8_1_';
+function sessionArchiveKey(userId){return SESSION_ARCHIVE_PREFIX+String(userId||'');}
+function normalizeLegacyDate(value){
+  const raw=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw;
+  const br=/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/.exec(raw);
+  return br?`${br[3]}-${br[2]}-${br[1]}`:'';
+}
+function normalizeLegacyPerformedSets(value){
+  if(!Array.isArray(value)||!value.length||value.length>30)return null;
+  const result=[];
+  for(const raw of value){
+    if(!raw||typeof raw!=='object')continue;
+    const weight=Number(raw.weight??raw.carga??raw.kg??raw.load??0);
+    const reps=Number(raw.reps??raw.repeticoes??raw.repetitions??raw.rep);
+    if(!Number.isFinite(weight)||weight<0||weight>10000||!Number.isInteger(reps)||reps<0||reps>100)continue;
+    const clean={weight:Math.round(weight*100)/100,reps};
+    const prescription=normalizePrescriptionSet(raw);if(prescription)Object.assign(clean,prescription);
+    result.push(clean);
+  }
+  return result.length?result:null;
+}
+function sanitizeHistorySession(value,id=''){
+  if(!value||typeof value!=='object')return null;
+  const sets=normalizePerformedSets(value.sets)||normalizeLegacyPerformedSets(value.sets);
+  const date=normalizeLegacyDate(value.date),week=Math.max(1,Math.min(8,parseInt(value.week,10)||1));
+  if(!sets||!date)return null;
+  return{...value,id:String(id||value.id||value.migrationKey||localGeneratedId()),date,week,note:String(value.note||'').slice(0,2000),exerciseName:String(value.exerciseName||value.exercicio||'').slice(0,100),performedExerciseItemId:String(value.performedExerciseItemId||'').slice(0,100),performedExerciseName:String(value.performedExerciseName||'').slice(0,100),workoutId:String(value.workoutId||''),exerciseId:String(value.exerciseId||''),sets};
+}
+function sessionIdentity(session){
+  if(session?.id)return'id:'+String(session.id);
+  if(session?.migrationKey)return'm:'+String(session.migrationKey);
+  return'f:'+sessionFingerprint(session||{});
+}
+function mergeHistorySessions(primary,secondary){
+  const map=new Map();
+  for(const source of [secondary,primary])for(const raw of(Array.isArray(source)?source:[])){
+    const session=sanitizeHistorySession(raw);if(!session)continue;
+    const key=sessionIdentity(session);map.set(key,{...(map.get(key)||{}),...session,sets:session.sets.map(set=>({...set}))});
+  }
+  return[...map.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||createdMillis(a)-createdMillis(b)||String(a.id).localeCompare(String(b.id)));
+}
+function sessionsFromWorkoutTree(workouts){
+  const result=[];
+  for(const workout of(Array.isArray(workouts)?workouts:[]))for(const exercise of(Array.isArray(workout?.exercises)?workout.exercises:[]))for(const raw of(Array.isArray(exercise?.sessions)?exercise.sessions:[])){
+    const session=sanitizeHistorySession({...raw,workoutId:raw.workoutId||workout.id,exerciseId:raw.exerciseId||exercise.id,exerciseName:raw.exerciseName||exercise.name});if(session)result.push(session);
+  }
+  return result;
+}
+function loadSessionArchive(userId){
+  if(!userId)return[];
+  let result=[];
+  try{result=mergeHistorySessions(JSON.parse(storageGet(sessionArchiveKey(userId))||'[]'),result);}catch(error){}
+  // Aproveita espelhos das versões anteriores sem apagar ou alterar esses dados.
+  for(const key of['teamms_cloud_'+userId,'teamms_local_'+userId]){
+    try{const parsed=JSON.parse(storageGet(key)||'null');const workouts=Array.isArray(parsed)?parsed:(parsed?.workouts||[]);result=mergeHistorySessions(sessionsFromWorkoutTree(workouts),result);}catch(error){}
+  }
+  return result;
+}
+function saveSessionArchive(userId,sessions){
+  if(!userId)return false;
+  try{const merged=mergeHistorySessions(sessions,loadSessionArchive(userId));storageSet(sessionArchiveKey(userId),JSON.stringify(merged));return true;}catch(error){console.warn('saveSessionArchive',error);return false;}
+}
+function removeSessionFromArchive(userId,sessionId){
+  if(!userId||!sessionId)return;
+  try{const filtered=loadSessionArchive(userId).filter(session=>String(session.id)!==String(sessionId));storageSet(sessionArchiveKey(userId),JSON.stringify(filtered));}catch(error){}
+}
+async function queryServerFirst(query,label){
+  try{return{snapshot:await withTimeout(query.get({source:'server'}),CLOUD_READ_TIMEOUT_MS,label),source:'server'};}
+  catch(serverError){
+    try{return{snapshot:await withTimeout(query.get({source:'cache'}),Math.min(3500,CLOUD_READ_TIMEOUT_MS),label+' em cache'),source:'cache',serverError};}
+    catch(cacheError){throw serverError;}
+  }
+}
+function attachSessionsWithoutLosingOrphans(workouts,sessions){
+  const exerciseById=new Map(),workoutById=new Map(),byName=new Map();
+  for(const workout of workouts){workoutById.set(String(workout.id),workout);for(const exercise of(workout.exercises||[])){
+    exercise.sessions=[];exerciseById.set(String(exercise.id),exercise);
+    const key=normalizedName(exercise.name);if(key){if(!byName.has(key))byName.set(key,[]);byName.get(key).push(exercise);}
+  }}
+  for(const session of sessions){
+    let exercise=exerciseById.get(String(session.exerciseId||''));
+    const nameKey=normalizedName(session.exerciseName||session.performedExerciseName||'');
+    if(!exercise&&session.workoutId&&nameKey){const workout=workoutById.get(String(session.workoutId));const candidates=(workout?.exercises||[]).filter(item=>normalizedName(item.name)===nameKey);if(candidates.length===1)exercise=candidates[0];}
+    if(!exercise&&nameKey){const candidates=byName.get(nameKey)||[];if(candidates.length===1)exercise=candidates[0];}
+    if(exercise){if(!session.exerciseName)session.exerciseName=exercise.name;exercise.sessions.push(session);}
+  }
+}
+
 function createdMillis(item){
   const value=item&&item.createdAt;
   if(value&&typeof value.toMillis==='function')return value.toMillis();
@@ -2932,31 +3189,69 @@ function createdMillis(item){
 function stableCreatedOrder(a,b){
   return createdMillis(a)-createdMillis(b)||normalizedName(a.name).localeCompare(normalizedName(b.name),'pt-BR')||String(a.id).localeCompare(String(b.id));
 }
+function hasManualOrder(item){return !!item&&item.order!==null&&item.order!==''&&Number.isInteger(Number(item.order))&&Number(item.order)>=0;}
+function orderedWorkouts(items){
+  return[...(Array.isArray(items)?items:[])].sort((a,b)=>{
+    const aManual=hasManualOrder(a),bManual=hasManualOrder(b);
+    if(aManual&&bManual)return Number(a.order)-Number(b.order)||createdMillis(b)-createdMillis(a)||String(a.id).localeCompare(String(b.id));
+    if(aManual!==bManual)return aManual?-1:1;
+    return createdMillis(b)-createdMillis(a)||normalizedName(a.name).localeCompare(normalizedName(b.name),'pt-BR')||String(a.id).localeCompare(String(b.id));
+  });
+}
+function activeWorkoutId(items){
+  const ordered=orderedWorkouts(items),explicit=ordered.find(workout=>workout.isActive===true);
+  return String((explicit||ordered[0])?.id||'');
+}
+function normalizeWorkoutCollection(items){
+  const ordered=orderedWorkouts(items),activeId=activeWorkoutId(ordered);
+  return ordered.map((workout,index)=>({...workout,order:index,isActive:String(workout.id)===activeId}));
+}
+function exerciseOrderComparator(a,b){
+  const aManual=hasManualOrder(a),bManual=hasManualOrder(b);
+  if(aManual&&bManual)return Number(a.order)-Number(b.order)||createdMillis(a)-createdMillis(b)||String(a.id).localeCompare(String(b.id));
+  if(aManual!==bManual)return aManual?-1:1;
+  return createdMillis(a)-createdMillis(b)||normalizedName(a.name).localeCompare(normalizedName(b.name),'pt-BR')||String(a.id).localeCompare(String(b.id));
+}
+function exercisesForDayUnsorted(workout,dayName){const key=normalizedName(dayName);return(workout?.exercises||[]).filter(exercise=>normalizedName(exercise.dayName||'Treino geral')===key);}
+function sortWorkoutExercises(workout){
+  if(!workout)return[];
+  const days=getWorkoutDays(workout),dayOrder=new Map(days.map((day,index)=>[normalizedName(day.name),index]));
+  return[...(workout.exercises||[])].sort((a,b)=>{
+    const dayA=dayOrder.get(normalizedName(a.dayName||'Treino geral'))??9999,dayB=dayOrder.get(normalizedName(b.dayName||'Treino geral'))??9999;
+    return dayA-dayB||exerciseOrderComparator(a,b);
+  });
+}
+function nextExerciseOrder(workout,dayName){
+  const items=exercisesForDayUnsorted(workout,dayName);return items.reduce((max,item)=>Math.max(max,hasManualOrder(item)?Number(item.order):-1),-1)+1;
+}
 
 // Carrega o plano inteiro em três consultas paralelas e só então monta a árvore.
 // Além de reduzir bastante o tempo de entrada, evita que arrays globais sejam
 // preenchidos aos poucos por duas respostas concorrentes.
 async function fetchCloudData(userId){
-  const [workoutSnap,exerciseSnap,sessionSnap]=await withTimeout(Promise.all([
-    db.collection('workouts').where('userId','==',userId).get(),
-    db.collection('exercises').where('userId','==',userId).get(),
-    db.collection('sessions').where('userId','==',userId).get()
-  ]),CLOUD_READ_TIMEOUT_MS,'carregamento dos treinos');
-  const workouts=workoutSnap.docs.map(d=>{const data=d.data();return{...data,id:d.id,name:String(data.name||'Treino').slice(0,60),color:PALETTE.includes(data.color)?data.color:PALETTE[0],exercises:[]};});
-  const workoutMap=new Map(workouts.map(w=>[w.id,w])),exerciseMap=new Map();
+  const workoutQuery=db.collection('workouts').where('userId','==',userId);
+  const exerciseQuery=db.collection('exercises').where('userId','==',userId);
+  const sessionQuery=db.collection('sessions').where('userId','==',userId);
+  const [workoutResult,exerciseResult,sessionResult]=await Promise.all([
+    queryServerFirst(workoutQuery,'treinos'),queryServerFirst(exerciseQuery,'exercícios'),queryServerFirst(sessionQuery,'histórico de séries')
+  ]);
+  const workoutSnap=workoutResult.snapshot,exerciseSnap=exerciseResult.snapshot,sessionSnap=sessionResult.snapshot;
+  let workouts=workoutSnap.docs.map(d=>{const data=d.data();return{...data,id:d.id,name:String(data.name||'Treino').slice(0,60),color:PALETTE.includes(data.color)?data.color:PALETTE[0],order:hasManualOrder(data)?Number(data.order):null,isActive:data.isActive===true,days:normalizeWorkoutDays(data.days,[]),exercises:[]};});
+  const workoutMap=new Map(workouts.map(w=>[String(w.id),w]));
   for(const d of exerciseSnap.docs){
-    const data=d.data();const exercise={...data,id:d.id,name:String(data.name||'Exercício').slice(0,100),dayName:String(data.dayName||'Treino geral').slice(0,60),videoUrl:String(data.videoUrl||'').slice(0,2000),weeklyPlan:normalizeWeeklyPlan(data.weeklyPlan),sessions:[]};
-    exerciseMap.set(exercise.id,exercise);const workout=workoutMap.get(exercise.workoutId);if(workout)workout.exercises.push(exercise);
+    const data=d.data();const exercise={...data,id:d.id,name:String(data.name||'Exercício').slice(0,100),dayName:String(data.dayName||'Treino geral').slice(0,60),videoUrl:String(data.videoUrl||'').slice(0,2000),order:hasManualOrder(data)?Number(data.order):null,weeklyPlan:normalizeWeeklyPlan(data.weeklyPlan),sessions:[]};
+    const workout=workoutMap.get(String(exercise.workoutId));if(workout)workout.exercises.push(exercise);
   }
-  const sessions=[];
-  for(const d of sessionSnap.docs){
-    const data=d.data(),sets=normalizePerformedSets(data.sets),week=Number(data.week),date=String(data.date||'');
-    if(!sets||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isInteger(week)||week<1||week>8)continue;
-    sessions.push({...data,id:d.id,date,week,note:String(data.note||'').slice(0,2000),exerciseName:String(data.exerciseName||'').slice(0,100),performedExerciseItemId:String(data.performedExerciseItemId||'').slice(0,100),performedExerciseName:String(data.performedExerciseName||'').slice(0,100),sets});
-  }
-  for(const session of sessions){const exercise=exerciseMap.get(session.exerciseId);if(exercise){if(!session.exerciseName)session.exerciseName=exercise.name;exercise.sessions.push(session);}}
-  workouts.sort(stableCreatedOrder);workouts.forEach(w=>{w.exercises.sort(stableCreatedOrder);w.exercises.forEach(e=>e.sessions.sort((a,b)=>String(a.date).localeCompare(String(b.date))||createdMillis(a)-createdMillis(b)||String(a.id).localeCompare(String(b.id))));});
-  return{workouts,sessions};
+  const remoteSessions=[];
+  for(const d of sessionSnap.docs){const session=sanitizeHistorySession(d.data(),d.id);if(session)remoteSessions.push(session);}
+  const archived=loadSessionArchive(userId);
+  // Leitura vinda do servidor tem prioridade; cache/arquivo apenas completa IDs
+  // ausentes. Um retorno vazio não apaga o histórico já conhecido no aparelho.
+  const sessions=mergeHistorySessions(remoteSessions,archived);
+  if(remoteSessions.length||sessionResult.source==='server')saveSessionArchive(userId,sessions);
+  attachSessionsWithoutLosingOrphans(workouts,sessions);
+  workouts=normalizeWorkoutCollection(workouts);workouts.forEach(w=>{w.days=normalizeWorkoutDays(w.days,w.exercises);w.exercises=sortWorkoutExercises(w);w.exercises.forEach(e=>e.sessions.sort((a,b)=>String(a.date).localeCompare(String(b.date))||createdMillis(a)-createdMillis(b)||String(a.id).localeCompare(String(b.id))));});
+  return{workouts,sessions,remoteSessionCount:remoteSessions.length,recoveredSessionCount:Math.max(0,sessions.length-remoteSessions.length),sessionSource:sessionResult.source};
 }
 
 async function loadCloudHome(){
@@ -2969,8 +3264,9 @@ async function loadCloudHome(){
     if(loadSeq!==CLOUD_LOAD_SEQ||CURRENT_USER?.uid!==userId||MODE!=='cloud')return false;
     CLOUD_WORKOUTS=loaded.workouts;
     HISTORY_BY_NAME=buildHistoryByName(loaded.sessions);
-    saveCloudBackup(); // ← atualiza backup offline com dados mais recentes do Firebase
+    saveCloudBackup(); // atualiza o espelho somente depois de mesclar o histórico preservado
     renderHome();
+    if(loaded.recoveredSessionCount>0)showToast(`✓ ${loaded.recoveredSessionCount} registro${loaded.recoveredSessionCount===1?'':'s'} recuperado${loaded.recoveredSessionCount===1?'':'s'} do histórico protegido`);
     return true;
   }catch(e){
     console.error('loadCloudHome error:',e.code, e.message);
@@ -3117,36 +3413,76 @@ function syncSessionToHistory(session){
   HISTORY_BY_NAME[key].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
 }
 
-function openWorkout(id){CUR_WORKOUT=id;renderWorkout();showScreen('screen-workout');}
-function groupExercisesByDay(exercises){
+function openWorkout(id){CUR_WORKOUT=id;CUR_DAY='';renderWorkout();showScreen('screen-workout');}
+function groupExercisesByDay(exercises,orderedDays=[]){
   const map=new Map();
-  for(const exercise of (exercises||[])){const day=String(exercise.dayName||'Treino geral').trim()||'Treino geral';if(!map.has(day))map.set(day,[]);map.get(day).push(exercise);}
+  for(const day of (orderedDays||[])){const name=safeDayName(day?.name||day);if(!map.has(name))map.set(name,[]);}
+  for(const exercise of (exercises||[])){const day=safeDayName(exercise.dayName||'Treino geral');if(!map.has(day))map.set(day,[]);map.get(day).push(exercise);}
+  for(const items of map.values())items.sort(exerciseOrderComparator);
   return[...map.entries()];
 }
+function exercisesForDay(workout,dayName){return exercisesForDayUnsorted(workout,dayName).sort(exerciseOrderComparator);}
+function dayLastDate(items){let value=null;for(const exercise of items)for(const session of(exercise.sessions||[])){if(session.date&&(!value||session.date>value))value=session.date;}return value;}
+function dayPrescriptionCount(items){let count=0;for(const exercise of items)for(let week=1;week<=8;week++)if(resolveWeekPrescription(exercise,week).sets.length)count++;return count;}
+function renderDayFolders(workout,trainerMode=false){
+  const days=getWorkoutDays(workout),canEdit=trainerMode||canSelfManagePlan();
+  return days.map(day=>{
+    const items=exercisesForDay(workout,day.name),last=dayLastDate(items),rx=dayPrescriptionCount(items);
+    const meta=`${items.length} ${items.length===1?'exercício':'exercícios'} · ${rx} semanas prescritas${last?' · Último: '+fmt(last):''}`;
+    const dayArg=jsArg(day.name),openCall=trainerMode?'openTsDay':'openDay';
+    const actions=canEdit?`<div class="day-folder-actions"><button class="btn-icon ghost" onclick="event.stopPropagation();openEditDayModal(${dayArg},'${trainerMode?'student':'self'}')" title="Renomear pasta">✏️</button><button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir pasta do dia','A pasta será removida. Exercícios existentes serão movidos para Treino geral, sem apagar séries ou histórico.',function(){deleteDayFolder(${dayArg},'${trainerMode?'student':'self'}');})" title="Excluir pasta">🗑</button></div>`:'';
+    return`<div class="day-folder-card" style="--wcard-color:${esc(workout.color||'var(--accent)')}" onclick="${openCall}(${dayArg})"><div class="day-folder-icon">DIA</div><div class="day-folder-info"><div class="day-folder-name">${esc(day.name)}</div><div class="day-folder-meta">${esc(meta)}</div></div>${actions}<div class="exercise-row-arrow">›</div></div>`;
+  }).join('');
+}
+function protocolSummaryHtml(workout,dayName=''){
+  const days=getWorkoutDays(workout),items=dayName?exercisesForDay(workout,dayName):(workout?.exercises||[]),sessions=items.reduce((sum,e)=>sum+(e.sessions||[]).length,0);
+  const title=dayName?safeDayName(dayName):workout?.name||'Treino';
+  const meta=dayName?`${workout?.name||'Protocolo'} · ${items.length} exercícios · ${sessions} registros`:`${days.length} ${days.length===1?'pasta de dia':'pastas de dias'} · ${items.length} exercícios · ${sessions} registros`;
+  return`<div class="archive-file-kicker">${dayName?'PASTA DO DIA':'PASTA PRINCIPAL DO PROTOCOLO'}</div><div class="protocol-summary-title">${esc(title)}</div><div class="protocol-summary-meta">${esc(meta)}</div>`;
+}
+function toggleWorkoutOverview(trainerMode){
+  const panel=document.getElementById(trainerMode?'trainer-workout-overview':'student-workout-overview'),button=document.getElementById(trainerMode?'trainer-overview-toggle':'student-overview-toggle');if(!panel||!button)return;
+  const open=!panel.classList.contains('open');panel.classList.toggle('open',open);button.textContent=open?'▤ OCULTAR VISÃO GERAL DAS 8 SEMANAS':'▤ MOSTRAR VISÃO GERAL DAS 8 SEMANAS';
+}
 function renderExerciseRows(exercises,trainerMode=false){
-  return exercises.map(e=>{
+  const ordered=[...(exercises||[])].sort(exerciseOrderComparator);
+  return ordered.map((e,index)=>{
     const shared=getSharedSessions(e.name,trainerMode?VIEW_STUDENT?.workouts:undefined);
     const last=shared.length?shared[shared.length-1]:null;
     const week=trainerMode?TRAINER_ACTIVE_WEEK:LAST_SESSION_WEEK;
     const rx=prescriptionCompactSummary(e,week);
     const info=(rx.rx.sets.length?`Sem. ${week}: ${rx.ger} · ${rx.reps}`:'Sem prescrição')+(last?' · Último: '+fmt(last.date):'');
     const eid=jsArg(e.id);
-    return`<div class="exercise-row" onclick="${trainerMode?'openTsExercise':'openExercise'}(${eid})"><div class="exercise-row-dot"></div><div class="exercise-row-info"><div class="exercise-row-name">${esc(e.name)}</div><div class="exercise-row-last">${info}</div></div>${trainerMode?`<button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px" onclick="event.stopPropagation();showConfirm('Excluir exercício','Excluir este exercício? O histórico de séries fica preservado.',function(){deleteTsExercise(${eid});})" title="Excluir">🗑</button>`:''}<div class="exercise-row-arrow">›</div></div>`;
+    const orderControls=trainerMode?`<div class="exercise-order-controls"><button class="order-btn" ${index===0?'disabled':''} onclick="event.stopPropagation();moveTrainerExercise(${eid},-1)" title="Mover exercício para cima">↑</button><button class="order-btn" ${index===ordered.length-1?'disabled':''} onclick="event.stopPropagation();moveTrainerExercise(${eid},1)" title="Mover exercício para baixo">↓</button></div>`:'';
+    return`<div class="exercise-row ${trainerMode?'trainer-orderable':''}" onclick="${trainerMode?'openTsExercise':'openExercise'}(${eid})"><div class="exercise-row-dot"></div><div class="exercise-row-info"><div class="exercise-row-name">${esc(e.name)}</div><div class="exercise-row-last">${info}</div></div>${orderControls}${trainerMode?`<button class="btn-icon ghost" style="width:28px;height:28px;font-size:13px" onclick="event.stopPropagation();showConfirm('Excluir exercício','Excluir este exercício? O histórico de séries fica preservado.',function(){deleteTsExercise(${eid});})" title="Excluir">🗑</button>`:''}<div class="exercise-row-arrow">›</div></div>`;
   }).join('');
 }
 function renderWorkout(){
-  const w=getW(CUR_WORKOUT);if(!w)return goHome();
+  const w=getW(CUR_WORKOUT);if(!w)return goHome();syncWorkoutDays(w);
   document.getElementById('workout-screen-title').textContent='TREINO // '+w.name;
+  document.getElementById('student-protocol-summary').innerHTML=protocolSummaryHtml(w);
   buildWeeklyBoard(w,'student-weekly-board',false);
-  const list=document.getElementById('exercise-list'),empty=document.getElementById('exercise-empty');
-  if(!w.exercises.length){list.innerHTML='';empty.style.display='block';const hint=empty.querySelector('.empty-hint');if(hint)hint.textContent=canSelfManagePlan()?'Adicione o primeiro exercício':'Seu treinador ainda não adicionou exercícios aqui';return;}
-  empty.style.display='none';
-  list.innerHTML=groupExercisesByDay(w.exercises).map(([day,items])=>`<section class="day-block"><div class="day-block-head"><div class="day-block-title">${esc(day)}</div><div class="day-block-count">${items.length} EXERC.</div></div>${renderExerciseRows(items,false)}</section>`).join('');
+  const list=document.getElementById('day-folder-list'),empty=document.getElementById('day-folder-empty'),days=getWorkoutDays(w);
+  list.innerHTML=renderDayFolders(w,false);empty.style.display=days.length?'none':'block';
+  const toggle=document.getElementById('student-overview-toggle');if(toggle)toggle.style.display=w.exercises.length?'block':'none';
+  const panel=document.getElementById('student-workout-overview');if(panel)panel.classList.remove('open');if(toggle)toggle.textContent='▤ MOSTRAR VISÃO GERAL DAS 8 SEMANAS';
 }
-
+function openDay(dayName){
+  const w=getW(CUR_WORKOUT),day=getWorkoutDays(w).find(item=>normalizedName(item.name)===normalizedName(dayName));if(!w||!day)return goWorkout();
+  CUR_DAY=day.name;renderDay();showScreen('screen-day');
+}
+function renderDay(){
+  const w=getW(CUR_WORKOUT);if(!w)return goHome();const day=getWorkoutDays(w).find(item=>normalizedName(item.name)===normalizedName(CUR_DAY));if(!day)return goWorkout();
+  CUR_DAY=day.name;const items=exercisesForDay(w,day.name),dayWorkout={...w,exercises:items};
+  document.getElementById('day-screen-title').textContent='DIA // '+day.name;
+  document.getElementById('student-day-summary').innerHTML=protocolSummaryHtml(w,day.name);
+  buildWeeklyBoard(dayWorkout,'student-day-weekly-board',false);
+  const list=document.getElementById('exercise-list'),empty=document.getElementById('exercise-empty');
+  list.innerHTML=renderExerciseRows(items,false);empty.style.display=items.length?'none':'block';
+}
 function openExercise(eid){
   CUR_EX=eid;miniChart=null;tsMiniChart=null;CHART_MODE='weight';
-  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goDay();
   document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
   renderExercisePrescription(e,'exercise-prescription-card',LAST_SESSION_WEEK,MODE==='local'&&canSelfManagePlan(),false);
   renderExerciseSubstitutions(e,'exercise-substitution-box');
@@ -3157,7 +3493,7 @@ function openExercise(eid){
   requestAnimationFrame(()=>{ buildChart(e,'progressChart',CHART_MODE,null); });
 }
 function renderExercise(){
-  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goWorkout();
+  const e=getE(CUR_WORKOUT,CUR_EX);if(!e)return goDay();
   document.getElementById('exercise-screen-title').textContent=e.name.toUpperCase();
   renderExercisePrescription(e,'exercise-prescription-card',LAST_SESSION_WEEK,MODE==='local'&&canSelfManagePlan(),false);
   renderExerciseSubstitutions(e,'exercise-substitution-box');
@@ -3172,7 +3508,7 @@ function renderExercise(){
 /* ── Planejamento semanal em grade (referência de 8 semanas) ── */
 function buildWeeklyBoard(workout,elId,trainerMode){
   const el=document.getElementById(elId);if(!el)return;
-  const exercises=workout?.exercises||[];
+  const exercises=sortWorkoutExercises(workout);
   if(!exercises.length){el.innerHTML='<div class="prescription-empty">Adicione exercícios para montar as semanas.</div>';return;}
   const weeks=Array.from({length:8},(_,i)=>i+1);
   const activeWeek=trainerMode?TRAINER_ACTIVE_WEEK:LAST_SESSION_WEEK;
@@ -3325,8 +3661,8 @@ async function persistPrescription(sets,replicate){
     if(PLAN_EDIT_TARGET==='trainer')await db.collection('exercises').doc(exercise.id).update({weeklyPlan});
     else{exercise.weeklyPlan=weeklyPlan;if(!localSave()){exercise.weeklyPlan=previous;throw new Error('Falha ao gravar no armazenamento local.');}}
     exercise.weeklyPlan=weeklyPlan;closeModal('modal-prescription');
-    if(PLAN_EDIT_TARGET==='trainer'){TRAINER_ACTIVE_WEEK=week;if(VIEW_STUDENT_WORKOUT)renderTsWorkout(VIEW_STUDENT_WORKOUT);if(VIEW_STUDENT_EXERCISE?.id===exercise.id)renderExercisePrescription(exercise,'ts-exercise-prescription-card',week,true,true);}
-    else{LAST_SESSION_WEEK=week;renderWorkout();if(CUR_EX===exercise.id)renderExercise();}
+    if(PLAN_EDIT_TARGET==='trainer'){TRAINER_ACTIVE_WEEK=week;if(VIEW_STUDENT_WORKOUT){if(VIEW_STUDENT_DAY)renderTsDay();else renderTsWorkout(VIEW_STUDENT_WORKOUT);}if(VIEW_STUDENT_EXERCISE?.id===exercise.id)renderExercisePrescription(exercise,'ts-exercise-prescription-card',week,true,true);}
+    else{LAST_SESSION_WEEK=week;if(CUR_DAY)renderDay();else renderWorkout();if(CUR_EX===exercise.id)renderExercise();}
     showToast(replicate?'✓ Prescrição repassada até a semana 8':'✓ Prescrição da semana salva');return true;
   }catch(error){exercise.weeklyPlan=previous;alert('Erro ao salvar a prescrição: '+error.message);return false;}
   finally{endAction(actionKey,'modal-prescription');}
@@ -4692,7 +5028,7 @@ function le(wid,eid){const w=lw(wid);return w?w.exercises.find(e=>e.id===eid):nu
 function deleteWorkout(id){
   if(MODE==='local'){
     const snapshot=JSON.stringify(LOCAL_DB);
-    LOCAL_DB.workouts=LOCAL_DB.workouts.filter(w=>w.id!==id);
+    LOCAL_DB.workouts=normalizeWorkoutCollection(LOCAL_DB.workouts.filter(w=>w.id!==id));
     if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(snapshot));return;}
     renderHome();
   } else {
@@ -4707,6 +5043,7 @@ function deleteSession(sid){
       if(!owner){showToast('Registro não encontrado.',true);return;}
       const snapshot=JSON.stringify(LOCAL_DB);owner.exercise.sessions=owner.exercise.sessions.filter(s=>s.id!==sid);
       if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(snapshot));return;}
+      removeSessionFromArchive(LOCAL_OWNER_UID||INACTIVE_UID||CURRENT_USER?.uid,sid);
       renderExercise();return;
     }
     if(!CURRENT_USER||CURRENT_USER.role!=='student'){showToast('Somente o aluno pode excluir o próprio registro.',true);return;}
@@ -4715,6 +5052,7 @@ function deleteSession(sid){
       await db.collection('sessions').doc(sid).delete();
       if(owner)owner.exercise.sessions=owner.exercise.sessions.filter(s=>s.id!==sid);
       Object.keys(HISTORY_BY_NAME).forEach(key=>{HISTORY_BY_NAME[key]=(HISTORY_BY_NAME[key]||[]).filter(s=>s.id!==sid);});
+      removeSessionFromArchive(CURRENT_USER.uid,sid);
       renderExercise();showToast('Registro excluído.');
     }catch(e){alert(firestoreWriteMessage(e,'registro'));}
     finally{endAction('delete-session-'+sid);}
@@ -4742,7 +5080,7 @@ function deleteCurrentExercise(){
         saveCloudBackup();
       }
       if(CUR_WORKOUT===wid)CUR_EX=null;
-      goWorkout();
+      if(CUR_DAY)goDay();else goWorkout();
     }catch(error){alert('Erro ao excluir exercício: '+error.message);}
     finally{endAction('delete-exercise-'+eid);}
   });
@@ -4776,10 +5114,13 @@ async function deleteTsWorkout(wid){
   try{
     // Não apaga as sessões — ficam preservadas em HISTORY_BY_NAME e voltam a
     // aparecer se você recriar um exercício de mesmo nome, mesmo em outro treino.
+    const before=normalizeWorkoutCollection(VIEW_STUDENT.workouts||[]),deleted=before.find(workout=>workout.id===wid),remaining=before.filter(workout=>workout.id!==wid);
+    const nextActiveId=deleted?.isActive?String(remaining[0]?.id||''):activeWorkoutId(remaining);
     const batch=db.batch();
     const exs=await cloudGet(db.collection('exercises').where('workoutId','==',wid),'exercícios do treino');
     exs.docs.forEach(ex=>batch.delete(ex.ref));
     batch.delete(db.collection('workouts').doc(wid));
+    remaining.forEach((workout,index)=>batch.update(db.collection('workouts').doc(workout.id),{order:index,isActive:String(workout.id)===nextActiveId}));
     await batch.commit();
     if(VIEW_STUDENT?.uid===student.uid)await renderTrainerStudent(student);
   }catch(e){
@@ -4788,15 +5129,20 @@ async function deleteTsWorkout(wid){
 }
 async function deleteTsExercise(eid){
   if(!VIEW_STUDENT||!VIEW_STUDENT_WORKOUT)return;
-  const student={...VIEW_STUDENT},wid=VIEW_STUDENT_WORKOUT.id;
+  const student={...VIEW_STUDENT},wid=VIEW_STUDENT_WORKOUT.id,currentDay=VIEW_STUDENT_DAY,removed=VIEW_STUDENT_WORKOUT.exercises.find(exercise=>exercise.id===eid);
   if(!beginAction('delete-ts-exercise-'+eid))return;
   try{
     // Não apaga as sessões — ficam preservadas em HISTORY_BY_NAME (mesma lógica acima).
-    await db.collection('exercises').doc(eid).delete();
+    const batch=db.batch();batch.delete(db.collection('exercises').doc(eid));
+    if(removed){exercisesForDay(VIEW_STUDENT_WORKOUT,removed.dayName).filter(exercise=>exercise.id!==eid).forEach((exercise,index)=>batch.update(db.collection('exercises').doc(exercise.id),{order:index}));}
+    await batch.commit();
     if(VIEW_STUDENT?.uid!==student.uid)return;
     await renderTrainerStudent(student);
     const w=VIEW_STUDENT.workouts.find(x=>x.id===wid);
-    if(w){VIEW_STUDENT_WORKOUT=w;renderTsWorkout(w);}else{goTrainerStudent();}
+    if(!w){goTrainerStudent();return;}
+    VIEW_STUDENT_WORKOUT=w;
+    const day=getWorkoutDays(w).find(item=>normalizedName(item.name)===normalizedName(currentDay));
+    if(day){VIEW_STUDENT_DAY=day.name;renderTsDay();}else{VIEW_STUDENT_DAY='';renderTsWorkout(w);showScreen('screen-ts-workout');}
   }catch(e){
     alert('Erro ao excluir exercício: '+e.message);
   }finally{endAction('delete-ts-exercise-'+eid);}
@@ -4854,7 +5200,10 @@ async function saveWorkout(){
         await db.collection('workouts').doc(EDIT_W).update({name,color:SEL_COLOR});
       }else{
         const docId=WORKOUT_CREATE_ID||(WORKOUT_CREATE_ID=stableEntityId('w',VIEW_STUDENT.uid,normalizedName(name)));
-        await db.collection('workouts').doc(docId).set({userId:VIEW_STUDENT.uid,name,color:SEL_COLOR,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        const existing=normalizeWorkoutCollection(VIEW_STUDENT.workouts||[]),batch=db.batch();
+        existing.forEach((workout,index)=>batch.update(db.collection('workouts').doc(workout.id),{order:index+1,isActive:false}));
+        batch.set(db.collection('workouts').doc(docId),{userId:VIEW_STUDENT.uid,name,color:SEL_COLOR,days:[],order:0,isActive:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await batch.commit();
       }
       WORKOUT_CREATE_ID=null;
       closeModal('modal-workout');
@@ -4867,7 +5216,8 @@ async function saveWorkout(){
       if(EDIT_W){const w=lw(EDIT_W);if(w){w.name=name;w.color=SEL_COLOR;}}
       else{
         const docId=WORKOUT_CREATE_ID||(WORKOUT_CREATE_ID=uid());
-        if(!LOCAL_DB.workouts.some(w=>w.id===docId))LOCAL_DB.workouts.push({id:docId,name,color:SEL_COLOR,exercises:[]});
+        LOCAL_DB.workouts=normalizeWorkoutCollection(LOCAL_DB.workouts).map((workout,index)=>({...workout,order:index+1,isActive:false}));
+        if(!LOCAL_DB.workouts.some(w=>w.id===docId))LOCAL_DB.workouts.unshift({id:docId,name,color:SEL_COLOR,days:[],order:0,isActive:true,exercises:[]});
       }
       WORKOUT_CREATE_ID=null;
       if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(__localSnapshot));throw new Error('Falha ao gravar no armazenamento local.');}showToast('✓ Treino salvo offline');closeModal('modal-workout');renderHome();
@@ -4877,9 +5227,11 @@ async function saveWorkout(){
         const w=getW(EDIT_W);if(w){w.name=name;w.color=SEL_COLOR;}
       }else{
         const docId=WORKOUT_CREATE_ID||(WORKOUT_CREATE_ID=stableEntityId('w',CURRENT_USER.uid,normalizedName(name)));
-        await db.collection('workouts').doc(docId).set({userId:CURRENT_USER.uid,name,color:SEL_COLOR,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-        if(!CLOUD_WORKOUTS.some(w=>w.id===docId))CLOUD_WORKOUTS.push({id:docId,userId:CURRENT_USER.uid,name,color:SEL_COLOR,exercises:[]});
-        CLOUD_WORKOUTS.sort(stableCreatedOrder);
+        const existing=normalizeWorkoutCollection(CLOUD_WORKOUTS),batch=db.batch();
+        existing.forEach((workout,index)=>batch.update(db.collection('workouts').doc(workout.id),{order:index+1,isActive:false}));
+        batch.set(db.collection('workouts').doc(docId),{userId:CURRENT_USER.uid,name,color:SEL_COLOR,days:[],order:0,isActive:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await batch.commit();
+        CLOUD_WORKOUTS=[{id:docId,userId:CURRENT_USER.uid,name,color:SEL_COLOR,days:[],order:0,isActive:true,exercises:[]},...existing.map((workout,index)=>({...workout,order:index+1,isActive:false}))];
       }
       WORKOUT_CREATE_ID=null;
       saveCloudBackup();
@@ -4891,6 +5243,69 @@ async function saveWorkout(){
   }finally{
     endAction('save-workout','modal-workout');
   }
+}
+
+
+// Day folders — hierarchy: protocol -> day -> exercises
+function workoutForDayTarget(target){return target==='student'?VIEW_STUDENT_WORKOUT:getW(CUR_WORKOUT);}
+function openAddDayModal(target='self'){
+  const workout=workoutForDayTarget(target);if(!workout){showToast('Abra um protocolo primeiro.',true);return;}
+  DAY_MODAL_TARGET=target;EDIT_DAY_NAME='';document.getElementById('modal-day-title').textContent='Novo dia — '+workout.name;document.getElementById('input-day-name').value='';openModal('modal-day');setTimeout(()=>document.getElementById('input-day-name').focus(),180);
+}
+function openEditDayModal(dayName,target='self'){
+  const workout=workoutForDayTarget(target),day=getWorkoutDays(workout).find(item=>normalizedName(item.name)===normalizedName(dayName));if(!workout||!day)return;
+  DAY_MODAL_TARGET=target;EDIT_DAY_NAME=day.name;document.getElementById('modal-day-title').textContent='Renomear dia — '+workout.name;document.getElementById('input-day-name').value=day.name;openModal('modal-day');setTimeout(()=>document.getElementById('input-day-name').focus(),180);
+}
+function dayListAfterRename(workout,oldName,newName){
+  const days=getWorkoutDays(workout).map(day=>normalizedName(day.name)===normalizedName(oldName)?{...day,id:dayIdFromName(newName),name:newName}:day);
+  if(!oldName)days.push({id:dayIdFromName(newName),name:newName,order:days.length});
+  return normalizeWorkoutDays(days,[]);
+}
+async function saveDayFolder(){
+  const workout=workoutForDayTarget(DAY_MODAL_TARGET),name=safeDayName(document.getElementById('input-day-name').value);if(!workout)return;
+  if(!document.getElementById('input-day-name').value.trim()){alert('Digite o nome do dia de treino.');return;}
+  const duplicate=getWorkoutDays(workout).some(day=>normalizedName(day.name)===normalizedName(name)&&normalizedName(day.name)!==normalizedName(EDIT_DAY_NAME));if(duplicate){alert('Já existe uma pasta de dia com esse nome.');return;}
+  if(!beginAction('save-day','modal-day'))return;
+  const oldName=EDIT_DAY_NAME,newDays=dayListAfterRename(workout,oldName,name);
+  try{
+    if(DAY_MODAL_TARGET==='student'){
+      if(CURRENT_USER?.role!=='trainer'||!VIEW_STUDENT)return;
+      const batch=db.batch();batch.update(db.collection('workouts').doc(workout.id),{days:newDays});
+      if(oldName)for(const exercise of exercisesForDay(workout,oldName))batch.update(db.collection('exercises').doc(exercise.id),{dayName:name});
+      await batch.commit();workout.days=newDays;if(oldName)for(const exercise of exercisesForDay(workout,oldName))exercise.dayName=name;VIEW_STUDENT_DAY=name;
+      closeModal('modal-day');renderTsWorkout(workout);showToast(oldName?'✓ Pasta renomeada':'✓ Dia criado');
+    }else{
+      if(!canSelfManagePlan())throw new Error('Este plano é administrado pelo treinador.');
+      const snapshot=JSON.stringify(LOCAL_DB);workout.days=newDays;if(oldName)for(const exercise of exercisesForDay(workout,oldName))exercise.dayName=name;
+      if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(snapshot));throw new Error('Falha ao gravar no aparelho.');}
+      CUR_DAY=name;closeModal('modal-day');renderWorkout();showToast(oldName?'✓ Pasta renomeada':'✓ Dia criado');
+    }
+  }catch(error){alert('Erro ao salvar o dia: '+error.message);}finally{EDIT_DAY_NAME='';endAction('save-day','modal-day');}
+}
+async function deleteDayFolder(dayName,target='self'){
+  const workout=workoutForDayTarget(target);if(!workout)return;
+  const items=exercisesForDay(workout,dayName),fallback='Treino geral';
+  if(items.length&&normalizedName(dayName)===normalizedName(fallback)){alert('A pasta Treino geral contém exercícios. Renomeie a pasta ou mova os exercícios antes de excluí-la.');return;}
+  let days=getWorkoutDays(workout).filter(day=>normalizedName(day.name)!==normalizedName(dayName));
+  if(items.length&&normalizedName(dayName)!==normalizedName(fallback)&&!days.some(day=>normalizedName(day.name)===normalizedName(fallback)))days.push({id:dayIdFromName(fallback),name:fallback,order:days.length});
+  days=normalizeWorkoutDays(days,[]);
+  if(!beginAction('delete-day'))return;
+  try{
+    if(target==='student'){
+      if(CURRENT_USER?.role!=='trainer')return;const batch=db.batch();batch.update(db.collection('workouts').doc(workout.id),{days});
+      let fallbackOrder=nextExerciseOrder(workout,fallback);for(const exercise of items){batch.update(db.collection('exercises').doc(exercise.id),{dayName:fallback,order:fallbackOrder});exercise.order=fallbackOrder++;}await batch.commit();workout.days=days;for(const exercise of items)exercise.dayName=fallback;workout.exercises=sortWorkoutExercises(workout);VIEW_STUDENT_DAY='';renderTsWorkout(workout);
+    }else{
+      if(!canSelfManagePlan())throw new Error('Este plano é administrado pelo treinador.');const snapshot=JSON.stringify(LOCAL_DB);workout.days=days;let fallbackOrder=nextExerciseOrder(workout,fallback);for(const exercise of items){exercise.dayName=fallback;exercise.order=fallbackOrder++;}workout.exercises=sortWorkoutExercises(workout);
+      if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(snapshot));throw new Error('Falha ao gravar no aparelho.');}CUR_DAY='';renderWorkout();
+    }
+    showToast(items.length?'✓ Pasta removida; exercícios movidos para Treino geral':'✓ Pasta removida');
+  }catch(error){alert('Erro ao excluir o dia: '+error.message);}finally{endAction('delete-day');}
+}
+function populateExerciseDaySelect(workout,selected=''){
+  const select=document.getElementById('input-exercise-day'),days=getWorkoutDays(workout);if(!select)return false;
+  select.innerHTML=days.map(day=>`<option value="${esc(day.name)}">${esc(day.name)}</option>`).join('');
+  if(!days.length){select.innerHTML='<option value="">Crie um dia antes de adicionar exercícios</option>';select.disabled=true;return false;}
+  select.disabled=false;const match=days.find(day=>normalizedName(day.name)===normalizedName(selected))||days[0];select.value=match.name;return true;
 }
 
 // Exercise
@@ -4954,22 +5369,23 @@ function syncCatalogSelectionWithName(){
   }
 }
 async function openAddExerciseModal(){
+  const workout=getW(CUR_WORKOUT);if(!workout||!getWorkoutDays(workout).length){showToast('Crie uma pasta de dia antes de adicionar exercícios.',true);return;}
   MODAL_TARGET='self';EXERCISE_CREATE_ID=null;EDIT_EXERCISE_ID=null;
-  document.getElementById('modal-exercise-title').textContent='Novo exercício';
+  document.getElementById('modal-exercise-title').textContent='Novo exercício — '+(CUR_DAY||workout.name);
   document.getElementById('btn-save-exercise').textContent='ADICIONAR';
   document.getElementById('input-exercise-name').value='';
-  document.getElementById('input-exercise-day').value='Treino geral';
+  populateExerciseDaySelect(workout,CUR_DAY);
   openModal('modal-exercise');
   await prepareExerciseCatalogPicker();
 }
 // Versão usada pelo treinador para adicionar um exercício ao treino do aluno.
 async function openAddExerciseModalTs(){
-  if(!VIEW_STUDENT_WORKOUT)return;
+  if(!VIEW_STUDENT_WORKOUT||!getWorkoutDays(VIEW_STUDENT_WORKOUT).length){showToast('Crie uma pasta de dia antes de adicionar exercícios.',true);return;}
   MODAL_TARGET='student';EXERCISE_CREATE_ID=null;EDIT_EXERCISE_ID=null;
-  document.getElementById('modal-exercise-title').textContent='Novo exercício — '+(VIEW_STUDENT?.name||'aluno');
+  document.getElementById('modal-exercise-title').textContent='Novo exercício — '+(VIEW_STUDENT_DAY||VIEW_STUDENT_WORKOUT.name);
   document.getElementById('btn-save-exercise').textContent='ADICIONAR';
   document.getElementById('input-exercise-name').value='';
-  document.getElementById('input-exercise-day').value=VIEW_STUDENT_WORKOUT.exercises?.[0]?.dayName||'Treino geral';
+  populateExerciseDaySelect(VIEW_STUDENT_WORKOUT,VIEW_STUDENT_DAY);
   openModal('modal-exercise');
   await prepareExerciseCatalogPicker();
 }
@@ -4978,13 +5394,13 @@ async function openAddExerciseModalTs(){
 async function openEditExerciseModalTs(){
   if(!VIEW_STUDENT_EXERCISE)return;MODAL_TARGET='student';EDIT_EXERCISE_ID=VIEW_STUDENT_EXERCISE.id;EXERCISE_CREATE_ID=null;
   document.getElementById('modal-exercise-title').textContent='Editar exercício — '+(VIEW_STUDENT?.name||'aluno');document.getElementById('btn-save-exercise').textContent='SALVAR ALTERAÇÕES';
-  document.getElementById('input-exercise-name').value=VIEW_STUDENT_EXERCISE.name;document.getElementById('input-exercise-day').value=VIEW_STUDENT_EXERCISE.dayName||'Treino geral';openModal('modal-exercise');await prepareExerciseCatalogPicker();
+  document.getElementById('input-exercise-name').value=VIEW_STUDENT_EXERCISE.name;populateExerciseDaySelect(VIEW_STUDENT_WORKOUT,VIEW_STUDENT_EXERCISE.dayName||VIEW_STUDENT_DAY);openModal('modal-exercise');await prepareExerciseCatalogPicker();
   const group=document.getElementById('input-exercise-catalog-group'),item=document.getElementById('input-exercise-catalog-item');if(VIEW_STUDENT_EXERCISE.catalogGroupId){group.value=VIEW_STUDENT_EXERCISE.catalogGroupId;renderExerciseCatalogItems();item.value=VIEW_STUDENT_EXERCISE.catalogItemId||'';SELECTED_EXERCISE_CATALOG={groupId:group.value,itemId:item.value,name:VIEW_STUDENT_EXERCISE.name};}
 }
 
 async function saveExercise(){
   const name=document.getElementById('input-exercise-name').value.trim();
-  const dayName=document.getElementById('input-exercise-day').value.trim()||'Treino geral';
+  const dayName=safeDayName(document.getElementById('input-exercise-day').value);
   if(!name){alert('Digite o nome do exercício!');return;}
   const catalogSelection=SELECTED_EXERCISE_CATALOG&&normalizedName(SELECTED_EXERCISE_CATALOG.name)===normalizedName(name)
     ?{catalogGroupId:SELECTED_EXERCISE_CATALOG.groupId,catalogItemId:SELECTED_EXERCISE_CATALOG.itemId}
@@ -5000,35 +5416,45 @@ async function saveExercise(){
     // Treinador adicionando exercício ao treino do aluno
     if(MODAL_TARGET==='student'){
       if(!VIEW_STUDENT||!VIEW_STUDENT_WORKOUT)return;
-      const wid=VIEW_STUDENT_WORKOUT.id;
-      if(EDIT_EXERCISE_ID){await db.collection('exercises').doc(EDIT_EXERCISE_ID).update({name,dayName,...catalogSelection});}
-      else{const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=stableEntityId('e',VIEW_STUDENT.uid,wid,normalizedName(dayName),normalizedName(name)));await db.collection('exercises').doc(docId).set({userId:VIEW_STUDENT.uid,workoutId:wid,name,dayName,videoUrl:'',weeklyPlan:{},...catalogSelection,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
+      const wid=VIEW_STUDENT_WORKOUT.id,wasEdit=!!EDIT_EXERCISE_ID;
+      let savedExerciseId=EDIT_EXERCISE_ID;
+      if(EDIT_EXERCISE_ID){
+        const current=VIEW_STUDENT_WORKOUT.exercises.find(exercise=>exercise.id===EDIT_EXERCISE_ID),changedDay=current&&normalizedName(current.dayName)!==normalizedName(dayName);
+        const order=changedDay?nextExerciseOrder(VIEW_STUDENT_WORKOUT,dayName):(hasManualOrder(current)?Number(current.order):nextExerciseOrder(VIEW_STUDENT_WORKOUT,dayName));
+        await db.collection('exercises').doc(EDIT_EXERCISE_ID).update({name,dayName,order,...catalogSelection});
+      }
+      else{const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=stableEntityId('e',VIEW_STUDENT.uid,wid,normalizedName(dayName),normalizedName(name)));savedExerciseId=docId;const order=nextExerciseOrder(VIEW_STUDENT_WORKOUT,dayName);await db.collection('exercises').doc(docId).set({userId:VIEW_STUDENT.uid,workoutId:wid,name,dayName,order,videoUrl:'',weeklyPlan:{},...catalogSelection,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
       EXERCISE_CREATE_ID=null;EDIT_EXERCISE_ID=null;
       closeModal('modal-exercise');
       showToast('✓ Exercício salvo');
       await renderTrainerStudent(VIEW_STUDENT);
       const w=VIEW_STUDENT.workouts.find(x=>x.id===wid);
-      if(w){VIEW_STUDENT_WORKOUT=w;renderTsWorkout(w);}
+      if(w){
+        VIEW_STUDENT_WORKOUT=w;VIEW_STUDENT_DAY=dayName;
+        const saved=w.exercises.find(exercise=>exercise.id===savedExerciseId);
+        if(wasEdit&&saved){VIEW_STUDENT_EXERCISE=saved;openTsExercise(savedExerciseId);}
+        else{renderTsDay();showScreen('screen-ts-day');}
+      }
       return;
     }
     const __localSnapshot=JSON.stringify(LOCAL_DB);
       if(MODE==='local'){
       const w=lw(CUR_WORKOUT);if(!w)return;
       const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=uid());
-      if(EDIT_EXERCISE_ID){const e=w.exercises.find(x=>x.id===EDIT_EXERCISE_ID);if(e){Object.assign(e,{name,dayName,...catalogSelection});}}else if(!w.exercises.some(e=>e.id===docId))w.exercises.push({id:docId,name,dayName,sessions:[],videoUrl:'',weeklyPlan:{},...catalogSelection});
+      if(EDIT_EXERCISE_ID){const e=w.exercises.find(x=>x.id===EDIT_EXERCISE_ID);if(e){const changedDay=normalizedName(e.dayName)!==normalizedName(dayName);Object.assign(e,{name,dayName,order:changedDay?nextExerciseOrder(w,dayName):(hasManualOrder(e)?Number(e.order):nextExerciseOrder(w,dayName)),...catalogSelection});}}else if(!w.exercises.some(e=>e.id===docId))w.exercises.push({id:docId,name,dayName,order:nextExerciseOrder(w,dayName),sessions:[],videoUrl:'',weeklyPlan:{},...catalogSelection});
       EXERCISE_CREATE_ID=null;EDIT_EXERCISE_ID=null;
-      if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(__localSnapshot));throw new Error('Falha ao gravar no armazenamento local.');}showToast('✓ Exercício salvo offline');closeModal('modal-exercise');renderWorkout();
+      if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(__localSnapshot));throw new Error('Falha ao gravar no armazenamento local.');}showToast('✓ Exercício salvo offline');closeModal('modal-exercise');CUR_DAY=dayName;renderDay();
     }else{
       const docId=EXERCISE_CREATE_ID||(EXERCISE_CREATE_ID=stableEntityId('e',CURRENT_USER.uid,CUR_WORKOUT,normalizedName(dayName),normalizedName(name)));
-      await db.collection('exercises').doc(docId).set({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,dayName,videoUrl:'',weeklyPlan:{},...catalogSelection,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      const w=getW(CUR_WORKOUT);
+      const w=getW(CUR_WORKOUT),order=nextExerciseOrder(w,dayName);
+      await db.collection('exercises').doc(docId).set({userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,dayName,order,videoUrl:'',weeklyPlan:{},...catalogSelection,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       if(w&&!w.exercises.some(e=>e.id===docId)){
-        w.exercises.push({id:docId,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,dayName,sessions:[],videoUrl:'',weeklyPlan:{},...catalogSelection});
-        w.exercises.sort(stableCreatedOrder);
+        w.exercises.push({id:docId,userId:CURRENT_USER.uid,workoutId:CUR_WORKOUT,name,dayName,order,sessions:[],videoUrl:'',weeklyPlan:{},...catalogSelection});
+        w.exercises=sortWorkoutExercises(w);
       }
       EXERCISE_CREATE_ID=null;
       saveCloudBackup();
-      closeModal('modal-exercise');renderWorkout();
+      closeModal('modal-exercise');CUR_DAY=dayName;renderDay();
     }
   }catch(e){
     alert('Erro ao salvar exercício: '+(e.code?e.code+' — ':'')+e.message);
@@ -5210,6 +5636,7 @@ async function saveSession(){
       const sessionData={id:sessionId,date,week,note,sets,exerciseName:e.name,...variant};
       if(!e.sessions.some(s=>s.id===sessionId))e.sessions.push(sessionData);
       syncSessionToHistory(sessionData);
+      saveSessionArchive(LOCAL_OWNER_UID||INACTIVE_UID||CURRENT_USER?.uid,[sessionData]);
       e.sessions.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       SESSION_CREATE_ID=null;
       if(!localSave()){LOCAL_DB=normalizeLocalDb(JSON.parse(__localSnapshot));throw new Error('Falha ao gravar no armazenamento local.');}
@@ -5225,6 +5652,7 @@ async function saveSession(){
       const sessionData={id:sessionId,userId:CURRENT_USER.uid,workoutId:wid,exerciseId:eid,date,week,note,sets,exerciseName,...variant};
       if(!e.sessions.some(s=>s.id===sessionId))e.sessions.push(sessionData);
       syncSessionToHistory(sessionData);
+      saveSessionArchive(CURRENT_USER.uid,[sessionData]);
       e.sessions.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       SESSION_CREATE_ID=null;
       saveCloudBackup();
@@ -5322,11 +5750,12 @@ async function renderTrainerStudent(s){
   try{
     const loaded=await fetchCloudData(studentUid);
     if(loadSeq!==TRAINER_STUDENT_LOAD_SEQ||VIEW_STUDENT?.uid!==studentUid)return;
-    const workouts=loaded.workouts;
+    const workouts=normalizeWorkoutCollection(loaded.workouts);
     VIEW_STUDENT={...VIEW_STUDENT,workouts};
     // Histórico completo por nome do exercício (sobrevive a treinos/exercícios excluídos)
     // — buscado sempre, mesmo se o aluno não tiver treino nenhum no momento.
     HISTORY_BY_NAME=buildHistoryByName(loaded.sessions);
+    if(loaded.recoveredSessionCount>0)showToast(`✓ ${loaded.recoveredSessionCount} registro${loaded.recoveredSessionCount===1?'':'s'} recuperado${loaded.recoveredSessionCount===1?'':'s'} para este aluno`);
     const list=document.getElementById('ts-workout-list');
     const empty=document.getElementById('ts-workout-empty');
     if(!workouts.length){list.innerHTML='';empty.style.display='block';return;}
@@ -5335,13 +5764,18 @@ async function renderTrainerStudent(s){
     workouts.forEach(w=>{const key=normalizedName(w.name);nameCounts[key]=(nameCounts[key]||0)+1;});
     const duplicateCount=Object.values(nameCounts).reduce((sum,n)=>sum+Math.max(0,n-1),0);
     const duplicateWarning=duplicateCount?`<div class="session-block" style="border-color:var(--warn);margin-bottom:12px"><div style="font-size:13px;color:var(--warn);margin-bottom:8px">⚠ ${duplicateCount===1?'1 treino duplicado encontrado':duplicateCount+' treinos duplicados encontrados'}</div><button class="btn-add-set" onclick="showConfirm('Corrigir duplicatas','Unir treinos com o mesmo nome sem apagar o histórico de séries?',cleanDuplicates)">CORRIGIR DUPLICATAS</button></div>`:'';
-    list.innerHTML=duplicateWarning+workouts.map(w=>{
+    const currentActiveId=activeWorkoutId(workouts);
+    list.innerHTML=duplicateWarning+workouts.map((w,index)=>{
       const last=lastDate(w);
-      const meta=last?'Último: '+fmt(last):w.exercises.length+' '+(w.exercises.length===1?'exercício':'exercícios');
-      const wid=jsArg(w.id);
-      return`<div class="workout-card" style="--wcard-color:${w.color}" onclick="openTsWorkout(${wid})">
-        <div class="workout-card-info"><div class="archive-file-kicker">PROTOCOLO PRESCRITO</div><div class="workout-card-name">${esc(w.name)}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.</div></div>
+      const dayCount=getWorkoutDays(w).length;
+      const meta=last?'Último: '+fmt(last):dayCount+' '+(dayCount===1?'dia':'dias');
+      const wid=jsArg(w.id),isActive=String(w.id)===currentActiveId;
+      const orderControls=`<div class="workout-order-controls"><button class="order-btn" ${index===0?'disabled':''} onclick="event.stopPropagation();moveTrainerWorkout(${wid},-1)" title="Mover protocolo para cima">↑</button><button class="order-btn" ${index===workouts.length-1?'disabled':''} onclick="event.stopPropagation();moveTrainerWorkout(${wid},1)" title="Mover protocolo para baixo">↓</button></div>`;
+      return`<div class="workout-card ${isActive?'is-active':'is-inactive'}" style="--wcard-color:${w.color}" onclick="openTsWorkout(${wid})">
+        <div class="workout-card-info"><div class="protocol-state-badge ${isActive?'active':'inactive'}">${isActive?'● TREINO ATIVO':'○ DESATIVADO'}</div><div class="workout-card-name">${esc(w.name)}</div><div class="workout-card-meta">${meta} · ${w.exercises.length} exerc.${isActive?' · plano atual':' · aluno mantém acesso'}</div></div>
         <div class="workout-card-actions">
+          ${orderControls}
+          ${isActive?'':`<button class="activate-workout-btn" onclick="event.stopPropagation();activateTrainerWorkout(${wid})" title="Definir como treino atual">ATIVAR</button>`}
           <button class="btn-icon ghost" onclick="event.stopPropagation();exportWorkoutPdfById(${wid},true)" title="Salvar PDF">PDF</button>
           <button class="btn-icon ghost" onclick="event.stopPropagation();openEditWorkoutTs(${wid})" title="Editar">✏️</button>
           <button class="btn-icon ghost" onclick="event.stopPropagation();showConfirm('Excluir treino','Excluir este treino? O histórico de séries dos exercícios fica preservado e reaparece se você recriar um exercício com o mesmo nome.',function(){deleteTsWorkout(${wid});})" title="Excluir">🗑</button>
@@ -5355,15 +5789,50 @@ async function renderTrainerStudent(s){
 }
 
 
+async function persistWorkoutOrder(workouts,actionKey='workout-order'){
+  if(!VIEW_STUDENT||CURRENT_USER?.role!=='trainer')return false;
+  const normalized=normalizeWorkoutCollection(workouts);
+  if(!beginAction(actionKey))return false;
+  try{
+    const batch=db.batch();normalized.forEach((workout,index)=>batch.update(db.collection('workouts').doc(workout.id),{order:index,isActive:workout.isActive===true}));
+    await batch.commit();VIEW_STUDENT.workouts=normalized;await renderTrainerStudent(VIEW_STUDENT);return true;
+  }catch(error){alert('Não foi possível atualizar a ordem dos treinos: '+error.message);return false;}
+  finally{endAction(actionKey);}
+}
+async function moveTrainerWorkout(wid,direction){
+  const workouts=normalizeWorkoutCollection(VIEW_STUDENT?.workouts||[]),index=workouts.findIndex(workout=>workout.id===wid),next=index+Number(direction);
+  if(index<0||next<0||next>=workouts.length)return;
+  [workouts[index],workouts[next]]=[workouts[next],workouts[index]];
+  workouts.forEach((workout,position)=>workout.order=position);
+  await persistWorkoutOrder(workouts,'move-workout-'+wid);
+}
+async function activateTrainerWorkout(wid){
+  const workouts=normalizeWorkoutCollection(VIEW_STUDENT?.workouts||[]),index=workouts.findIndex(workout=>workout.id===wid);if(index<0)return;
+  const [target]=workouts.splice(index,1);workouts.unshift(target);
+  workouts.forEach((workout,position)=>{workout.order=position;workout.isActive=workout.id===wid;});
+  if(await persistWorkoutOrder(workouts,'activate-workout-'+wid))showToast('✓ Treino ativo atualizado');
+}
+async function moveTrainerExercise(eid,direction){
+  const workout=VIEW_STUDENT_WORKOUT,exercise=workout?.exercises?.find(item=>item.id===eid);if(!workout||!exercise||CURRENT_USER?.role!=='trainer')return;
+  const items=exercisesForDay(workout,exercise.dayName),index=items.findIndex(item=>item.id===eid),next=index+Number(direction);if(index<0||next<0||next>=items.length)return;
+  [items[index],items[next]]=[items[next],items[index]];
+  const key='move-exercise-'+eid;if(!beginAction(key))return;
+  try{
+    const batch=db.batch();items.forEach((item,position)=>{item.order=position;batch.update(db.collection('exercises').doc(item.id),{order:position});});
+    await batch.commit();workout.exercises=sortWorkoutExercises(workout);renderTsDay();showToast('✓ Ordem dos exercícios atualizada');
+  }catch(error){alert('Não foi possível alterar a ordem dos exercícios: '+error.message);}
+  finally{endAction(key);}
+}
+
 function openBulkPrescriptionModal(){
   const w=VIEW_STUDENT_WORKOUT;if(!w||!(w.exercises||[]).length){showToast('Adicione exercícios antes de copiar prescrições.',true);return;}
-  const source=document.getElementById('bulk-source-exercise');source.innerHTML=w.exercises.map(e=>`<option value="${esc(e.id)}"${VIEW_STUDENT_EXERCISE?.id===e.id?' selected':''}>${esc(e.dayName||'Treino geral')} — ${esc(e.name)}</option>`).join('');
+  const source=document.getElementById('bulk-source-exercise');source.innerHTML=sortWorkoutExercises(w).map(e=>`<option value="${esc(e.id)}"${VIEW_STUDENT_EXERCISE?.id===e.id?' selected':''}>${esc(e.dayName||'Treino geral')} — ${esc(e.name)}</option>`).join('');
   document.getElementById('bulk-copy-week').value=String(TRAINER_ACTIVE_WEEK||1);document.getElementById('bulk-copy-mode').value='all';syncBulkWeekVisibility();renderBulkTargets();openModal('modal-bulk-prescription');
 }
 function syncBulkWeekVisibility(){document.getElementById('bulk-week-wrap').style.display=document.getElementById('bulk-copy-mode').value==='week'?'block':'none';}
 function renderBulkTargets(){
   const w=VIEW_STUDENT_WORKOUT,sourceId=document.getElementById('bulk-source-exercise').value,wrap=document.getElementById('bulk-targets');
-  const targets=(w?.exercises||[]).filter(e=>e.id!==sourceId);wrap.innerHTML=targets.map(e=>`<label class="bulk-target"><input type="checkbox" value="${esc(e.id)}"><span><b>${esc(e.name)}</b><small style="display:block;color:var(--text-muted)">${esc(e.dayName||'Treino geral')}</small></span></label>`).join('')||'<div class="plan-help">Não há outros exercícios neste treino.</div>';document.getElementById('bulk-select-all').checked=false;
+  const targets=sortWorkoutExercises(w).filter(e=>e.id!==sourceId);wrap.innerHTML=targets.map(e=>`<label class="bulk-target"><input type="checkbox" value="${esc(e.id)}"><span><b>${esc(e.name)}</b><small style="display:block;color:var(--text-muted)">${esc(e.dayName||'Treino geral')}</small></span></label>`).join('')||'<div class="plan-help">Não há outros exercícios neste treino.</div>';document.getElementById('bulk-select-all').checked=false;
 }
 function toggleBulkAll(checked){document.querySelectorAll('#bulk-targets input[type=checkbox]').forEach(input=>input.checked=checked);}
 async function saveBulkPrescription(){
@@ -5378,26 +5847,40 @@ async function saveBulkPrescription(){
       else plan['w'+week]=clonePrescriptionSets(resolveWeekPrescription(source,week).sets);
       target.weeklyPlan=plan;batch.update(db.collection('exercises').doc(id),{weeklyPlan:plan});
     }
-    await batch.commit();closeModal('modal-bulk-prescription');renderTsWorkout(w);showToast(mode==='all'?'✓ Semanas 1 a 8 copiadas':'✓ Semana '+week+' copiada');
+    await batch.commit();closeModal('modal-bulk-prescription');if(VIEW_STUDENT_DAY)renderTsDay();else renderTsWorkout(w);showToast(mode==='all'?'✓ Semanas 1 a 8 copiadas':'✓ Semana '+week+' copiada');
   }catch(e){alert('Erro ao copiar prescrições: '+e.message);}finally{endAction('bulk-prescription','modal-bulk-prescription');}
 }
 
 function openTsWorkout(wid){
   const w=VIEW_STUDENT.workouts.find(x=>x.id===wid);
-  if(!w)return;VIEW_STUDENT_WORKOUT=w;
+  if(!w)return;VIEW_STUDENT_WORKOUT=w;VIEW_STUDENT_DAY='';
   renderTsWorkout(w);showScreen('screen-ts-workout');
 }
 function renderTsWorkout(w){
+  if(!w)return goTrainerStudent();syncWorkoutDays(w);
   document.getElementById('ts-workout-title').textContent='TREINO // '+w.name;
+  document.getElementById('trainer-protocol-summary').innerHTML=protocolSummaryHtml(w);
   buildWeeklyBoard(w,'trainer-weekly-board',true);
-  const list=document.getElementById('ts-exercise-list');
-  if(!w.exercises.length){list.innerHTML='<div class="no-data-inline">Sem exercícios neste treino. Toque em + EXERCÍCIO para adicionar.</div>';return;}
-  list.innerHTML=groupExercisesByDay(w.exercises).map(([day,items])=>`<section class="day-block"><div class="day-block-head"><div class="day-block-title">${esc(day)}</div><div class="day-block-count">${items.length} EXERC.</div></div>${renderExerciseRows(items,true)}</section>`).join('');
+  const list=document.getElementById('trainer-day-folder-list'),empty=document.getElementById('trainer-day-folder-empty'),days=getWorkoutDays(w);
+  list.innerHTML=renderDayFolders(w,true);empty.style.display=days.length?'none':'block';
+  const toggle=document.getElementById('trainer-overview-toggle');if(toggle)toggle.style.display=w.exercises.length?'block':'none';
+  const panel=document.getElementById('trainer-workout-overview');if(panel)panel.classList.remove('open');if(toggle)toggle.textContent='▤ MOSTRAR VISÃO GERAL DAS 8 SEMANAS';
 }
-
+function openTsDay(dayName){
+  const w=VIEW_STUDENT_WORKOUT,day=getWorkoutDays(w).find(item=>normalizedName(item.name)===normalizedName(dayName));if(!w||!day)return goTsWorkout();
+  VIEW_STUDENT_DAY=day.name;renderTsDay();showScreen('screen-ts-day');
+}
+function renderTsDay(){
+  const w=VIEW_STUDENT_WORKOUT;if(!w)return goTrainerStudent();const day=getWorkoutDays(w).find(item=>normalizedName(item.name)===normalizedName(VIEW_STUDENT_DAY));if(!day)return goTsWorkout();
+  VIEW_STUDENT_DAY=day.name;const items=exercisesForDay(w,day.name),dayWorkout={...w,exercises:items};
+  document.getElementById('ts-day-title').textContent='DIA // '+day.name;
+  document.getElementById('trainer-day-summary').innerHTML=protocolSummaryHtml(w,day.name);
+  buildWeeklyBoard(dayWorkout,'trainer-day-weekly-board',true);
+  const list=document.getElementById('ts-exercise-list'),empty=document.getElementById('ts-day-exercise-empty');list.innerHTML=renderExerciseRows(items,true);empty.style.display=items.length?'none':'block';
+}
 function openTsExercise(eid){
   const e=VIEW_STUDENT_WORKOUT.exercises.find(x=>x.id===eid);
-  if(!e)return;VIEW_STUDENT_EXERCISE=e;
+  if(!e)return goTsDay();VIEW_STUDENT_EXERCISE=e;
   document.getElementById('ts-exercise-title').textContent=e.name.toUpperCase();
   tsMiniChart=null;
   renderExercisePrescription(e,'ts-exercise-prescription-card',TRAINER_ACTIVE_WEEK,true,true);
@@ -5534,7 +6017,9 @@ async function saveEditSession(){
       e.sessions.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       saveCloudBackup();
     }
-    syncSessionToHistory(e.sessions.find(s=>s.id===EDIT_SESSION_ID));
+    const editedSession=e.sessions.find(s=>s.id===EDIT_SESSION_ID);
+    syncSessionToHistory(editedSession);
+    saveSessionArchive(MODE==='local'?(LOCAL_OWNER_UID||INACTIVE_UID||CURRENT_USER?.uid):CURRENT_USER?.uid,[editedSession]);
     closeModal('modal-edit-session');
     if(CUR_WORKOUT===wid && CUR_EX===eid) renderExercise();
   }catch(err){
@@ -5870,7 +6355,7 @@ window.addEventListener('pageshow',event=>{
 // ── Service Worker: atualização silenciosa, sem recarregar a página ──
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw_11.js',{updateViaCache:'none'}).then(registration=>{
+    navigator.serviceWorker.register('sw_15.js',{updateViaCache:'none'}).then(registration=>{
       if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
@@ -5879,7 +6364,7 @@ if('serviceWorker' in navigator){
       // A atualização ocorre em segundo plano. Não há location.reload() no
       // controllerchange, evitando ciclos de recarga durante a autenticação.
       registration.update().catch(()=>{});
-      console.log('SW v9.6 registrado:',registration.scope);
+      console.log('SW v9.8.1 registrado:',registration.scope);
     }).catch(error=>console.warn('SW falhou:',error));
   });
 }

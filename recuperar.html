@@ -17,7 +17,7 @@
 <div class="tag">TEAM BULLS // RECUPERAÇÃO</div>
 <div class="title">Corrigir atualização</div>
 <p class="text">Esta página remove somente o Service Worker e os caches antigos do aplicativo. Treinos e registros salvos no armazenamento local são preservados.</p>
-<div id="status" class="status">Pronto para remover caches antigos e abrir a v9.6.</div>
+<div id="status" class="status">Pronto para remover caches antigos e abrir a v9.8.1.</div>
 <button id="run" class="btn" type="button">CORRIGIR E ABRIR O APP</button>
 <p class="note">Use esta página quando o aplicativo ficar preso na tela de carregamento após uma atualização.</p>
 </main>
@@ -37,7 +37,7 @@
    }
    try{sessionStorage.clear();}catch(error){}
    status.textContent='Correção concluída. Abrindo a versão nova...';
-   setTimeout(()=>location.replace('./index.html?v=9.6&recuperado='+Date.now()),900);
+   setTimeout(()=>location.replace('./index.html?v=9.8.1&recuperado='+Date.now()),900);
   }catch(error){
    status.textContent='Não foi possível concluir automaticamente. Limpe os dados do site no navegador e tente novamente.';
    button.disabled=false;
