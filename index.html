@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v9.8.1: recuperação e preservação do histórico de séries, ordem manual, treino ativo, ícones PWA pretos e segurança reforçada. -->
+<!-- Team Bulls v9.9: refeições livres com tabela calórica e registros fotográficos, histórico protegido, treino ativo e modo offline. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -15,7 +15,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"/>
 <title>Team Bulls</title>
-<link href="manifest_13.json" rel="manifest"/>
+<link href="manifest_14.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -478,6 +478,37 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     .catalog-picker-help{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);line-height:1.5;margin-top:8px;}
     .form-input:disabled{opacity:.5;cursor:not-allowed;}
 
+
+
+    /* REFEIÇÕES LIVRES — tabela calórica + registros fotográficos */
+    .free-meal-intro{background:linear-gradient(135deg,rgba(165,30,32,.17),rgba(18,16,14,.96));border:1px solid #573a31;border-left:3px solid var(--accent);padding:13px 14px;margin-bottom:14px;}
+    .free-meal-intro-title{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:22px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--paper,var(--text));}
+    .free-meal-intro-sub{font-size:12px;color:var(--text-dim);line-height:1.5;margin-top:5px;}
+    .free-meal-table-wrap{overflow-x:auto;margin-bottom:16px;scrollbar-color:var(--border-l) transparent;}
+    .free-meal-table{width:100%;min-width:650px;border-collapse:collapse;background:var(--surface);}
+    .free-meal-table th,.free-meal-table td{border:1px solid var(--border-l);padding:9px 8px;vertical-align:top;text-align:left;}
+    .free-meal-table th{background:#181512;color:var(--accent);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;}
+    .free-meal-table td{font-size:12px;color:var(--text-dim);}
+    .free-meal-table td strong{display:block;color:var(--text);font-size:13px;}
+    .free-meal-calorie{font-family:'DM Mono',monospace;font-weight:700;color:#d6a36d;white-space:nowrap;}
+    .free-meal-table-actions{display:flex;gap:4px;justify-content:flex-end;white-space:nowrap;}
+    .free-meal-table-actions button{background:#141210;border:1px solid #4a4037;color:#b9aa99;min-width:28px;height:28px;cursor:pointer;font-size:12px;}
+    .free-meal-table-actions button:active{border-color:var(--accent);color:var(--accent);}
+    .free-meal-log-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px;margin-bottom:10px;display:grid;grid-template-columns:94px 1fr;gap:12px;cursor:pointer;}
+    .free-meal-log-photo{width:94px;height:94px;object-fit:cover;border:1px solid #504439;background:#0c0b0a;display:block;}
+    .free-meal-log-main{min-width:0;}
+    .free-meal-log-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+    .free-meal-log-name{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:18px;font-weight:800;color:var(--text);line-height:1.15;}
+    .free-meal-log-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);white-space:nowrap;}
+    .free-meal-log-cal{font-family:'DM Mono',monospace;font-size:11px;color:#d6a36d;margin-top:5px;font-weight:700;}
+    .free-meal-log-note{font-size:12px;color:var(--text-dim);line-height:1.4;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .free-meal-pending{display:inline-block;margin-top:6px;border:1px solid rgba(245,158,11,.4);color:#f0bd68;background:rgba(245,158,11,.08);font-family:'DM Mono',monospace;font-size:8px;padding:2px 5px;letter-spacing:.5px;text-transform:uppercase;}
+    .free-meal-preview{display:none;width:100%;max-height:260px;object-fit:contain;background:#080808;border:1px solid var(--border-l);margin-top:8px;}
+    .free-meal-view-photo{width:100%;max-height:52vh;object-fit:contain;background:#070707;border:1px solid var(--border-l);display:block;margin-bottom:12px;}
+    .free-meal-view-meta{font-family:'DM Mono',monospace;font-size:10px;color:#d6a36d;border:1px solid #4a4037;background:#100f0e;padding:9px 10px;margin-bottom:10px;line-height:1.5;}
+    .free-meal-section-note{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);line-height:1.5;margin:-4px 0 12px;}
+    @media(max-width:520px){.free-meal-log-card{grid-template-columns:78px 1fr}.free-meal-log-photo{width:78px;height:78px}.free-meal-log-name{font-size:16px}}
+
     /* PROGRESS PHOTOS */
     .photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
     .photo-thumb{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--border);}
@@ -840,6 +871,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <div class="quick-nav">
 <button class="quick-nav-btn" onclick="openCalendar()"><span>▦</span>Registros</button>
 <button class="quick-nav-btn" onclick="openMeals()"><span>▣</span>Suprimentos</button>
+<button class="quick-nav-btn" onclick="openFreeMeals()"><span>◈</span>Refeição livre</button>
 <button class="quick-nav-btn" onclick="openPhotos()"><span>◉</span>Evidências</button>
 <button class="quick-nav-btn" onclick="openMyQuestionnaires()"><span>▤</span>Relatórios</button>
 <button class="quick-nav-btn" id="qn-food" onclick="openFoodOptions()"><span>◇</span>Alimentos</button>
@@ -968,6 +1000,54 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 </div>
 </div>
 </div>
+
+<!-- FREE MEALS — aluno -->
+<div class="screen" id="screen-free-meals">
+<div class="header">
+<button class="btn-icon" onclick="goHome()">←</button>
+<div class="header-title">REFEIÇÕES LIVRES</div>
+</div>
+<div class="content">
+<div class="free-meal-intro">
+<div class="free-meal-intro-title">Estimativa, não precisão absoluta</div>
+<div class="free-meal-intro-sub">Use a tabela como referência aproximada. O preparo, o tamanho da porção e os ingredientes podem alterar bastante as calorias reais.</div>
+</div>
+<div class="section-header"><span class="section-label">Tabela de aproximações</span></div>
+<div class="free-meal-table-wrap"><div id="free-meal-catalog-student"></div></div>
+<div class="section-header"><span class="section-label">Meus registros</span></div>
+<div class="free-meal-section-note">As fotos ficam vinculadas à sua conta. Quando estiver sem internet, o registro pode ficar pendente e será enviado ao retornar online.</div>
+<div id="free-meal-logs"></div>
+<div class="empty-state" id="free-meal-logs-empty" style="display:none">
+<div class="empty-icon">🍔</div><div class="empty-label">Nenhuma refeição livre registrada</div><div class="empty-hint">Toque em + REGISTRAR para arquivar sua refeição</div>
+</div>
+</div>
+</div>
+<!-- FREE MEAL CATALOG — treinador -->
+<div class="screen" id="screen-free-meal-catalog">
+<div class="header">
+<button class="btn-icon" onclick="goTrainer()">←</button>
+<div class="header-title">CALORIAS // REFEIÇÕES LIVRES</div>
+</div>
+<div class="content">
+<div class="free-meal-intro"><div class="free-meal-intro-title">Tabela compartilhada</div><div class="free-meal-intro-sub">Personalize as opções que todos os alunos ativos verão. Cadastre porção, faixa aproximada de calorias e observações.</div></div>
+<button class="btn-primary" onclick="openAddFreeMealItem()" style="margin-bottom:14px">+ NOVA OPÇÃO</button>
+<div class="free-meal-table-wrap"><div id="free-meal-catalog-trainer"></div></div>
+</div>
+</div>
+<!-- FREE MEAL LOGS — treinador visualizando aluno -->
+<div class="screen" id="screen-ts-free-meals">
+<div class="header">
+<button class="btn-icon" onclick="goTrainerStudent()">←</button>
+<div class="header-title">REFEIÇÕES LIVRES DO ALUNO</div>
+</div>
+<div class="readonly-banner">👁 Registros enviados pelo aluno · visualização somente leitura</div>
+<div class="content" style="padding-top:12px">
+<div class="section-header"><span class="section-label">Histórico fotográfico</span></div>
+<div id="ts-free-meal-logs"></div>
+<div class="empty-state" id="ts-free-meal-logs-empty" style="display:none"><div class="empty-icon">🍔</div><div class="empty-label">Nenhuma refeição livre registrada</div></div>
+</div>
+</div>
+
 <!-- PROGRESS PHOTOS -->
 <div class="screen" id="screen-photos">
 <div class="header">
@@ -1016,6 +1096,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <div class="stats-grid" id="trainer-stats"></div>
 <div class="content">
 <button class="btn-add-set" onclick="openFoodOptions()" style="margin-bottom:14px">🍎 Opções de alimentos (tabela de substituições)</button>
+<button class="btn-add-set" onclick="openFreeMealCatalog()" style="margin-bottom:14px">🍔 Tabela de calorias — refeições livres</button>
 <button class="btn-add-set" onclick="openExerciseOptions()" style="margin-bottom:14px">🔄 Substituições de exercícios (tabela de trocas)</button>
 <div class="section-header"><span class="section-label">Arquivos dos alunos</span></div>
 <div id="student-list"></div>
@@ -1032,6 +1113,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <button class="btn-icon" onclick="goTrainer()">←</button>
 <div class="header-title" id="ts-title">ALUNO</div>
 <button class="btn-icon ghost" onclick="openTsMeals()" title="Plano alimentar">🍽</button>
+<button class="btn-icon ghost" onclick="openTsFreeMeals()" title="Registros de refeições livres">🍔</button>
 <button class="btn-icon ghost" onclick="openTsPhotos()" title="Fotos de progresso">📷</button>
 <button class="btn-icon ghost" onclick="openTsQuestionnaires()" title="Questionários">📝</button>
 <button class="btn-icon ghost" onclick="openFeedbackModal()" title="Enviar transmissão">💬</button>
@@ -1248,6 +1330,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <div class="fab-wrap" id="fab-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
 <div class="fab-wrap" id="fab-ts-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
 <div class="fab-wrap" id="fab-photos" style="display:none"><button class="fab" onclick="triggerPhotoUpload()"><span class="fab-icon">+</span> EVIDÊNCIA</button></div>
+<div class="fab-wrap" id="fab-free-meals" style="display:none"><button class="fab" onclick="openFreeMealLogModal()"><span class="fab-icon">+</span> REGISTRAR</button></div>
 <!-- MODAL: Workout -->
 <div class="modal-backdrop" id="modal-workout">
 <div class="modal-sheet">
@@ -1522,6 +1605,53 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 <button class="btn-ghost" onclick="closeModal('modal-exercise-option-item')">CANCELAR</button>
 </div>
 </div>
+
+<!-- MODAL: opção da tabela de refeição livre -->
+<div class="modal-backdrop" id="modal-free-meal-item">
+<div class="modal-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title" id="modal-free-meal-item-title">Nova opção</div>
+<div class="form-group"><label class="form-label">Refeição / alimento</label><input class="form-input" id="input-free-meal-name" maxlength="100" placeholder="Ex.: Hambúrguer artesanal"/></div>
+<div class="form-group"><label class="form-label">Porção de referência</label><input class="form-input" id="input-free-meal-portion" maxlength="100" placeholder="Ex.: 1 unidade média (250 g)"/></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="form-group"><label class="form-label">Calorias mín.</label><input class="form-input" id="input-free-meal-cal-min" inputmode="numeric" min="0" max="10000" step="1" type="number" placeholder="650"/></div>
+<div class="form-group"><label class="form-label">Calorias máx.</label><input class="form-input" id="input-free-meal-cal-max" inputmode="numeric" min="0" max="10000" step="1" type="number" placeholder="900"/></div>
+</div>
+<div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="input-free-meal-note" maxlength="1000" rows="3" placeholder="Ex.: molhos, queijo e acompanhamentos aumentam a estimativa"></textarea></div>
+<button class="btn-primary" onclick="saveFreeMealItem()">SALVAR</button>
+<button class="btn-ghost" id="btn-delete-free-meal-item" onclick="deleteFreeMealItem()" style="display:none;color:var(--danger)">EXCLUIR OPÇÃO</button>
+<button class="btn-ghost" onclick="closeModal('modal-free-meal-item')">CANCELAR</button>
+</div>
+</div>
+<!-- MODAL: registro fotográfico de refeição livre -->
+<div class="modal-backdrop" id="modal-free-meal-log">
+<div class="modal-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title">Registrar refeição livre</div>
+<div class="form-group"><label class="form-label">Data</label><input class="form-input" id="input-free-log-date" type="date"/></div>
+<div class="form-group"><label class="form-label">Referência da tabela (opcional)</label><select class="form-input" id="input-free-log-catalog" onchange="onFreeMealCatalogSelected()"><option value="">Outra refeição / descrição manual</option></select></div>
+<div class="form-group"><label class="form-label">Descrição da refeição</label><input class="form-input" id="input-free-log-name" maxlength="120" placeholder="Ex.: pizza, hambúrguer e sobremesa"/></div>
+<div class="form-group"><label class="form-label">Calorias aproximadas</label><input class="form-input" id="input-free-log-calories" inputmode="numeric" min="0" max="10000" step="1" type="number" placeholder="Ex.: 950"/></div>
+<div class="form-group"><label class="form-label">Observações (opcional)</label><textarea class="form-input" id="input-free-log-notes" maxlength="2000" rows="3" placeholder="Ex.: dividi a sobremesa, não consumi a bebida..."></textarea></div>
+<div class="form-group"><label class="form-label">Foto da refeição</label><input accept="image/*" capture="environment" class="form-input" id="input-free-log-photo" onchange="handleFreeMealPhotoSelected(event)" type="file"/><img class="free-meal-preview" id="free-meal-photo-preview" alt="Prévia da refeição"/></div>
+<div class="plan-help">A foto é comprimida antes do envio para deixar o aplicativo mais leve. A estimativa calórica não substitui uma avaliação nutricional.</div>
+<button class="btn-primary" onclick="saveFreeMealLog()">SALVAR REGISTRO</button>
+<button class="btn-ghost" onclick="closeModal('modal-free-meal-log')">CANCELAR</button>
+</div>
+</div>
+<!-- MODAL: visualizar registro de refeição livre -->
+<div class="modal-backdrop" id="modal-free-meal-view">
+<div class="modal-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title" id="free-meal-view-title">Refeição livre</div>
+<img class="free-meal-view-photo" id="free-meal-view-photo" alt="Foto da refeição livre"/>
+<div class="free-meal-view-meta" id="free-meal-view-meta"></div>
+<div class="meal-card-notes" id="free-meal-view-notes" style="margin-bottom:12px"></div>
+<button class="btn-ghost" id="btn-delete-free-meal-log" onclick="deleteCurrentFreeMealLog()" style="color:var(--danger)">EXCLUIR REGISTRO</button>
+<button class="btn-ghost" onclick="closeModal('modal-free-meal-view')">FECHAR</button>
+</div>
+</div>
+
 <!-- MODAL: New Evidence (photo + weight only) -->
 <div class="modal-backdrop" id="modal-photo-upload">
 <div class="modal-sheet">
@@ -1613,7 +1743,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 /* ══════════════════════════════════════════════════
    INICIALIZAÇÃO RESILIENTE E LIMITES DE REDE
 ══════════════════════════════════════════════════ */
-const APP_VERSION='9.7';
+const APP_VERSION='9.9';
 const AUTH_UI_FALLBACK_MS=850;
 const BOOT_TIMEOUT_MS=3200;
 const PROFILE_READ_TIMEOUT_MS=2500;
@@ -2935,6 +3065,7 @@ function showScreen(id,expectedToken=null){
   display('fab-meals',id==='screen-meals'&&MODE==='local');
   display('fab-ts-meals',id==='screen-ts-meals');
   display('fab-photos',id==='screen-photos'&&!isReadonly);
+  display('fab-free-meals',id==='screen-free-meals'&&CURRENT_USER?.role!=='trainer');
   if(id==='screen-exercise'||id==='screen-ts-exercise')display('btn-del-exercise',id==='screen-exercise'&&!isReadonly&&canSelfManagePlan());
   if(id!=='screen-loading')finishBoot();
   return true;
@@ -3954,6 +4085,229 @@ async function toggleMealDone(mid){
   finally{endAction(actionKey);}
 }
 
+
+/* ══════════════════════════════════════════════════
+   REFEIÇÕES LIVRES — catálogo global e registros fotográficos
+══════════════════════════════════════════════════ */
+const FREE_MEAL_CATALOG_VERSION=1;
+const FREE_MEAL_CATALOG_CACHE_KEY='team_bulls_free_meal_catalog_v1';
+let FREE_MEAL_CATALOG={catalogVersion:FREE_MEAL_CATALOG_VERSION,items:[]};
+let EDIT_FREE_MEAL_ITEM_ID=null;
+let FREE_MEAL_LOGS=[];
+let FREE_MEAL_LOGS_UID='';
+let FREE_MEAL_LOG_LOAD_SEQ=0;
+let CUR_FREE_MEAL_LOG_ID=null;
+let FREE_MEAL_PENDING_PHOTO='';
+let FREE_MEAL_VIEW_READONLY=false;
+
+function normalizeFreeMealCatalog(source){
+  const raw=source&&typeof source==='object'?source:{};
+  const seen=new Set();
+  const items=(Array.isArray(raw.items)?raw.items:[]).filter(item=>item&&typeof item==='object').map((item,index)=>{
+    const id=String(item.id||uid()).slice(0,100);if(seen.has(id))return null;seen.add(id);
+    let min=Math.max(0,Math.min(10000,Math.round(Number(item.caloriesMin)||0)));
+    let max=Math.max(0,Math.min(10000,Math.round(Number(item.caloriesMax)||min)));
+    if(max<min)[min,max]=[max,min];
+    return{id,name:String(item.name||'').trim().slice(0,100),portion:String(item.portion||'').trim().slice(0,100),caloriesMin:min,caloriesMax:max,note:String(item.note||'').trim().slice(0,1000),order:Number.isFinite(Number(item.order))?Number(item.order):index};
+  }).filter(item=>item&&item.name).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'pt-BR')).map((item,index)=>({...item,order:index}));
+  return{catalogVersion:FREE_MEAL_CATALOG_VERSION,items};
+}
+function cacheFreeMealCatalog(){try{localStorage.setItem(FREE_MEAL_CATALOG_CACHE_KEY,JSON.stringify(FREE_MEAL_CATALOG));}catch(e){}}
+function cachedFreeMealCatalog(){try{return normalizeFreeMealCatalog(JSON.parse(localStorage.getItem(FREE_MEAL_CATALOG_CACHE_KEY)||'{}'));}catch(e){return normalizeFreeMealCatalog(null);}}
+async function loadFreeMealCatalog(){
+  if(MODE==='local'){FREE_MEAL_CATALOG=cachedFreeMealCatalog();return FREE_MEAL_CATALOG;}
+  try{
+    const doc=await cloudGet(db.collection('freeMealCatalog').doc('main'),'tabela de refeições livres');
+    if(doc.exists)FREE_MEAL_CATALOG=normalizeFreeMealCatalog(doc.data());
+    else if(CURRENT_USER?.role==='trainer'){
+      FREE_MEAL_CATALOG=normalizeFreeMealCatalog({items:[]});
+      await cloudWrite(db.collection('freeMealCatalog').doc('main').set(FREE_MEAL_CATALOG),'criar tabela de refeições livres');
+    }else FREE_MEAL_CATALOG=cachedFreeMealCatalog();
+  }catch(e){console.warn('loadFreeMealCatalog',e);FREE_MEAL_CATALOG=cachedFreeMealCatalog();}
+  cacheFreeMealCatalog();return FREE_MEAL_CATALOG;
+}
+async function persistFreeMealCatalog(){
+  if(CURRENT_USER?.role!=='trainer'||MODE!=='cloud')throw new Error('Somente o treinador online pode alterar esta tabela.');
+  FREE_MEAL_CATALOG=normalizeFreeMealCatalog(FREE_MEAL_CATALOG);
+  await cloudWrite(db.collection('freeMealCatalog').doc('main').set({...FREE_MEAL_CATALOG,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}),'salvar tabela de refeições livres');
+  cacheFreeMealCatalog();
+}
+function freeMealCaloriesText(item){
+  const min=Number(item?.caloriesMin)||0,max=Number(item?.caloriesMax)||min;
+  if(!min&&!max)return'Não informada';
+  return min===max?min.toLocaleString('pt-BR')+' kcal':min.toLocaleString('pt-BR')+'–'+max.toLocaleString('pt-BR')+' kcal';
+}
+function renderFreeMealCatalog(targetId,editable=false){
+  const host=document.getElementById(targetId);if(!host)return;
+  const items=normalizeFreeMealCatalog(FREE_MEAL_CATALOG).items;
+  if(!items.length){host.innerHTML='<div class="empty-state" style="padding:28px 12px"><div class="empty-icon">🍽</div><div class="empty-label">Tabela ainda não cadastrada</div><div class="empty-hint">O treinador poderá incluir aproximações de calorias aqui.</div></div>';return;}
+  host.innerHTML=`<table class="free-meal-table"><thead><tr><th>Refeição</th><th>Porção</th><th>Estimativa</th><th>Observações</th>${editable?'<th>Ações</th>':''}</tr></thead><tbody>${items.map((item,index)=>`<tr><td><strong>${esc(item.name)}</strong></td><td>${esc(item.portion||'—')}</td><td><span class="free-meal-calorie">${esc(freeMealCaloriesText(item))}</span></td><td>${esc(item.note||'—')}</td>${editable?`<td><div class="free-meal-table-actions"><button onclick="moveFreeMealItem(${jsArg(item.id)},-1)" ${index===0?'disabled':''} title="Subir">↑</button><button onclick="moveFreeMealItem(${jsArg(item.id)},1)" ${index===items.length-1?'disabled':''} title="Descer">↓</button><button onclick="openEditFreeMealItem(${jsArg(item.id)})" title="Editar">✎</button></div></td>`:''}</tr>`).join('')}</tbody></table>`;
+}
+async function openFreeMealCatalog(){
+  if(CURRENT_USER?.role!=='trainer')return;
+  const navigation=beginAsyncNavigation();await loadFreeMealCatalog();if(!isNavigationCurrent(navigation))return;
+  renderFreeMealCatalog('free-meal-catalog-trainer',true);showScreen('screen-free-meal-catalog',navigation);
+}
+function openAddFreeMealItem(){
+  EDIT_FREE_MEAL_ITEM_ID=null;
+  document.getElementById('modal-free-meal-item-title').textContent='Nova opção';
+  ['input-free-meal-name','input-free-meal-portion','input-free-meal-cal-min','input-free-meal-cal-max','input-free-meal-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('btn-delete-free-meal-item').style.display='none';openModal('modal-free-meal-item');
+}
+function openEditFreeMealItem(id){
+  const item=FREE_MEAL_CATALOG.items.find(entry=>entry.id===id);if(!item)return;
+  EDIT_FREE_MEAL_ITEM_ID=id;document.getElementById('modal-free-meal-item-title').textContent='Editar opção';
+  document.getElementById('input-free-meal-name').value=item.name||'';
+  document.getElementById('input-free-meal-portion').value=item.portion||'';
+  document.getElementById('input-free-meal-cal-min').value=item.caloriesMin||'';
+  document.getElementById('input-free-meal-cal-max').value=item.caloriesMax||'';
+  document.getElementById('input-free-meal-note').value=item.note||'';
+  document.getElementById('btn-delete-free-meal-item').style.display='block';openModal('modal-free-meal-item');
+}
+async function saveFreeMealItem(){
+  if(CURRENT_USER?.role!=='trainer')return;
+  const name=document.getElementById('input-free-meal-name').value.trim();
+  const portion=document.getElementById('input-free-meal-portion').value.trim();
+  let min=Math.round(Number(document.getElementById('input-free-meal-cal-min').value));
+  let max=Math.round(Number(document.getElementById('input-free-meal-cal-max').value));
+  const note=document.getElementById('input-free-meal-note').value.trim();
+  if(!name){alert('Informe o nome da refeição.');return;}
+  if(!Number.isFinite(min)||min<0||min>10000||!Number.isFinite(max)||max<0||max>10000){alert('Informe uma faixa de calorias entre 0 e 10.000 kcal.');return;}
+  if(max<min)[min,max]=[max,min];
+  if(!beginAction('save-free-meal-item','modal-free-meal-item'))return;
+  const before=JSON.stringify(FREE_MEAL_CATALOG);
+  try{
+    if(EDIT_FREE_MEAL_ITEM_ID){const item=FREE_MEAL_CATALOG.items.find(entry=>entry.id===EDIT_FREE_MEAL_ITEM_ID);if(!item)throw new Error('Opção não encontrada.');Object.assign(item,{name,portion,caloriesMin:min,caloriesMax:max,note});}
+    else FREE_MEAL_CATALOG.items.push({id:uid(),name,portion,caloriesMin:min,caloriesMax:max,note,order:FREE_MEAL_CATALOG.items.length});
+    await persistFreeMealCatalog();closeModal('modal-free-meal-item');renderFreeMealCatalog('free-meal-catalog-trainer',true);showToast('✓ Tabela atualizada');
+  }catch(e){FREE_MEAL_CATALOG=normalizeFreeMealCatalog(JSON.parse(before));alert(cloudWriteError(e,'salvar a tabela'));}
+  finally{endAction('save-free-meal-item','modal-free-meal-item');}
+}
+function deleteFreeMealItem(){
+  if(!EDIT_FREE_MEAL_ITEM_ID)return;const target=EDIT_FREE_MEAL_ITEM_ID;closeModal('modal-free-meal-item');
+  showConfirm('Excluir opção','Remover esta opção da tabela? Os registros antigos dos alunos serão preservados.',async()=>{
+    const before=JSON.stringify(FREE_MEAL_CATALOG);try{FREE_MEAL_CATALOG.items=FREE_MEAL_CATALOG.items.filter(item=>item.id!==target);await persistFreeMealCatalog();renderFreeMealCatalog('free-meal-catalog-trainer',true);}catch(e){FREE_MEAL_CATALOG=normalizeFreeMealCatalog(JSON.parse(before));alert(cloudWriteError(e,'excluir a opção'));}
+  });
+}
+async function moveFreeMealItem(id,direction){
+  const items=normalizeFreeMealCatalog(FREE_MEAL_CATALOG).items;const index=items.findIndex(item=>item.id===id),next=index+Number(direction);if(index<0||next<0||next>=items.length)return;
+  [items[index],items[next]]=[items[next],items[index]];items.forEach((item,i)=>item.order=i);const before=JSON.stringify(FREE_MEAL_CATALOG);FREE_MEAL_CATALOG.items=items;
+  try{await persistFreeMealCatalog();renderFreeMealCatalog('free-meal-catalog-trainer',true);}catch(e){FREE_MEAL_CATALOG=normalizeFreeMealCatalog(JSON.parse(before));alert(cloudWriteError(e,'alterar a ordem'));}
+}
+function localFreeMealDbFor(ownerUid){
+  const owner=String(ownerUid||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER);
+  if(MODE==='local'&&owner===LOCAL_OWNER_UID)return LOCAL_DB;
+  return parseStoredLocal(localStorage.getItem(localKeyFor(owner)));
+}
+function saveLocalFreeMealDb(ownerUid,dbValue){
+  const owner=String(ownerUid||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER);dbValue.freeMealLogs=Array.isArray(dbValue.freeMealLogs)?dbValue.freeMealLogs:[];
+  if(MODE==='local'&&owner===LOCAL_OWNER_UID){LOCAL_DB=dbValue;return localSave();}
+  try{localStorage.setItem(localKeyFor(owner),JSON.stringify(dbValue));localStorage.setItem('teamms_local_initialized_'+owner,'1');return true;}catch(e){return false;}
+}
+function normalizeFreeMealLog(log){
+  const calories=Math.max(0,Math.min(10000,Math.round(Number(log?.estimatedCalories)||0)));
+  return{...log,id:String(log?.id||uid()),userId:String(log?.userId||''),date:String(log?.date||today()),mealName:String(log?.mealName||'Refeição livre').trim().slice(0,120),catalogItemId:String(log?.catalogItemId||'').slice(0,100),catalogItemName:String(log?.catalogItemName||'').trim().slice(0,100),portion:String(log?.portion||'').trim().slice(0,100),estimatedCalories:calories,notes:String(log?.notes||'').trim().slice(0,2000),dataUrl:safePhotoDataUrl(log?.dataUrl),pendingSync:log?.pendingSync===true,createdAtLocal:Number(log?.createdAtLocal)||Date.now()};
+}
+async function syncPendingFreeMealLogs(userId){
+  if(MODE!=='cloud'||!userId||!navigator.onLine)return;
+  const localDb=localFreeMealDbFor(userId);const pending=(localDb.freeMealLogs||[]).map(normalizeFreeMealLog).filter(log=>log.pendingSync&&log.userId===userId&&log.dataUrl);if(!pending.length)return;
+  let changed=false;
+  for(const log of pending){
+    try{
+      const ref=db.collection('freeMealLogs').doc(log.id);const existing=await cloudGet(ref,'verificar refeição livre');
+      if(!existing.exists)await cloudWrite(ref.set({userId,mealName:log.mealName,catalogItemId:log.catalogItemId,catalogItemName:log.catalogItemName,portion:log.portion,estimatedCalories:log.estimatedCalories,notes:log.notes,date:log.date,dataUrl:log.dataUrl,createdAt:firebase.firestore.FieldValue.serverTimestamp()}),'sincronizar refeição livre');
+      log.pendingSync=false;changed=true;
+    }catch(e){console.warn('syncPendingFreeMealLogs',e);break;}
+  }
+  if(changed){localDb.freeMealLogs=(localDb.freeMealLogs||[]).map(entry=>{const synced=pending.find(log=>log.id===entry.id);return synced?{...entry,pendingSync:synced.pendingSync}:entry;});saveLocalFreeMealDb(userId,localDb);}
+}
+async function loadFreeMealLogs(userId){
+  const target=String(userId||CURRENT_USER?.uid||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER);const seq=++FREE_MEAL_LOG_LOAD_SEQ;
+  if(MODE==='local'){
+    const localDb=localFreeMealDbFor(target);const logs=(localDb.freeMealLogs||[]).map(normalizeFreeMealLog).filter(log=>!log.userId||log.userId===target).sort((a,b)=>String(b.date).localeCompare(String(a.date))||b.createdAtLocal-a.createdAtLocal);
+    if(seq===FREE_MEAL_LOG_LOAD_SEQ){FREE_MEAL_LOGS=logs;FREE_MEAL_LOGS_UID=target;}return logs;
+  }
+  if(CURRENT_USER?.role==='student'&&target===CURRENT_USER.uid)await syncPendingFreeMealLogs(target);
+  try{
+    const snap=await cloudGet(db.collection('freeMealLogs').where('userId','==',target),'registros de refeições livres');
+    const cloudLogs=snap.docs.map(doc=>normalizeFreeMealLog({...doc.data(),id:doc.id,pendingSync:false}));
+    let logs=cloudLogs;
+    if(CURRENT_USER?.role==='student'&&target===CURRENT_USER.uid){
+      const localDb=localFreeMealDbFor(target);const pending=(localDb.freeMealLogs||[]).map(normalizeFreeMealLog).filter(log=>log.pendingSync);const ids=new Set(logs.map(log=>log.id));logs=logs.concat(pending.filter(log=>!ids.has(log.id)));
+    }
+    logs.sort((a,b)=>String(b.date).localeCompare(String(a.date))||b.createdAtLocal-a.createdAtLocal);
+    if(seq===FREE_MEAL_LOG_LOAD_SEQ){FREE_MEAL_LOGS=logs;FREE_MEAL_LOGS_UID=target;}return logs;
+  }catch(e){
+    console.warn('loadFreeMealLogs',e);const localDb=localFreeMealDbFor(target);const logs=(localDb.freeMealLogs||[]).map(normalizeFreeMealLog).filter(log=>log.userId===target||!log.userId);
+    if(seq===FREE_MEAL_LOG_LOAD_SEQ){FREE_MEAL_LOGS=logs;FREE_MEAL_LOGS_UID=target;}return logs;
+  }
+}
+function renderFreeMealLogs(listId,emptyId,readonly=false){
+  const list=document.getElementById(listId),empty=document.getElementById(emptyId);if(!list)return;
+  const logs=(FREE_MEAL_LOGS||[]).filter(log=>log.dataUrl);
+  if(!logs.length){list.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';
+  list.innerHTML=logs.map(log=>`<div class="free-meal-log-card" onclick="openFreeMealLogView(${jsArg(log.id)},${readonly})"><img class="free-meal-log-photo" src="${esc(safePhotoDataUrl(log.dataUrl))}" loading="lazy" decoding="async" alt="${esc(log.mealName)}"><div class="free-meal-log-main"><div class="free-meal-log-head"><div class="free-meal-log-name">${esc(log.mealName)}</div><div class="free-meal-log-date">${esc(fmt(log.date))}</div></div><div class="free-meal-log-cal">${log.estimatedCalories?esc(log.estimatedCalories.toLocaleString('pt-BR'))+' kcal aproximadas':'Calorias não informadas'}</div>${log.portion?`<div class="free-meal-log-note">Porção: ${esc(log.portion)}</div>`:''}${log.notes?`<div class="free-meal-log-note">${esc(log.notes)}</div>`:''}${log.pendingSync?'<span class="free-meal-pending">pendente de sincronização</span>':''}</div></div>`).join('');
+}
+async function openFreeMeals(){
+  const navigation=beginAsyncNavigation();await loadFreeMealCatalog();const owner=MODE==='cloud'?CURRENT_USER?.uid:(CURRENT_USER?.uid||INACTIVE_UID||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER);await loadFreeMealLogs(owner);if(!isNavigationCurrent(navigation))return;
+  renderFreeMealCatalog('free-meal-catalog-student',false);renderFreeMealLogs('free-meal-logs','free-meal-logs-empty',false);showScreen('screen-free-meals',navigation);
+}
+async function openTsFreeMeals(){
+  if(!VIEW_STUDENT)return;const navigation=beginAsyncNavigation(),uidTarget=VIEW_STUDENT.uid;await loadFreeMealLogs(uidTarget);if(!isNavigationCurrent(navigation)||VIEW_STUDENT?.uid!==uidTarget)return;
+  renderFreeMealLogs('ts-free-meal-logs','ts-free-meal-logs-empty',true);showScreen('screen-ts-free-meals',navigation);
+}
+function openFreeMealLogModal(){
+  if(CURRENT_USER?.role==='trainer')return;FREE_MEAL_PENDING_PHOTO='';
+  document.getElementById('input-free-log-date').value=today();document.getElementById('input-free-log-name').value='';document.getElementById('input-free-log-calories').value='';document.getElementById('input-free-log-notes').value='';document.getElementById('input-free-log-photo').value='';
+  const preview=document.getElementById('free-meal-photo-preview');preview.src='';preview.style.display='none';
+  const select=document.getElementById('input-free-log-catalog');select.innerHTML='<option value="">Outra refeição / descrição manual</option>'+FREE_MEAL_CATALOG.items.map(item=>`<option value="${esc(item.id)}">${esc(item.name)} · ${esc(freeMealCaloriesText(item))}</option>`).join('');openModal('modal-free-meal-log');
+}
+function onFreeMealCatalogSelected(){
+  const id=document.getElementById('input-free-log-catalog').value,item=FREE_MEAL_CATALOG.items.find(entry=>entry.id===id);if(!item)return;
+  document.getElementById('input-free-log-name').value=item.name||'';const min=Number(item.caloriesMin)||0,max=Number(item.caloriesMax)||min;document.getElementById('input-free-log-calories').value=Math.round((min+max)/2)||'';
+}
+async function handleFreeMealPhotoSelected(event){
+  const file=event.target.files?.[0];FREE_MEAL_PENDING_PHOTO='';const preview=document.getElementById('free-meal-photo-preview');preview.src='';preview.style.display='none';if(!file)return;
+  if(!String(file.type||'').startsWith('image/')){alert('Selecione uma imagem válida.');event.target.value='';return;}
+  if(file.size>20*1024*1024){alert('A foto ultrapassa 20 MB. Escolha uma imagem menor.');event.target.value='';return;}
+  try{showToast('Comprimindo foto...');FREE_MEAL_PENDING_PHOTO=await compressImageFile(file,900,.66,480000);if(!FREE_MEAL_PENDING_PHOTO)throw new Error('Falha ao preparar a foto.');preview.src=FREE_MEAL_PENDING_PHOTO;preview.style.display='block';}
+  catch(e){event.target.value='';alert(e.message||'Não foi possível preparar a foto.');}
+}
+function queueFreeMealLogLocally(log,ownerUid){
+  const owner=String(ownerUid||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER),localDb=localFreeMealDbFor(owner);localDb.freeMealLogs=Array.isArray(localDb.freeMealLogs)?localDb.freeMealLogs:[];
+  const idx=localDb.freeMealLogs.findIndex(item=>item.id===log.id);if(idx>=0)localDb.freeMealLogs[idx]=log;else localDb.freeMealLogs.push(log);return saveLocalFreeMealDb(owner,localDb);
+}
+async function saveFreeMealLog(){
+  const date=document.getElementById('input-free-log-date').value,name=document.getElementById('input-free-log-name').value.trim();const calories=Math.round(Number(document.getElementById('input-free-log-calories').value)||0);const notes=document.getElementById('input-free-log-notes').value.trim();const catalogId=document.getElementById('input-free-log-catalog').value,item=FREE_MEAL_CATALOG.items.find(entry=>entry.id===catalogId);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert('Informe uma data válida.');return;}if(!name){alert('Descreva a refeição.');return;}if(calories<0||calories>10000){alert('Informe uma estimativa entre 0 e 10.000 kcal.');return;}if(!FREE_MEAL_PENDING_PHOTO){alert('Selecione uma foto da refeição.');return;}
+  if(!beginAction('save-free-meal-log','modal-free-meal-log'))return;
+  const owner=MODE==='cloud'?CURRENT_USER?.uid:(CURRENT_USER?.uid||INACTIVE_UID||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER);const id=uid();const base=normalizeFreeMealLog({id,userId:owner===LOCAL_GUEST_OWNER?'':owner,date,mealName:name,catalogItemId:item?.id||'',catalogItemName:item?.name||'',portion:item?.portion||'',estimatedCalories:calories,notes,dataUrl:FREE_MEAL_PENDING_PHOTO,createdAtLocal:Date.now(),pendingSync:MODE!=='cloud'});
+  try{
+    if(MODE==='cloud'&&CURRENT_USER?.role==='student'){
+      try{await cloudWrite(db.collection('freeMealLogs').doc(id).set({userId:CURRENT_USER.uid,mealName:base.mealName,catalogItemId:base.catalogItemId,catalogItemName:base.catalogItemName,portion:base.portion,estimatedCalories:base.estimatedCalories,notes:base.notes,date:base.date,dataUrl:base.dataUrl,createdAt:firebase.firestore.FieldValue.serverTimestamp()}),'salvar refeição livre');base.pendingSync=false;}
+      catch(error){base.pendingSync=true;if(!queueFreeMealLogLocally(base,CURRENT_USER.uid))throw error;showToast('Registro salvo neste aparelho e pendente de sincronização.',true);}
+    }else if(!queueFreeMealLogLocally(base,owner))throw new Error('Não foi possível salvar a foto neste aparelho. Libere espaço e tente novamente.');
+    closeModal('modal-free-meal-log');FREE_MEAL_PENDING_PHOTO='';await loadFreeMealLogs(owner);renderFreeMealLogs('free-meal-logs','free-meal-logs-empty',false);showToast(base.pendingSync?'✓ Registro salvo localmente':'✓ Refeição livre registrada');
+  }catch(e){alert(cloudWriteError(e,'salvar a refeição livre'));}
+  finally{endAction('save-free-meal-log','modal-free-meal-log');}
+}
+function openFreeMealLogView(id,readonly=false){
+  const log=FREE_MEAL_LOGS.find(entry=>entry.id===id);if(!log)return;CUR_FREE_MEAL_LOG_ID=id;FREE_MEAL_VIEW_READONLY=readonly;
+  document.getElementById('free-meal-view-title').textContent=log.mealName;document.getElementById('free-meal-view-photo').src=safePhotoDataUrl(log.dataUrl);
+  document.getElementById('free-meal-view-meta').textContent=fmt(log.date)+' · '+(log.estimatedCalories?log.estimatedCalories.toLocaleString('pt-BR')+' kcal aproximadas':'calorias não informadas')+(log.portion?' · '+log.portion:'')+(log.pendingSync?' · pendente de sincronização':'');
+  document.getElementById('free-meal-view-notes').textContent=log.notes||'Sem observações.';document.getElementById('btn-delete-free-meal-log').style.display=readonly?'none':'block';openModal('modal-free-meal-view');
+}
+function deleteCurrentFreeMealLog(){
+  if(FREE_MEAL_VIEW_READONLY||!CUR_FREE_MEAL_LOG_ID)return;const id=CUR_FREE_MEAL_LOG_ID,log=FREE_MEAL_LOGS.find(entry=>entry.id===id);if(!log)return;closeModal('modal-free-meal-view');
+  showConfirm('Excluir registro','Apagar esta foto e o registro da refeição livre?',async()=>{
+    try{
+      if(MODE==='cloud'&&!log.pendingSync){await cloudWrite(db.collection('freeMealLogs').doc(id).delete(),'excluir refeição livre');}
+      const owner=MODE==='cloud'?CURRENT_USER?.uid:(CURRENT_USER?.uid||INACTIVE_UID||LOCAL_OWNER_UID||LOCAL_GUEST_OWNER),localDb=localFreeMealDbFor(owner);localDb.freeMealLogs=(localDb.freeMealLogs||[]).filter(entry=>entry.id!==id);saveLocalFreeMealDb(owner,localDb);
+      FREE_MEAL_LOGS=FREE_MEAL_LOGS.filter(entry=>entry.id!==id);renderFreeMealLogs('free-meal-logs','free-meal-logs-empty',false);
+    }catch(e){alert(cloudWriteError(e,'excluir o registro'));}
+  });
+}
+
 /* ── Opções de Alimentos (tabela de substituições) ──────────────────────
    Documento ÚNICO e global (foodOptions/main), compartilhado por todos os
    alunos do treinador — não é por aluno. Só o treinador edita; os alunos
@@ -3975,7 +4329,7 @@ const EXERCISE_CATALOG_VERSION=2;
 function ensureGlobalCatalogs(){
   if(MODE!=='cloud'||CURRENT_USER?.role!=='trainer')return Promise.resolve();
   if(!GLOBAL_CATALOG_INIT_PROMISE){
-    GLOBAL_CATALOG_INIT_PROMISE=Promise.all([loadFoodOptions(),loadExerciseOptions()])
+    GLOBAL_CATALOG_INIT_PROMISE=Promise.all([loadFoodOptions(),loadExerciseOptions(),loadFreeMealCatalog()])
       .catch(error=>{
         GLOBAL_CATALOG_INIT_PROMISE=null;
         console.error('ensureGlobalCatalogs',error);
@@ -6355,7 +6709,7 @@ window.addEventListener('pageshow',event=>{
 // ── Service Worker: atualização silenciosa, sem recarregar a página ──
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw_15.js',{updateViaCache:'none'}).then(registration=>{
+    navigator.serviceWorker.register('sw_16.js',{updateViaCache:'none'}).then(registration=>{
       if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
