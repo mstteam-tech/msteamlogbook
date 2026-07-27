@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v10.4: divisões de dieta, ciclos por data, desktop do aluno, brilho calibrado e cópia global de prescrições. -->
+<!-- Team Bulls v10.5: Myo Reps opcional, login desktop, permissões corrigidas e prescrição acelerada. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -15,7 +15,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
 <title>Team Bulls</title>
-<link href="manifest_19.json" rel="manifest"/>
+<link href="manifest_20.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -25,11 +25,11 @@
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
 <script src="viewport_v10_2_1.js"></script>
 <script src="boot_v10.js"></script>
-<link as="style" href="styles_v10_4.css" rel="preload"/><link href="styles_v10_4.css" rel="stylesheet"/><link as="script" href="app_v10_4.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<link as="style" href="styles_v10_5.css" rel="preload"/><link href="styles_v10_5.css" rel="stylesheet"/><link as="script" href="app_v10_5.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.4</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.5</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
@@ -40,7 +40,7 @@
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
 </div>
 <div aria-label="Navegação do aluno" class="student-desktop-nav" id="student-desktop-nav">
-<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.4</small></div>
+<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.5</small></div>
 <button onclick="goHome()">⌂ INÍCIO</button>
 <button onclick="goHome();setTimeout(()=>document.getElementById('workout-list')?.scrollIntoView({behavior:'smooth'}),80)">▦ TREINOS</button>
 <button onclick="openMeals()">🍽 DIETA / SUPRIMENTOS</button>
@@ -754,7 +754,7 @@
 <div class="form-group"><label class="form-label">Nome do exercício</label><input class="form-input" id="input-exercise-name" maxlength="100" oninput="syncCatalogSelectionWithName()" placeholder="Ex.: Supino reto com barra"/></div>
 <div class="form-group"><label class="form-label">Pasta/dia do treino</label><select aria-label="Pasta do dia do treino" class="form-input" id="input-exercise-day"></select><div class="plan-help" style="margin-top:7px">Para criar outra pasta, volte ao protocolo e use + NOVO DIA.</div></div>
 <div class="form-group"><label class="form-label">Instruções do exercício</label><textarea class="form-input exercise-instructions-input" id="input-exercise-instructions" maxlength="1500" rows="4" placeholder="Ex.: Controlar bem a excêntrica; manter a escápula estabilizada; não travar os cotovelos..."></textarea><div class="plan-help" style="margin-top:7px">Essas orientações aparecem para o aluno dentro do exercício e no PDF do treino.</div></div>
-<div class="form-group"><label class="form-label">Técnicas aplicadas</label><div class="technique-picker" id="exercise-technique-picker"><div class="plan-help">Carregando biblioteca de técnicas...</div></div><div class="plan-help" style="margin-top:7px">Você pode selecionar várias técnicas no mesmo exercício.</div></div>
+<div class="form-group"><label class="form-label">Técnicas aplicadas</label><div class="technique-picker" id="exercise-technique-picker"><div class="plan-help">Carregando biblioteca de técnicas...</div></div><div class="plan-help" style="margin-top:7px">Você pode selecionar várias técnicas no mesmo exercício.</div></div><div class="form-group myo-optional-config" id="myo-optional-group" style="display:none"><label class="technique-option-toggle"><input id="input-myo-optional" type="checkbox"/><span><strong>MYO REPS OPCIONAL</strong><small>O aluno poderá escolher entre executar as séries em Myo Reps ou realizar as mesmas séries de forma convencional.</small></span></label></div>
 <div class="form-group" id="superset-pair-group" style="display:none"><label class="form-label">Exercício conjugado no Super set</label><select class="form-input" id="input-superset-exercise"><option value="">Selecione o segundo exercício</option></select><div class="plan-help" style="margin-top:7px">O aluno verá os dois exercícios unidos no mesmo bloco de Super set.</div></div>
 <button class="btn-primary" id="btn-save-exercise" onclick="saveExercise()">ADICIONAR</button>
 <button class="btn-ghost" onclick="closeModal('modal-exercise')">CANCELAR</button>
@@ -805,7 +805,7 @@
 </select>
 </div>
 <div class="session-rx-summary" id="session-prescription-summary"></div>
-<div class="form-group" id="session-variant-group" style="display:none"><label class="form-label">Variação realizada</label><select aria-label="Variação realizada" class="form-input" id="input-session-variant"></select><div class="plan-help">A variação escolhida ficará registrada no histórico desta sessão.</div></div>
+<div class="form-group" id="session-variant-group" style="display:none"><label class="form-label">Variação realizada</label><select aria-label="Variação realizada" class="form-input" id="input-session-variant"></select><div class="plan-help">A variação escolhida ficará registrada no histórico desta sessão.</div></div><div class="form-group" id="session-technique-mode-group" style="display:none"><label class="form-label">Forma de execução</label><select aria-label="Forma de execução" class="form-input" id="input-session-technique-mode"><option value="myo">Myo Reps</option><option value="normal">Séries normais</option></select><div class="plan-help">O treinador deixou a técnica opcional. Escolha como executou esta sessão.</div></div>
 <div class="form-group">
 <label class="form-label">Resultado realizado</label>
 <div class="performed-cols-header"><span></span><span class="sets-col-lbl">Prescrito</span><span class="sets-col-lbl">GER</span><span class="sets-col-lbl">Carga</span><span class="sets-col-lbl" id="session-result-label">Reps</span><span></span></div>
@@ -855,7 +855,7 @@
 </select>
 </div>
 <div class="session-rx-summary" id="edit-session-prescription-summary"></div>
-<div class="form-group" id="edit-session-variant-group" style="display:none"><label class="form-label">Variação realizada</label><select aria-label="Variação realizada" class="form-input" id="edit-session-variant"></select></div>
+<div class="form-group" id="edit-session-variant-group" style="display:none"><label class="form-label">Variação realizada</label><select aria-label="Variação realizada" class="form-input" id="edit-session-variant"></select></div><div class="form-group" id="edit-session-technique-mode-group" style="display:none"><label class="form-label">Forma de execução</label><select aria-label="Forma de execução" class="form-input" id="edit-session-technique-mode"><option value="myo">Myo Reps</option><option value="normal">Séries normais</option></select></div>
 <div class="form-group">
 <label class="form-label">Resultado realizado</label>
 <div class="performed-cols-header"><span></span><span class="sets-col-lbl">Prescrito</span><span class="sets-col-lbl">GER</span><span class="sets-col-lbl">Carga</span><span class="sets-col-lbl" id="edit-session-result-label">Reps</span><span></span></div>
@@ -1182,6 +1182,6 @@
 </div>
 </div>
 </div>
-<script defer="True" src="app_v10_4.js"></script>
+<script defer="True" src="app_v10_5.js"></script>
 </body>
 </html>
