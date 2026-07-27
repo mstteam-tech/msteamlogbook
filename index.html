@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v10.2.1: correção universal de escala, safe areas e viewport móvel. -->
+<!-- Team Bulls v10.4: divisões de dieta, ciclos por data, desktop do aluno, brilho calibrado e cópia global de prescrições. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -15,7 +15,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
 <title>Team Bulls</title>
-<link href="manifest_17.json" rel="manifest"/>
+<link href="manifest_19.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -25,16 +25,28 @@
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
 <script src="viewport_v10_2_1.js"></script>
 <script src="boot_v10.js"></script>
-<link as="style" href="styles_v10_2.css" rel="preload"/><link href="styles_v10_2.css" rel="stylesheet"/><link as="script" href="app_v10_2.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<link as="style" href="styles_v10_4.css" rel="preload"/><link href="styles_v10_4.css" rel="stylesheet"/><link as="script" href="app_v10_4.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.2.1</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.4</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
 <button onclick="openInstructions()">▤ INSTRUÇÕES GERAIS</button>
 <button onclick="openTechniques()">⚙ TÉCNICAS DE TREINO</button>
+<button onclick="openSettings()">⚙ CONFIGURAÇÕES</button>
+<div class="nav-spacer"></div>
+<button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
+</div>
+<div aria-label="Navegação do aluno" class="student-desktop-nav" id="student-desktop-nav">
+<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.4</small></div>
+<button onclick="goHome()">⌂ INÍCIO</button>
+<button onclick="goHome();setTimeout(()=>document.getElementById('workout-list')?.scrollIntoView({behavior:'smooth'}),80)">▦ TREINOS</button>
+<button onclick="openMeals()">🍽 DIETA / SUPRIMENTOS</button>
+<button onclick="openCalendar()">▤ REGISTROS / CHECK-INS</button>
+<button onclick="openInstructions()">📖 INSTRUÇÕES</button>
+<button onclick="openFreeMeals()">🍔 REFEIÇÕES LIVRES</button>
 <button onclick="openSettings()">⚙ CONFIGURAÇÕES</button>
 <div class="nav-spacer"></div>
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
@@ -107,6 +119,7 @@
 <div id="debug-bar" style="display:none;font-size:11px;text-align:center;padding:4px 8px;background:#111;font-family:monospace;border-bottom:1px solid #222;"></div>
 <div class="header">
 <div class="header-title">TEAM <span class="accent">BULLS</span></div>
+<button class="btn-icon ghost settings-gear-btn" onclick="openSettings()" title="Configurações" aria-label="Abrir configurações">⚙</button>
 <div class="user-chip" id="user-chip" onclick="handleChipTap()">
 <div class="user-chip-dot"></div>
 <span class="user-chip-name" id="user-chip-name">offline</span>
@@ -125,6 +138,11 @@
 <div class="feedback-banner-text" id="quest-banner-text">A central enviou um novo relatório.</div>
 <button class="btn-primary" onclick="openAnswerQuestionnaire(document.getElementById('quest-banner').dataset.qid)" style="margin-top:8px;padding:8px">RESPONDER</button>
 </div>
+<div class="feedback-banner weekly-checkin-home-banner" id="weekly-checkin-home-banner" style="display:none">
+<div class="feedback-banner-label">Check-in semanal // relatório + 4 fotos</div>
+<div class="feedback-banner-text" id="weekly-checkin-home-text">Seu check-in semanal está disponível.</div>
+<button class="btn-primary" onclick="openCalendar()" style="margin-top:8px;padding:8px">ABRIR REGISTROS</button>
+</div>
 <div class="home-hero">
 <div class="home-hero-eyebrow" id="hero-eyebrow">// modo offline</div>
 <div class="home-hero-title">SALA<br/><span class="dim">VERMELHA</span></div>
@@ -139,8 +157,7 @@
 <button class="quick-nav-btn" id="qn-food" onclick="openFoodOptions()"><span>◇</span>Alimentos</button>
 <button class="quick-nav-btn" id="qn-exopt" onclick="openExerciseOptions()"><span>↺</span>Substituir</button>
 <button class="quick-nav-btn" onclick="openInstructions()"><span>▤</span>Instruções</button>
-<button class="quick-nav-btn" onclick="openTechniques()"><span>⚙</span>Técnicas</button>
-<button class="quick-nav-btn" onclick="openSettings()"><span>◌</span>Configurações</button>
+<button class="quick-nav-btn" onclick="openTechniques()"><span>⌁</span>Técnicas</button>
 </div>
 <div class="content">
 <div class="section-header"><span class="section-label">Protocolos ativos</span></div>
@@ -249,22 +266,52 @@
 <div class="cal-weekdays"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
 <div class="cal-grid" id="cal-grid"></div>
 <div class="cal-summary" id="cal-summary">—</div>
+<div class="weekly-checkin-card" id="weekly-checkin-card" style="display:none">
+<div class="weekly-checkin-head"><div><span class="weekly-checkin-kicker">CHECK-IN SEMANAL</span><strong id="weekly-checkin-title">Relatório + 4 fotos</strong></div><span class="quest-status pending" id="weekly-checkin-status">PENDENTE</span></div>
+<div class="weekly-checkin-meta" id="weekly-checkin-meta">Carregando programação...</div>
+<button class="btn-primary" id="weekly-checkin-action" onclick="openWeeklyCheckinModal()">ENVIAR RELATÓRIO E 4 FOTOS</button>
+</div>
+<div class="records-shortcuts">
+<button class="btn-add-set" onclick="openPhotos()">◉ ARQUIVO DE FOTOS</button>
+<button class="btn-add-set" onclick="openMyQuestionnaires()">▤ RELATÓRIOS ANTERIORES</button>
 </div>
 </div>
-<!-- MEAL PLAN -->
+</div>
+<!-- DIETAS / SUPRIMENTOS — lista do aluno -->
 <div class="screen" id="screen-meals">
 <div class="header">
 <button class="btn-icon" onclick="goHome()">←</button>
-<div class="header-title">SUPRIMENTOS</div>
+<div class="header-title">DIETA / SUPRIMENTOS</div>
 </div>
-<div class="readonly-banner" id="meals-readonly-note" style="display:none">👁 Plano montado pelo seu treinador</div>
+<div class="readonly-banner" id="meals-readonly-note" style="display:none">👁 Dietas montadas pelo seu treinador</div>
 <div class="content">
+<div class="diet-page-intro"><strong>PLANOS ALIMENTARES</strong><span>Abra uma dieta para visualizar refeições, suplementos, protocolo hormonal e a lista de alimentos.</span></div>
 <div id="meals-list"></div>
 <div class="empty-state" id="meals-empty" style="display:none">
 <div class="empty-icon">🍽</div>
-<div class="empty-label">Nenhuma refeição cadastrada</div>
-<div class="empty-hint" id="meals-empty-hint">Toque em + REFEIÇÃO para começar</div>
+<div class="empty-label">Nenhuma dieta cadastrada</div>
+<div class="empty-hint" id="meals-empty-hint">Seu treinador ainda não montou sua dieta</div>
 </div>
+</div>
+</div>
+<!-- DIETA / SUPRIMENTOS — detalhe do aluno -->
+<div class="screen" id="screen-diet-detail">
+<div class="header">
+<button class="btn-icon" onclick="goDietList()">←</button>
+<div class="header-title" id="diet-detail-title">DIETA</div>
+<button class="btn-icon ghost" onclick="openFoodOptionsFromDiet()" title="Lista de alimentos">◇</button>
+</div>
+<div class="content">
+<div class="diet-active-banner" id="diet-detail-status"></div>
+<div class="diet-cycle-summary" id="diet-cycle-summary"></div>
+<div class="section-header"><span class="section-label">Divisões da dieta</span></div>
+<div class="diet-variant-tabs" id="diet-variant-tabs"></div>
+<div class="diet-week-distribution" id="diet-week-distribution"></div>
+<div class="section-header"><span class="section-label" id="diet-meals-section-label">Refeições</span></div>
+<div id="diet-meals-list"></div>
+<div class="empty-state" id="diet-meals-empty" style="display:none"><div class="empty-icon">🍽</div><div class="empty-label">Nenhuma refeição cadastrada</div></div>
+<div id="diet-support-tables"></div>
+<button class="btn-add-set" onclick="openFoodOptionsFromDiet()" style="margin-top:14px">◇ ABRIR LISTA DE ALIMENTOS E SUBSTITUIÇÕES</button>
 </div>
 </div>
 <!-- FREE MEALS — aluno -->
@@ -337,7 +384,7 @@
 <div class="header-title">QUESTIONÁRIOS</div>
 </div>
 <div class="content">
-<div id="my-quest-list"></div>
+<div class="section-header"><span class="section-label">Check-ins semanais</span></div><div id="my-weekly-checkin-list"></div><div class="section-header"><span class="section-label">Questionários avulsos</span></div><div id="my-quest-list"></div>
 <div class="empty-state" id="my-quest-empty" style="display:none">
 <div class="empty-icon">📝</div>
 <div class="empty-label">Nenhum questionário recebido</div>
@@ -349,6 +396,7 @@
 <div class="screen" id="screen-trainer">
 <div class="header">
 <div class="header-title">TEAM <span class="accent">BULLS</span></div>
+<button class="btn-icon ghost settings-gear-btn" onclick="openSettings()" title="Configurações" aria-label="Abrir configurações">⚙</button>
 <div class="user-chip" onclick="confirmLogout()">
 <div class="user-chip-dot"></div>
 <span class="user-chip-name" id="trainer-chip-name">treinador</span>
@@ -390,6 +438,13 @@
 <div class="archive-file-kicker">Arquivo confidencial // carregando</div>
 <div class="archive-file-name">ALUNO</div>
 <div class="archive-file-meta">AGUARDE A SINCRONIZAÇÃO DO SISTEMA</div>
+</div>
+<div class="trainer-checkin-schedule" id="trainer-checkin-schedule">
+<div class="trainer-checkin-head"><div><span>CHECK-IN SEMANAL</span><strong>Relatório + 4 fotos obrigatórias</strong></div><span class="quest-status pending" id="trainer-checkin-state">CARREGANDO</span></div>
+<div class="trainer-checkin-grid"><label class="form-group"><span class="form-label">Próxima data prescrita</span><input class="form-input" id="trainer-checkin-date" type="date"/></label><label class="form-group"><span class="form-label">Intervalo</span><select class="form-input" id="trainer-checkin-interval"><option value="7">A cada 7 dias</option></select></label></div>
+<div class="trainer-checkin-actions"><button class="btn-primary" onclick="saveTrainerCheckinSchedule()">SALVAR PROGRAMAÇÃO</button><button class="btn-add-set" onclick="requestExtraWeeklyCheckin()">PEDIR RELATÓRIO + FOTOS AGORA</button></div>
+<div class="plan-help" id="trainer-checkin-help">O aluno receberá o pedido na aba Registros. Você pode alterar a próxima data quando necessário.</div>
+<div class="cycle-link-note" id="trainer-cycle-link-note">As datas do treino e da dieta ativos serão usadas para alinhar as semanas, os registros e a atualização do ciclo.</div>
 </div>
 <div class="section-header"><span class="section-label">Protocolos do aluno</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted)">prescrição do treinador</span></div>
 <div id="ts-workout-list"></div>
@@ -488,15 +543,37 @@
 <div class="screen" id="screen-ts-meals">
 <div class="header">
 <button class="btn-icon" onclick="goTrainerStudent()">←</button>
-<div class="header-title">SUPRIMENTOS DO ALUNO</div>
+<div class="header-title">DIETAS DO ALUNO</div>
 </div>
 <div class="content" style="padding-top:12px">
+<div class="diet-page-intro"><strong>DIETAS / SUPRIMENTOS</strong><span>Crie planos separados e defina qual está ativo. O aluno continua tendo acesso aos anteriores.</span></div>
 <div id="ts-meals-list"></div>
 <div class="empty-state" id="ts-meals-empty" style="display:none">
 <div class="empty-icon">🍽</div>
-<div class="empty-label">Nenhuma refeição cadastrada</div>
-<div class="empty-hint">Toque em + REFEIÇÃO para montar o plano do aluno</div>
+<div class="empty-label">Nenhuma dieta cadastrada</div>
+<div class="empty-hint">Toque em + NOVA DIETA para montar o plano do aluno</div>
 </div>
+</div>
+</div>
+<!-- DIETA / SUPRIMENTOS — detalhe do treinador -->
+<div class="screen" id="screen-ts-diet-detail">
+<div class="header">
+<button class="btn-icon" onclick="goTsDietList()">←</button>
+<div class="header-title" id="ts-diet-detail-title">DIETA</div>
+<button class="btn-icon ghost" onclick="openFoodOptionsFromDiet()" title="Editar lista de alimentos">◇</button>
+<button class="btn-icon ghost" onclick="openEditDietModal()" title="Editar dieta">✎</button>
+</div>
+<div class="content" style="padding-top:12px">
+<div class="diet-active-banner" id="ts-diet-detail-status"></div>
+<div class="diet-cycle-summary" id="ts-diet-cycle-summary"></div>
+<div class="section-header"><span class="section-label">Divisões da dieta</span><button class="section-mini-btn" onclick="openAddDietVariantModal()">+ DIVISÃO</button></div>
+<div class="diet-variant-tabs trainer" id="ts-diet-variant-tabs"></div>
+<div class="diet-week-distribution" id="ts-diet-week-distribution"></div>
+<div class="section-header"><span class="section-label" id="ts-diet-meals-section-label">Refeições</span></div>
+<div id="ts-diet-meals-list"></div>
+<div class="empty-state" id="ts-diet-meals-empty" style="display:none"><div class="empty-icon">🍽</div><div class="empty-label">Nenhuma refeição cadastrada</div></div>
+<div id="ts-diet-support-tables"></div>
+<button class="btn-add-set" onclick="openFoodOptionsFromDiet()" style="margin-top:14px">◇ EDITAR LISTA DE ALIMENTOS E SUBSTITUIÇÕES</button>
 </div>
 </div>
 <!-- FOOD OPTIONS: tabela de substituições, compartilhada entre todos os alunos -->
@@ -538,7 +615,7 @@
 <div class="content" style="padding-top:12px">
 <button class="btn-primary" onclick="sendDefaultQuestionnaire()" style="margin-bottom:10px">📋 ENVIAR QUESTIONÁRIO SEMANAL PADRÃO</button>
 <button class="btn-add-set" onclick="openSendQuestionnaireModal()" style="margin-bottom:14px">+ QUESTIONÁRIO PERSONALIZADO</button>
-<div id="ts-quest-list"></div>
+<div class="section-header"><span class="section-label">Check-ins semanais</span></div><div id="ts-weekly-checkin-list"></div><div class="section-header"><span class="section-label">Questionários avulsos</span></div><div id="ts-quest-list"></div>
 <div class="empty-state" id="ts-quest-empty" style="display:none">
 <div class="empty-icon">📝</div>
 <div class="empty-label">Nenhum questionário enviado</div>
@@ -582,8 +659,8 @@
 <div class="settings-grid">
 <div class="settings-card">
 <h3>Visual</h3>
-<div class="setting-row"><div class="setting-label">Brilho do fundo<span class="setting-value" id="setting-bg-value">100%</span></div><input aria-label="Brilho do fundo" id="setting-bg" max="140" min="65" oninput="updateSettingsFromUi()" type="range" value="100"/></div>
-<div class="setting-row"><div class="setting-label">Brilho das palavras<span class="setting-value" id="setting-text-value">100%</span></div><input aria-label="Brilho das palavras" id="setting-text" max="150" min="70" oninput="updateSettingsFromUi()" type="range" value="100"/></div>
+<div class="setting-row"><div class="setting-label">Brilho do fundo<span class="setting-value" id="setting-bg-value">100%</span></div><input aria-label="Brilho do fundo" id="setting-bg" max="180" min="35" oninput="updateSettingsFromUi()" type="range" value="100"/></div>
+<div class="setting-row"><div class="setting-label">Brilho das palavras<span class="setting-value" id="setting-text-value">100%</span></div><input aria-label="Brilho das palavras" id="setting-text" max="180" min="45" oninput="updateSettingsFromUi()" type="range" value="100"/></div>
 <div class="setting-row"><div class="setting-label">Tamanho da fonte<span class="setting-value" id="setting-font-value">100%</span></div><input aria-label="Tamanho da fonte" id="setting-font" max="135" min="85" oninput="updateSettingsFromUi()" type="range" value="100"/></div>
 </div>
 <div class="settings-card">
@@ -624,9 +701,11 @@
 <div class="fab-wrap" id="fab-ts-workout" style="display:none"><button class="fab" onclick="openAddWorkoutModalTs()"><span class="fab-icon">+</span> NOVO PROTOCOLO</button></div>
 <div class="fab-wrap" id="fab-ts-day-folder" style="display:none"><button class="fab" onclick="openAddDayModal('student')"><span class="fab-icon">+</span> NOVO DIA</button></div>
 <div class="fab-wrap" id="fab-ts-exercise" style="display:none"><button class="fab" onclick="openAddExerciseModalTs()"><span class="fab-icon">+</span> EXERCÍCIO</button></div>
-<div class="fab-wrap" id="fab-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
-<div class="fab-wrap" id="fab-ts-meals" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
-<div class="fab-wrap" id="fab-photos" style="display:none"><button class="fab" onclick="triggerPhotoUpload()"><span class="fab-icon">+</span> EVIDÊNCIA</button></div>
+<div class="fab-wrap" id="fab-meals" style="display:none"><button class="fab" onclick="openAddDietModal()"><span class="fab-icon">+</span> NOVA DIETA</button></div>
+<div class="fab-wrap" id="fab-ts-meals" style="display:none"><button class="fab" onclick="openAddDietModal()"><span class="fab-icon">+</span> NOVA DIETA</button></div>
+<div class="fab-wrap" id="fab-diet-meal" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
+<div class="fab-wrap" id="fab-ts-diet-meal" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
+<div class="fab-wrap" id="fab-photos" style="display:none"><button class="fab" onclick="triggerPhotoUpload()"><span class="fab-icon">+</span> CHECK-IN 4 FOTOS</button></div>
 <div class="fab-wrap" id="fab-free-meals" style="display:none"><button class="fab" onclick="openFreeMealLogModal()"><span class="fab-icon">+</span> REGISTRAR</button></div>
 <!-- MODAL: Workout -->
 <div class="modal-backdrop" id="modal-workout">
@@ -635,6 +714,11 @@
 <div class="modal-title" id="modal-workout-title">Novo protocolo</div>
 <div class="form-group"><label class="form-label">Nome do protocolo</label><input class="form-input" id="input-workout-name" maxlength="60" placeholder="Ex.: Protocolo A — peito/ombro"/></div>
 <div class="form-group"><label class="form-label">Cor</label><div class="color-row" id="color-picker-row"></div></div>
+<div class="cycle-date-grid">
+<label class="form-group"><span class="form-label">Início da prescrição</span><input class="form-input" id="input-workout-start-date" type="date" onchange="syncWorkoutUpdateDateFromStart()"/></label>
+<label class="form-group"><span class="form-label">Atualização prevista</span><input class="form-input" id="input-workout-update-date" type="date"/></label>
+</div>
+<div class="plan-help">A atualização é sugerida automaticamente para 4 semanas após o início. As semanas e os registros serão relacionados a essas datas.</div>
 <button class="btn-primary" onclick="saveWorkout()">SALVAR</button>
 <button class="btn-ghost" onclick="closeModal('modal-workout')">CANCELAR</button>
 </div>
@@ -700,6 +784,10 @@
 <div class="plan-help smart-series-hint">A nova série copia automaticamente as repetições mínimas, máximas e o GER da última série alterada.</div>
 <button class="btn-primary" onclick="savePrescription(false)">SALVAR ESTA SEMANA</button>
 <button class="btn-ghost" id="btn-replicate-prescription" onclick="confirmReplicatePrescription()">REPASSAR ATÉ A SEMANA 8</button>
+<div class="prescription-global-actions" id="prescription-global-actions">
+<button class="btn-ghost" onclick="confirmCopyCurrentWeekToAllExercises()">⇄ ESTA SEMANA PARA TODOS OS EXERCÍCIOS</button>
+<button class="btn-ghost" onclick="confirmCopyAllWeeksToAllExercises()">▦ 8 SEMANAS PARA A PLANILHA TODA</button>
+</div>
 <button class="btn-ghost" onclick="clearPrescriptionWeek()">SEM EXERCÍCIO NESTA SEMANA</button>
 <button class="btn-ghost" onclick="closeModal('modal-prescription')">CANCELAR</button>
 </div>
@@ -709,7 +797,7 @@
 <div class="modal-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title">Registrar resultado</div>
-<div class="form-group"><label class="form-label">Data</label><input aria-label="Data da sessão" class="form-input" id="input-session-date" type="date"/></div>
+<div class="form-group"><label class="form-label">Data</label><input aria-label="Data da sessão" class="form-input" id="input-session-date" type="date" onchange="syncSessionWeekFromDate()"/></div>
 <div class="form-group"><label class="form-label">Semana de treino</label>
 <select aria-label="Semana da sessão" class="form-input" id="input-session-week" onchange="onSessionWeekChange()">
 <option value="1">Semana 1</option><option value="2">Semana 2</option><option value="3">Semana 3</option><option value="4">Semana 4</option>
@@ -794,6 +882,7 @@
 <div class="bulk-targets" id="bulk-targets"></div>
 <div class="plan-help">As prescrições existentes nos destinos selecionados serão substituídas. Séries já registradas pelos alunos não são alteradas.</div>
 <button class="btn-primary" onclick="saveBulkPrescription()">COPIAR PARA SELECIONADOS</button>
+<button class="btn-ghost bulk-all-btn" onclick="copyBulkToEntireWorksheet()">APLICAR À PLANILHA TODA</button>
 <button class="btn-ghost" onclick="closeModal('modal-bulk-prescription')">CANCELAR</button>
 </div>
 </div>
@@ -837,6 +926,30 @@
 </div>
 </div>
 <!-- MODAL: Meal -->
+<!-- MODAL: Dieta -->
+<div class="modal-backdrop" id="modal-diet"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="modal-diet-title">Nova dieta</div>
+<div class="form-group"><label class="form-label">Nome da dieta</label><input class="form-input" id="input-diet-name" maxlength="100" placeholder="Ex.: Dieta João 1"/></div>
+<div class="form-group"><label class="form-label">Situação</label><select class="form-input" id="input-diet-active"><option value="true">Dieta ativa</option><option value="false">Dieta anterior / desativada</option></select></div>
+<div class="cycle-date-grid">
+<label class="form-group"><span class="form-label">Início da dieta</span><input class="form-input" id="input-diet-start-date" type="date" onchange="syncDietUpdateDateFromStart()"/></label>
+<label class="form-group"><span class="form-label">Atualização prevista</span><input class="form-input" id="input-diet-update-date" type="date"/></label>
+</div>
+<div class="plan-help">A data de atualização é sugerida para 4 semanas após a prescrição e pode ser alterada livremente.</div>
+<button class="btn-primary" onclick="saveDietPlan()">SALVAR DIETA</button><button class="btn-ghost" id="btn-delete-diet" onclick="deleteCurrentDiet()" style="display:none;color:var(--danger)">EXCLUIR DIETA</button><button class="btn-ghost" onclick="closeModal('modal-diet')">CANCELAR</button></div></div>
+<!-- MODAL: Divisão da dieta -->
+<div class="modal-backdrop" id="modal-diet-variant"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="modal-diet-variant-title">Nova divisão</div>
+<div class="form-group"><label class="form-label">Nome da divisão</label><input class="form-input" id="input-diet-variant-name" maxlength="100" placeholder="Ex.: Dia de treino, Baixo carboidrato..."/></div>
+<div class="form-group"><label class="form-label">Dias por semana</label><input class="form-input" id="input-diet-variant-days" type="number" min="0" max="7" step="1" value="0"/><div class="plan-help">A soma ideal das divisões é 7 dias. Ex.: 2 dias de baixo carboidrato e 5 dias de alto carboidrato.</div></div>
+<button class="btn-primary" onclick="saveDietVariant()">SALVAR DIVISÃO</button>
+<button class="btn-ghost" id="btn-delete-diet-variant" onclick="deleteDietVariant()" style="display:none;color:var(--danger)">EXCLUIR DIVISÃO</button>
+<button class="btn-ghost" onclick="closeModal('modal-diet-variant')">CANCELAR</button></div></div>
+<!-- MODAL: Item de suplementos/protocolo -->
+<div class="modal-backdrop" id="modal-diet-support"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="modal-diet-support-title">Novo item</div>
+<div class="form-group"><label class="form-label">Item</label><input class="form-input" id="input-diet-support-name" maxlength="120" placeholder="Ex.: Creatina"/></div>
+<div class="form-group"><label class="form-label">Dose / quantidade</label><input class="form-input" id="input-diet-support-dose" maxlength="100" placeholder="Ex.: 5 g"/></div>
+<div class="form-group"><label class="form-label">Horário / frequência</label><input class="form-input" id="input-diet-support-time" maxlength="120" placeholder="Ex.: diariamente após o treino"/></div>
+<div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="input-diet-support-notes" maxlength="2000" rows="3"></textarea></div>
+<button class="btn-primary" onclick="saveDietSupportItem()">SALVAR ITEM</button><button class="btn-ghost" id="btn-delete-diet-support" onclick="deleteDietSupportItem()" style="display:none;color:var(--danger)">EXCLUIR ITEM</button><button class="btn-ghost" onclick="closeModal('modal-diet-support')">CANCELAR</button></div></div>
 <div class="modal-backdrop" id="modal-meal">
 <div class="modal-sheet">
 <div class="modal-handle"></div>
@@ -946,17 +1059,33 @@
 <button class="btn-ghost" onclick="closeModal('modal-free-meal-view')">FECHAR</button>
 </div>
 </div>
+<!-- MODAL: Visualizar check-in semanal -->
+<div class="modal-backdrop" id="modal-weekly-checkin-view"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="weekly-checkin-view-title">Check-in semanal</div><div id="weekly-checkin-view-body"></div><button class="btn-ghost" onclick="closeModal('modal-weekly-checkin-view')">FECHAR</button></div></div>
+<!-- MODAL: Check-in semanal obrigatório -->
+<div class="modal-backdrop" id="modal-weekly-checkin"><div class="modal-sheet weekly-checkin-sheet"><div class="modal-handle"></div><div class="modal-title">Check-in semanal</div>
+<div class="weekly-checkin-due" id="weekly-checkin-modal-due">Relatório + 4 fotos obrigatórias</div>
+<div class="form-group"><label class="form-label">Peso atual (kg)</label><input class="form-input" id="weekly-checkin-weight" type="number" min="20" max="500" step="0.1" inputmode="decimal" placeholder="Ex.: 82,5"/></div>
+<div id="weekly-checkin-questions"></div>
+<div class="section-header"><span class="section-label">4 fotos obrigatórias</span></div>
+<div class="checkin-photo-grid">
+<label class="checkin-photo-slot"><span>1 · Frente</span><input accept="image/*" id="weekly-photo-0" type="file" onchange="previewWeeklyCheckinPhoto(0,event)"/><img id="weekly-photo-preview-0" alt="Frente"/></label>
+<label class="checkin-photo-slot"><span>2 · Costas</span><input accept="image/*" id="weekly-photo-1" type="file" onchange="previewWeeklyCheckinPhoto(1,event)"/><img id="weekly-photo-preview-1" alt="Costas"/></label>
+<label class="checkin-photo-slot"><span>3 · Lado direito</span><input accept="image/*" id="weekly-photo-2" type="file" onchange="previewWeeklyCheckinPhoto(2,event)"/><img id="weekly-photo-preview-2" alt="Lado direito"/></label>
+<label class="checkin-photo-slot"><span>4 · Lado esquerdo</span><input accept="image/*" id="weekly-photo-3" type="file" onchange="previewWeeklyCheckinPhoto(3,event)"/><img id="weekly-photo-preview-3" alt="Lado esquerdo"/></label>
+</div>
+<div class="plan-help">As quatro fotos são comprimidas antes do envio. O relatório só será concluído quando todas as respostas e fotos forem enviadas.</div>
+<button class="btn-primary" onclick="submitWeeklyCheckin()">ENVIAR RELATÓRIO + 4 FOTOS</button><button class="btn-ghost" onclick="closeModal('modal-weekly-checkin')">DEPOIS</button></div></div>
 <!-- MODAL: New Evidence (photo + weight only) -->
 <div class="modal-backdrop" id="modal-photo-upload">
 <div class="modal-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title">Nova evidência</div>
-<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Selecione de 1 a 6 fotos. Todas recebem a mesma data e o peso informado.</p>
+<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">As novas fotos de evolução são enviadas exclusivamente pelo check-in da aba Registros, sempre com relatório e exatamente quatro fotos.</p>
 <div class="form-group">
 <label class="form-label">Peso atual (kg)</label>
 <input class="form-input" id="input-photo-weight" inputmode="decimal" max="500" min="20" placeholder="Ex.: 82,5" step="0.1" type="number"/>
 </div>
-<button class="btn-primary" onclick="choosePhotoForUpload()">SELECIONAR FOTOS E ENVIAR</button>
+<button class="btn-primary" onclick="closeModal('modal-photo-upload');openWeeklyCheckinModal()">ABRIR CHECK-IN OBRIGATÓRIO</button>
 <button class="btn-ghost" onclick="closeModal('modal-photo-upload')">CANCELAR</button>
 </div>
 </div>
@@ -1053,6 +1182,6 @@
 </div>
 </div>
 </div>
-<script defer="True" src="app_v10_2.js"></script>
+<script defer="True" src="app_v10_4.js"></script>
 </body>
 </html>
