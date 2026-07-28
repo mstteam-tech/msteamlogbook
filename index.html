@@ -25,7 +25,7 @@
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
 <script src="viewport_v10_2_1.js"></script>
 <script src="boot_v10.js"></script>
-<link as="style" href="styles_v10_5_8.css" rel="preload"/><link href="styles_v10_5_8.css" rel="stylesheet"/><link as="script" href="app_v10_5_8.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<link as="style" href="styles_v10_5_9.css" rel="preload"/><link href="styles_v10_5_9.css" rel="stylesheet"/><link as="script" href="app_v10_5_9.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
@@ -774,17 +774,25 @@
 <div class="plan-help" id="prescription-source-help">Semanas sem ajuste próprio herdam automaticamente a prescrição anterior.</div>
 <div class="week-technique-editor" id="week-technique-editor">
   <div class="week-technique-head">
-    <div><span class="form-label">Técnicas desta semana</span><div class="plan-help" id="week-technique-source">Carregando técnicas...</div></div>
+    <div class="week-technique-heading">
+      <span class="form-label">Técnicas desta semana</span>
+      <div class="plan-help" id="week-technique-source">Carregando técnicas...</div>
+    </div>
     <span class="week-technique-badge" id="week-technique-week-badge">SEMANA 1</span>
   </div>
-  <div class="technique-picker" id="week-technique-picker"><div class="plan-help">Carregando biblioteca de técnicas...</div></div>
+  <div class="technique-picker week-technique-picker" id="week-technique-picker"><div class="plan-help">Carregando biblioteca de técnicas...</div></div>
   <div class="form-group myo-optional-config" id="week-myo-optional-group" style="display:none"><label class="technique-option-toggle"><input id="week-input-myo-optional" type="checkbox" onchange="onWeekTechniqueSelectionChange()"/><span><strong>MYO REPS OPCIONAL NESTA SEMANA</strong><small>O aluno poderá escolher Myo Reps ou séries normais somente nesta semana.</small></span></label></div>
-  <div class="form-group" id="week-superset-pair-group" style="display:none"><label class="form-label">Exercício conjugado nesta semana</label><select class="form-input" id="week-input-superset-exercise" onchange="onWeekTechniqueSelectionChange()"><option value="">Selecione o segundo exercício</option></select><div class="plan-help">O vínculo de Super set valerá somente para esta semana.</div></div>
-  <div class="week-technique-actions">
-    <button class="btn-ghost" type="button" onclick="confirmReplicateWeekTechniques()">→ REPASSAR TÉCNICAS ÀS PRÓXIMAS SEMANAS</button>
-    <button class="btn-ghost" type="button" onclick="restoreWeekTechniquesToDefault()">↺ USAR PADRÃO DO EXERCÍCIO</button>
+  <div class="form-group week-superset-config" id="week-superset-pair-group" style="display:none"><label class="form-label">Exercício conjugado nesta semana</label><select class="form-input" id="week-input-superset-exercise" onchange="onWeekTechniqueSelectionChange()"><option value="">Selecione o segundo exercício</option></select><div class="plan-help">O vínculo de Super set valerá somente para esta semana.</div></div>
+  <div class="week-technique-status" id="week-technique-save-state" aria-live="polite">Nenhuma alteração pendente.</div>
+  <div class="week-technique-primary-actions">
+    <button class="btn-primary" id="btn-save-week-techniques" type="button" onclick="saveCurrentWeekTechniques()">SALVAR TÉCNICAS DESTA SEMANA</button>
+    <button class="btn-ghost danger-soft" type="button" onclick="clearCurrentWeekTechniques()">REMOVER TODAS DESTA SEMANA</button>
   </div>
-  <div class="plan-help week-technique-help">Marcar ou desmarcar aqui altera apenas a semana selecionada. As semanas anteriores e posteriores permanecem independentes.</div>
+  <div class="week-technique-actions">
+    <button class="btn-ghost" type="button" onclick="confirmReplicateWeekTechniques()">→ COPIAR PARA AS PRÓXIMAS SEMANAS</button>
+    <button class="btn-ghost" type="button" onclick="restoreWeekTechniquesToDefault()">↺ RESTAURAR PADRÃO NESTA SEMANA</button>
+  </div>
+  <div class="plan-help week-technique-help">As técnicas são salvas separadamente em cada semana. Alterar esta tela não modifica semanas anteriores ou posteriores, a menos que você use o botão de copiar.</div>
 </div>
 <div class="plan-tools">
 <button class="btn-ghost" onclick="copyPreviousPrescription()">← COPIAR ANTERIOR</button>
@@ -1196,6 +1204,6 @@
 </div>
 </div>
 </div>
-<script defer="True" src="app_v10_5_8.js"></script>
+<script defer="True" src="app_v10_5_9.js"></script>
 </body>
 </html>
