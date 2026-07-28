@@ -1428,3 +1428,25 @@ button,a,input,select,textarea,[role="button"]{touch-action:manipulation;}
   body.student-desktop #workout-list,
   body.student-desktop #exercise-list{grid-template-columns:1fr;}
 }
+
+/* ═══════════════════════════════════════════════
+   TEAM BULLS v10.5.6 — FUNDO DO MENU INICIAL NO DESKTOP
+   A camada "contain" preserva toda a arte; a camada "cover"
+   preenche monitores com proporções diferentes sem deixar faixas vazias.
+   O mobile continua usando o fundo anterior.
+═══════════════════════════════════════════════ */
+@media (min-width:900px){
+  body.auth-desktop #screen-auth,
+  body:has(#screen-auth.active) #screen-auth{
+    background-color:#020202;
+    background-image:
+      linear-gradient(90deg,rgba(0,0,0,.70) 0%,rgba(0,0,0,.30) 42%,rgba(0,0,0,.40) 67%,rgba(0,0,0,.74) 100%),
+      linear-gradient(180deg,rgba(0,0,0,.12) 0%,rgba(0,0,0,.20) 58%,rgba(0,0,0,.72) 100%),
+      url('team-bulls-desktop-menu-v10-5-6.webp'),
+      url('team-bulls-desktop-menu-v10-5-6.webp');
+    background-size:cover,cover,contain,cover;
+    background-position:center,center,center,center;
+    background-repeat:no-repeat,no-repeat,no-repeat,no-repeat;
+    background-attachment:scroll;
+  }
+}

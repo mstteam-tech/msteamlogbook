@@ -1,6 +1,6 @@
-/* Team Bulls v10.5.4 — escala desktop, menu recolhível e música suavizada. */
+/* Team Bulls v10.5.6 — fundo do menu inicial no desktop. */
 'use strict';
-const CACHE_NAME='team-bulls-v10-5-4-layout-music';
+const CACHE_NAME='team-bulls-v10-5-6-desktop-menu-bg';
 const AUDIO_CACHE_NAME='team-bulls-v9-5-security-audio';
 const AUDIO_NAME_PATTERN=/^team-bulls-music-[a-z0-9-]+\.mp3$/i;
 const ESSENTIAL_ASSETS=[
@@ -9,7 +9,7 @@ const ESSENTIAL_ASSETS=[
   './icon-192-v9-8.png','./icon-512-v9-8.png',
   './icon-maskable-192-v9-8.png','./icon-maskable-512-v9-8.png','./apple-touch-icon-v9-8.png'
 ];
-const OPTIONAL_ASSETS=['./team-bulls-auth-bg-v9-8-2.webp'];
+const OPTIONAL_ASSETS=['./team-bulls-auth-bg-v9-8-2.webp','./team-bulls-desktop-menu-v10-5-6.webp'];
 const NAVIGATION_TIMEOUT_MS=2600;
 const RECOVERY_TIMEOUT_MS=1800;
 const AUDIO_NETWORK_TIMEOUT_MS=2200;
