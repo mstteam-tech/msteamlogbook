@@ -1,0 +1,22 @@
+20/20 verificações aprovadas
+
+PASS — Sintaxe app_v10_6.js
+PASS — Sintaxe sw_34.js
+PASS — Sintaxe recovery_v10.js
+PASS — Sintaxe boot_v10.js
+PASS — Sintaxe viewport_v10_2_1.js
+PASS — IDs HTML únicos — 453 IDs
+PASS — Referências locais do HTML
+PASS — Recursos do Service Worker
+PASS — Manifesto v10.6 — ./index.html?v=10.6
+PASS — Chaves CSS equilibradas — 1182/1182
+PASS — firebase/firestore_21_compacto.rules começa em rules_version — 12610
+PASS — firebase/firestore_21_compacto.rules compacto — 12610
+PASS — firebase/firestore_21_compacto.rules chaves equilibradas — 58/58
+PASS — firebase/storage_2.rules começa em rules_version — 1455
+PASS — firebase/storage_2.rules compacto — 1455
+PASS — firebase/storage_2.rules chaves equilibradas — 18/18
+PASS — Coleções cobertas pelas regras
+PASS — Sem referências antigas no shell
+PASS — Sem eval/new Function
+PASS — Recuperação não limpa dados locais
