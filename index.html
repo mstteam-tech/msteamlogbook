@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v10.6: auditoria de estabilidade, desempenho e segurança. -->
+<!-- Team Bulls v10.7: continuidade, modelos, auditoria e automação. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -15,7 +15,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
 <title>Team Bulls</title>
-<link href="manifest_21.json" rel="manifest"/>
+<link href="manifest_22.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -25,28 +25,32 @@
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
 <script src="viewport_v10_2_1.js"></script>
 <script src="boot_v10.js"></script>
-<link as="style" href="styles_v10_6.css" rel="preload"/><link href="styles_v10_6.css" rel="stylesheet"/><link as="script" href="app_v10_6.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<link as="style" href="styles_v10_7.css" rel="preload"/><link href="styles_v10_7.css" rel="stylesheet"/><link as="script" href="app_v10_7_core.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.6</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.7</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
 <button onclick="openInstructions()">▤ INSTRUÇÕES GERAIS</button>
 <button onclick="openTechniques()">⚙ TÉCNICAS DE TREINO</button>
+<button onclick="openV107Operations('overview')">◉ CENTRAL DE OPERAÇÕES</button>
+<button onclick="openV107Operations('invites')">⌁ CONVITES DE ALUNOS</button>
 <button onclick="openSettings()">⚙ CONFIGURAÇÕES</button>
 <div class="nav-spacer"></div>
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
 </div>
 <div aria-label="Navegação do aluno" class="student-desktop-nav" id="student-desktop-nav">
-<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.6</small></div>
+<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.7</small></div>
 <button onclick="goHome()">⌂ INÍCIO</button>
 <button onclick="goHome();setTimeout(()=>document.getElementById('workout-list')?.scrollIntoView({behavior:'smooth'}),80)">▦ TREINOS</button>
 <button onclick="openMeals()">🍽 DIETA / SUPRIMENTOS</button>
 <button onclick="openCalendar()">▤ REGISTROS / CHECK-INS</button>
 <button onclick="openInstructions()">📖 INSTRUÇÕES</button>
 <button onclick="openFreeMeals()">🍔 REFEIÇÕES LIVRES</button>
+<button id="v107-student-nav-notices" onclick="openV107Operations('notices')">● AVISOS <span class="v107-notice-badge" id="v107-nav-notice-count"></span></button>
+<button onclick="openV107Operations('sync')">⇄ SINCRONIZAÇÃO</button>
 <button onclick="openSettings()">⚙ CONFIGURAÇÕES</button>
 <div class="nav-spacer"></div>
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
@@ -158,6 +162,7 @@
 <button class="quick-nav-btn" id="qn-exopt" onclick="openExerciseOptions()"><span>↺</span>Substituir</button>
 <button class="quick-nav-btn" onclick="openInstructions()"><span>▤</span>Instruções</button>
 <button class="quick-nav-btn" onclick="openTechniques()"><span>⌁</span>Técnicas</button>
+<button class="quick-nav-btn" id="v107-home-notices" onclick="openV107Operations('notices')"><span>●</span>Avisos <b class="v107-notice-badge" id="v107-home-notice-count"></b></button>
 </div>
 <div class="content">
 <div class="section-header"><span class="section-label">Protocolos ativos</span></div>
@@ -414,6 +419,8 @@
 <button class="btn-add-set" onclick="openExerciseOptions()" style="margin-bottom:14px">🔄 Substituições de exercícios (tabela de trocas)</button>
 <button class="btn-add-set" onclick="openInstructions()" style="margin-bottom:14px">📖 Instruções gerais e vídeos</button>
 <button class="btn-add-set" onclick="openTechniques()" style="margin-bottom:14px">⚙ Biblioteca de técnicas de treino</button>
+<button class="btn-add-set v107-command-button" onclick="openV107Operations('overview')" style="margin-bottom:14px">◉ Central de operações, versões e sincronização</button>
+<button class="btn-add-set" onclick="openV107Operations('invites')" style="margin-bottom:14px">⌁ Convites individuais de alunos</button>
 <div class="section-header"><span class="section-label">Arquivos dos alunos</span></div>
 <div id="student-list"></div>
 <div class="empty-state" id="student-empty" style="display:none">
@@ -432,6 +439,7 @@
 <button class="btn-icon ghost" onclick="openTsFreeMeals()" title="Registros de refeições livres">🍔</button>
 <button class="btn-icon ghost" onclick="openTsPhotos()" title="Fotos de progresso">📷</button>
 <button class="btn-icon ghost" onclick="openTsQuestionnaires()" title="Questionários">📝</button>
+<button class="btn-icon ghost" onclick="openV107Operations('overview')" title="Central de operações">◉</button>
 <button class="btn-icon ghost" onclick="openFeedbackModal()" title="Enviar transmissão">💬</button>
 </div>
 <div class="content" style="padding-top:12px">
@@ -682,6 +690,27 @@
 <button class="btn-ghost" onclick="resetAppSettings()">RESTAURAR PADRÕES</button>
 </div>
 </div>
+</div>
+
+<!-- CENTRAL DE OPERAÇÕES V10.7 -->
+<div class="screen" id="screen-v107-operations">
+  <div class="header">
+    <button class="btn-icon" onclick="closeV107Operations()">←</button>
+    <div class="header-title" id="v107-operations-title">CENTRAL DE OPERAÇÕES</div>
+  </div>
+  <div class="v107-tabs" role="tablist" aria-label="Áreas da central de operações">
+    <button data-v107-tab="overview" onclick="v107SelectTab('overview')">VISÃO GERAL</button>
+    <button data-v107-tab="versions" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('versions')">VERSÕES</button>
+    <button data-v107-tab="templates" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('templates')">MODELOS</button>
+    <button data-v107-tab="adherence" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('adherence')">ADESÃO</button>
+    <button data-v107-tab="invites" data-v107-trainer-only onclick="v107SelectTab('invites')">CONVITES</button>
+    <button data-v107-tab="audit" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('audit')">AUDITORIA</button>
+    <button data-v107-tab="notices" onclick="v107SelectTab('notices')">AVISOS</button>
+    <button data-v107-tab="sync" onclick="v107SelectTab('sync')">SINCRONIZAÇÃO</button>
+  </div>
+  <div class="content v107-operations-content" id="v107-operations-body">
+    <div class="v107-loading"><div class="spinner"></div><span>Carregando...</span></div>
+  </div>
 </div>
 </div>
 <div aria-label="Música de fundo" class="music-dock" id="music-dock">
@@ -1231,6 +1260,10 @@
 </div>
 </div>
 </div>
-<script defer src="app_v10_6.js"></script>
+<script defer src="config_v10_7.js"></script>
+<script defer src="app_v10_7_core.js"></script>
+<script defer src="modules/v107-core.js"></script>
+<script defer src="modules/v107-invites.js"></script>
+<script defer src="modules/v107-operations.js"></script>
 </body>
 </html>
