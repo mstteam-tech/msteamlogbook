@@ -1,0 +1,19 @@
+name: Validar Team Bulls
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Executar validação estática
+        run: python testes/validar_v10_7_1.py
