@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v10.7.1: rolagem natural, retrato obrigatório e continuidade. -->
+<!-- Team Bulls v10.7.2: recuperação autônoma de senha, rolagem natural e retrato obrigatório. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -13,9 +13,9 @@
 <meta content="#000000" name="msapplication-TileColor"/>
 <meta content="Treinos, dietas e evolução — Team Bulls" name="description"/>
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
-<meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
+<meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
 <title>Team Bulls</title>
-<link href="manifest_23.json" rel="manifest"/>
+<link href="manifest_24.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -25,7 +25,7 @@
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
 <script src="viewport_v10_2_1.js"></script>
 <script src="boot_v10.js"></script>
-<link as="style" href="styles_v10_7_1.css" rel="preload"/><link href="styles_v10_7_1.css" rel="stylesheet"/><link as="script" href="app_v10_7_1_core.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<link as="style" href="styles_v10_7_2.css" rel="preload"/><link href="styles_v10_7_2.css" rel="stylesheet"/><link as="script" href="app_v10_7_2_core.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div id="portrait-lock-overlay" aria-hidden="true" inert>
@@ -36,7 +36,7 @@
   </div>
 </div>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.7.1</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.7.2</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
@@ -49,7 +49,7 @@
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
 </div>
 <div aria-label="Navegação do aluno" class="student-desktop-nav" id="student-desktop-nav">
-<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.7.1</small></div>
+<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.7.2</small></div>
 <button onclick="goHome()">⌂ INÍCIO</button>
 <button onclick="goHome();setTimeout(()=>document.getElementById('workout-list')?.scrollIntoView({behavior:'smooth'}),80)">▦ TREINOS</button>
 <button onclick="openMeals()">🍽 DIETA / SUPRIMENTOS</button>
@@ -97,6 +97,7 @@
 <input autocomplete="current-password" class="form-input" id="login-pass" placeholder="••••••••" type="password"/>
 </div>
 <button class="btn-primary" id="btn-login" onclick="doLogin()">ACESSAR SISTEMA</button>
+<button class="auth-link-btn" id="btn-forgot-password" onclick="openPasswordReset()" type="button">ESQUECI MINHA SENHA</button>
 <div class="auth-divider"><span>ou</span></div>
 <button class="btn-offline" onclick="goOffline()">MODO LOCAL // SEM CONTA</button>
 </div>
@@ -122,6 +123,18 @@
 <button class="btn-primary" id="btn-register" onclick="doRegister()">CRIAR NOVO REGISTRO</button>
 <div class="auth-divider"><span>ou</span></div>
 <button class="btn-offline" onclick="goOffline()">MODO LOCAL // SEM CONTA</button>
+</div>
+<!-- PASSWORD RESET -->
+<div class="auth-panel" id="panel-reset">
+<div class="auth-error" id="reset-error" role="alert"></div>
+<div class="auth-success" id="reset-success" role="status" aria-live="polite"></div>
+<p class="auth-help">Informe o e-mail usado no cadastro. O Firebase enviará um link seguro para criar uma nova senha.</p>
+<div class="form-group">
+<label class="form-label" for="reset-email">E-mail da conta</label>
+<input autocomplete="email" class="form-input" id="reset-email" maxlength="320" placeholder="seu@email.com" type="email"/>
+</div>
+<button class="btn-primary" id="btn-reset-password" onclick="sendPasswordReset()" type="button">ENVIAR LINK DE RECUPERAÇÃO</button>
+<button class="btn-ghost auth-back-btn" onclick="authTab('login')" type="button">← VOLTAR AO LOGIN</button>
 </div>
 </div>
 </div>
@@ -699,7 +712,7 @@
 </div>
 </div>
 
-<!-- CENTRAL DE OPERAÇÕES V10.7.1 -->
+<!-- CENTRAL DE OPERAÇÕES V10.7.2 -->
 <div class="screen" id="screen-v107-operations">
   <div class="header">
     <button class="btn-icon" onclick="closeV107Operations()">←</button>
@@ -1268,10 +1281,10 @@
 </div>
 </div>
 <script defer src="config_v10_7.js"></script>
-<script defer src="app_v10_7_1_core.js"></script>
+<script defer src="app_v10_7_2_core.js"></script>
 <script defer src="modules/v107-core.js"></script>
 <script defer src="modules/v107-invites.js"></script>
 <script defer src="modules/v107-operations.js"></script>
-<script defer src="interaction_v10_7_1.js"></script>
+<script defer src="interaction_v10_7_2.js"></script>
 </body>
 </html>
