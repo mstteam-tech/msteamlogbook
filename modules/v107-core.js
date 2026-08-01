@@ -1,12 +1,12 @@
-/* Team Bulls v10.7.2 — núcleo de continuidade, versões, rascunhos e auditoria. */
+/* Team Bulls v10.8.2 — núcleo otimizado de continuidade, versões, rascunhos e auditoria. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107=window.TeamBulls107||{};
-  TB.version='10.7.2';
+  TB.version='10.8.2';
   TB.schemaVersion=1;
   TB.state={appCheck:'desativado',lastError:'',restoring:false};
   const PREFIX='team_bulls_v107_';
-  const MAX_UNDO=20,MAX_VERSIONS=35,MAX_DRAFT_AGE=1000*60*60*12;
+  const MAX_UNDO=20,MAX_VERSIONS=35,MAX_FORM_DRAFT_AGE=1000*60*60*2;
   const wrapped=new Set();
   const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const clone=value=>{try{return JSON.parse(JSON.stringify(value??null));}catch(error){return null;}};
@@ -105,10 +105,11 @@
     return !!(await ensureFirebaseReady().catch(()=>false));
   }
   TB.audit=async function(action,details={}){
-    if(CURRENT_USER?.role!=='trainer'||!targetUid()||!await ensureCloud())return false;
+    const studentId=String(details.studentId||targetUid()||'');
+    if(CURRENT_USER?.role!=='trainer'||!studentId||!await ensureCloud())return false;
     try{
       const data={
-        trainerId:CURRENT_USER.uid,studentId:targetUid(),action:cleanText(action,160),entity:cleanText(details.entity||'plano',80),
+        trainerId:CURRENT_USER.uid,studentId,action:cleanText(action,160),entity:cleanText(details.entity||'plano',80),
         summary:cleanText(details.summary||'',500),metadata:stripFirestoreValue(details.metadata||{}),createdAt:firebase.firestore.FieldValue.serverTimestamp()
       };
       await cloudWrite(db.collection('auditLogs').add(data),'registrar auditoria');return true;
@@ -125,17 +126,21 @@
       }),'enviar aviso');storageSet(PREFIX+dedupeKey,String(Date.now()));return true;
     }catch(error){console.warn('Aviso não enviado',error);return false;}
   };
-  TB.saveVersion=async function(label='Ponto de restauração',source='manual',snapshot=null){
+  TB.saveCloudVersion=async function(snapshot,label='Ponto de restauração',source='manual'){
     const snap=snapshot||TB.snapshot();
-    const localItem=TB.saveLocalVersion(snap,label,source);
-    if(CURRENT_USER?.role!=='trainer'||!snap.targetUid||!await ensureCloud())return localItem;
+    if(CURRENT_USER?.role!=='trainer'||!snap.targetUid||!await ensureCloud())return null;
+    const ref=await cloudWrite(db.collection('planVersions').add({
+      trainerId:CURRENT_USER.uid,studentId:snap.targetUid,label:cleanText(label,160),source:cleanText(source,40),schemaVersion:TB.schemaVersion,
+      snapshot:snap,createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    }),'salvar versão');
+    return{cloudId:ref.id};
+  };
+  TB.saveVersion=async function(label='Ponto de restauração',source='manual',snapshot=null){
+    const snap=snapshot||TB.snapshot(),localItem=TB.saveLocalVersion(snap,label,source);
     try{
-      const ref=await cloudWrite(db.collection('planVersions').add({
-        trainerId:CURRENT_USER.uid,studentId:snap.targetUid,label:cleanText(label,160),source:cleanText(source,40),schemaVersion:TB.schemaVersion,
-        snapshot:snap,createdAt:firebase.firestore.FieldValue.serverTimestamp()
-      }),'salvar versão');
-      await TB.audit('Versão salva',{entity:'versão',summary:label,metadata:{versionId:ref.id,source}});
-      return{...localItem,cloudId:ref.id};
+      const cloudItem=await TB.saveCloudVersion(snap,label,source);
+      if(cloudItem)await TB.audit('Versão salva',{entity:'versão',summary:label,metadata:{versionId:cloudItem.cloudId,source}});
+      return cloudItem?{...localItem,...cloudItem}:localItem;
     }catch(error){console.warn('Versão salva apenas localmente',error);return localItem;}
   };
   async function commitOperations(operations,label){
@@ -217,68 +222,125 @@
   TB.undoCount=()=>stackRead('undo').length;
   TB.redoCount=()=>stackRead('redo').length;
 
-  /* Rascunhos de formulários: não armazena senha, arquivo ou credenciais. */
+  /* Rascunhos de formulários: somente quando há edição real.
+     Campos sensíveis, arquivos e modais curtos/descartáveis não são persistidos. */
+  const DRAFT_DISABLED_MODAL_IDS=new Set(['modal-day','modal-confirm','modal-photo-view','modal-compare-photos','modal-catalog-video','modal-technique-detail']);
+  const modalDraftBaselines=new WeakMap();
   function modalEntityKey(modalId){
-    const candidates=[typeof EDIT_W!=='undefined'?EDIT_W:'',typeof EDIT_EX!=='undefined'?EDIT_EX:'',typeof EDIT_DIET_PLAN_ID!=='undefined'?EDIT_DIET_PLAN_ID:'',typeof EDIT_DIET_VARIANT_ID!=='undefined'?EDIT_DIET_VARIANT_ID:'',typeof EDIT_MEAL!=='undefined'?EDIT_MEAL:''];
+    const candidates=[
+      typeof EDIT_W!=='undefined'?EDIT_W:'',typeof EDIT_EX!=='undefined'?EDIT_EX:'',
+      typeof EDIT_DIET_PLAN_ID!=='undefined'?EDIT_DIET_PLAN_ID:'',typeof EDIT_DIET_VARIANT_ID!=='undefined'?EDIT_DIET_VARIANT_ID:'',
+      typeof EDIT_MEAL!=='undefined'?EDIT_MEAL:'',typeof CUR_WORKOUT!=='undefined'?CUR_WORKOUT:'',
+      typeof VIEW_STUDENT_WORKOUT!=='undefined'?VIEW_STUDENT_WORKOUT?.id:'',typeof EDIT_DAY_NAME!=='undefined'?EDIT_DAY_NAME:''
+    ];
     return modalId+'_'+keyPart(candidates.filter(Boolean).join('_')||'novo');
   }
   function draftKey(modalId){return contextKey('form_'+modalEntityKey(modalId));}
-  function captureModalDraft(modal){
-    if(!modal?.classList.contains('open'))return;
+  function modalDraftValues(modal){
     const values={};
-    modal.querySelectorAll('input,textarea,select').forEach(field=>{
-      if(!field.id||field.type==='password'||field.type==='file'||field.type==='hidden')return;
+    modal?.querySelectorAll?.('input,textarea,select').forEach(field=>{
+      if(!field.id||field.disabled||field.dataset.sensitive==='true'||field.type==='password'||field.type==='file'||field.type==='hidden')return;
       values[field.id]=field.type==='checkbox'?!!field.checked:String(field.value||'');
     });
-    if(!Object.keys(values).length)return;
+    return values;
+  }
+  function captureModalDraft(modal){
+    if(!modal?.classList.contains('open')||DRAFT_DISABLED_MODAL_IDS.has(modal.id))return false;
+    const current=modalDraftValues(modal),baseline=modalDraftBaselines.get(modal)||{};
+    const values={};let meaningful=false;
+    Object.entries(current).forEach(([id,value])=>{
+      if(String(value)===String(baseline[id]??''))return;
+      values[id]=value;
+      if(typeof value==='boolean'||String(value||'').trim()||String(baseline[id]||'').trim())meaningful=true;
+    });
+    if(!meaningful||!Object.keys(values).length){storageRemove(PREFIX+draftKey(modal.id));return false;}
     localWrite(draftKey(modal.id),{updatedAt:Date.now(),values});
-    TB.state.lastDraftAt=Date.now();window.dispatchEvent(new CustomEvent('team-bulls-v107-state'));
+    TB.state.lastDraftAt=Date.now();window.dispatchEvent(new CustomEvent('team-bulls-v107-state'));return true;
   }
   function restoreModalDraft(modal){
-    const draft=localRead(draftKey(modal.id),null);if(!draft||Date.now()-Number(draft.updatedAt)>MAX_DRAFT_AGE)return false;
-    let restored=0;
+    if(!modal||DRAFT_DISABLED_MODAL_IDS.has(modal.id))return false;
+    const draft=localRead(draftKey(modal.id),null);
+    if(!draft||Date.now()-Number(draft.updatedAt)>MAX_FORM_DRAFT_AGE){if(draft)storageRemove(PREFIX+draftKey(modal.id));return false;}
+    let restored=0,longText=false;
     Object.entries(draft.values||{}).forEach(([id,value])=>{
-      const field=document.getElementById(id);if(!field||!modal.contains(field))return;
+      const field=document.getElementById(id);if(!field||!modal.contains(field)||field.dataset.sensitive==='true')return;
       const isEmpty=field.type==='checkbox'?!field.checked:String(field.value||'').trim()==='';
       if(!isEmpty)return;
       if(field.type==='checkbox')field.checked=!!value;else field.value=String(value||'');
       field.dispatchEvent(new Event('input',{bubbles:true}));restored++;
+      if(String(value||'').trim().length>=40)longText=true;
     });
-    if(restored)showToast('Rascunho automático recuperado.');return !!restored;
+    if(restored>1||longText)showToast('Rascunho recuperado.');
+    return !!restored;
   }
   TB.clearOpenDraft=function(modalId){if(modalId)storageRemove(PREFIX+draftKey(modalId));};
+  try{
+    for(let index=localStorage.length-1;index>=0;index--){const key=localStorage.key(index)||'';if(key.startsWith(PREFIX)&&key.includes('_form_modal-day_'))localStorage.removeItem(key);}
+  }catch(error){}
   let formDraftTimer=null;
   document.addEventListener('input',event=>{
-    const modal=event.target?.closest?.('.modal-backdrop.open');if(!modal)return;
-    clearTimeout(formDraftTimer);formDraftTimer=setTimeout(()=>captureModalDraft(modal),450);
+    const modal=event.target?.closest?.('.modal-backdrop.open');if(!modal||DRAFT_DISABLED_MODAL_IDS.has(modal.id))return;
+    clearTimeout(formDraftTimer);formDraftTimer=setTimeout(()=>captureModalDraft(modal),900);
   },true);
-  const baseOpenModal=openModal;
-  openModal=function(id){const result=baseOpenModal(id);setTimeout(()=>{const modal=document.getElementById(id);if(modal)restoreModalDraft(modal);},80);return result;};
-
-  /* Rascunho estrutural periódico, útil mesmo antes de uma versão manual. */
-  let lastPlanDraftHash='';
-  function savePlanDraft(){
-    try{
-      const snap=TB.snapshot();if(!snap.workouts.length&&!snap.diet)return;
-      const hash=TB.snapshotHash(snap);if(hash===lastPlanDraftHash)return;
-      localWrite(contextKey('plan_draft'),{updatedAt:Date.now(),hash,snapshot:snap});lastPlanDraftHash=hash;TB.state.lastDraftAt=Date.now();
-      window.dispatchEvent(new CustomEvent('team-bulls-v107-state'));
-    }catch(error){}
-  }
-  TB.getPlanDraft=()=>localRead(contextKey('plan_draft'),null);
-  setInterval(savePlanDraft,20000);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')savePlanDraft();});
-  window.addEventListener('pagehide',savePlanDraft);
-
-  /* Marca sincronizações reais sem alterar o comportamento original. */
-  const baseCloudWrite=cloudWrite;
-  cloudWrite=async function(task,label='gravação'){
-    const result=await baseCloudWrite(task,label);
-    storageSet(PREFIX+'last_cloud_success',String(Date.now()));
-    window.dispatchEvent(new CustomEvent('team-bulls-v107-sync'));
+  const baseOpenModal=openModal,baseCloseModal=closeModal;
+  openModal=function(id){
+    const result=baseOpenModal(id),modal=document.getElementById(id);
+    if(modal&&!DRAFT_DISABLED_MODAL_IDS.has(id)){
+      modalDraftBaselines.set(modal,modalDraftValues(modal));
+      setTimeout(()=>restoreModalDraft(modal),90);
+    }
     return result;
   };
-  TB.lastCloudSuccess=()=>Number(storageGet(PREFIX+'last_cloud_success')||0);
+  closeModal=function(id){
+    clearTimeout(formDraftTimer);
+    const modal=document.getElementById(id);if(modal){storageRemove(PREFIX+draftKey(id));modalDraftBaselines.delete(modal);}
+    return baseCloseModal(id);
+  };
+
+  /* Rascunho estrutural orientado a alterações. Evita recalcular o plano inteiro
+     a cada 20 segundos quando a tela está ociosa. */
+  let lastPlanDraftHash='',planDraftDirty=true,planDraftTimer=null;
+  function markPlanDraftDirty(){
+    planDraftDirty=true;
+    clearTimeout(planDraftTimer);
+    planDraftTimer=setTimeout(()=>savePlanDraft(false),1400);
+  }
+  function savePlanDraft(force=false){
+    if(!force&&!planDraftDirty)return false;
+    try{
+      const snap=TB.snapshot();
+      if(!snap.workouts.length&&!snap.diet){planDraftDirty=false;return false;}
+      const hash=TB.snapshotHash(snap);
+      if(hash===lastPlanDraftHash){planDraftDirty=false;return false;}
+      localWrite(contextKey('plan_draft'),{updatedAt:Date.now(),hash,snapshot:snap});
+      lastPlanDraftHash=hash;planDraftDirty=false;TB.state.lastDraftAt=Date.now();
+      window.dispatchEvent(new CustomEvent('team-bulls-v107-state'));return true;
+    }catch(error){return false;}
+  }
+  TB.getPlanDraft=()=>localRead(contextKey('plan_draft'),null);
+  TB.markPlanDraftDirty=markPlanDraftDirty;
+  TB.flushDrafts=function(){
+    clearTimeout(formDraftTimer);clearTimeout(planDraftTimer);
+    document.querySelectorAll('.modal-backdrop.open').forEach(captureModalDraft);
+    return savePlanDraft(true);
+  };
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')TB.flushDrafts();});
+  window.addEventListener('pagehide',()=>TB.flushDrafts());
+  window.addEventListener('team-bulls:before-refresh',()=>TB.flushDrafts());
+
+  /* Marca sincronizações sem gravar no localStorage a cada item de um lote. */
+  const baseCloudWrite=cloudWrite;
+  let lastCloudSuccess=Number(storageGet(PREFIX+'last_cloud_success')||0),lastCloudPersistAt=lastCloudSuccess,syncFrame=0;
+  function markCloudSuccess(){
+    lastCloudSuccess=Date.now();
+    if(lastCloudSuccess-lastCloudPersistAt>1200){lastCloudPersistAt=lastCloudSuccess;storageSet(PREFIX+'last_cloud_success',String(lastCloudSuccess));}
+    if(!syncFrame)syncFrame=requestAnimationFrame(()=>{syncFrame=0;window.dispatchEvent(new CustomEvent('team-bulls-v107-sync'));});
+  }
+  cloudWrite=async function(task,label='gravação'){
+    const result=await baseCloudWrite(task,label);markCloudSuccess();return result;
+  };
+  TB.lastCloudSuccess=()=>lastCloudSuccess;
+  window.addEventListener('pagehide',()=>{if(lastCloudSuccess)storageSet(PREFIX+'last_cloud_success',String(lastCloudSuccess));});
 
   /* App Check compatível com reCAPTCHA Enterprise, com fallback para chave v3. */
   initOptionalAppCheck=async function(){
@@ -295,9 +357,35 @@
     }catch(error){TB.state.appCheck='falha: '+cleanText(error?.message,120);console.warn('App Check não iniciado',error);return false;}
   };
 
+  /* Alterações consecutivas são consolidadas antes da auditoria, versão automática
+     e aviso. A gravação principal continua imediata; apenas os registros auxiliares
+     deixam de bloquear a interface do treinador. */
+  const pendingMutationSync=new Map();
+  function mutationQueueKey(studentId){return keyPart(actorUid())+'_'+keyPart(studentId);}
+  async function flushMutationSync(key){
+    const entry=pendingMutationSync.get(key);if(!entry)return;
+    clearTimeout(entry.timer);pendingMutationSync.delete(key);
+    const labels=[...entry.labels],entities=[...entry.entities];
+    const label=labels.length===1?labels[0]:'Atualização consolidada do plano';
+    TB.saveLocalVersion(entry.snapshot,label,'automatic');
+    if(CURRENT_USER?.role!=='trainer'||!entry.studentId)return;
+    await Promise.allSettled([
+      TB.audit(label,{studentId:entry.studentId,entity:entities.length===1?entities[0]:'plano',summary:labels.join(' · ').slice(0,500),metadata:{beforeHash:entry.beforeHash,afterHash:entry.afterHash,actions:labels.length}}),
+      TB.saveCloudVersion(entry.snapshot,label,'automatic'),
+      entry.notice?TB.createNotification({studentId:entry.studentId,title:'Plano atualizado',body:entry.notice,type:entities.length===1?entities[0]:'plano',dedupeMinutes:2}):Promise.resolve(false)
+    ]);
+  }
+  function queueMutationSync(meta,{studentId,beforeHash,afterHash,snapshot}){
+    const key=mutationQueueKey(studentId),existing=pendingMutationSync.get(key)||{studentId,labels:new Set(),entities:new Set(),beforeHash,afterHash,snapshot,notice:'',timer:null};
+    existing.labels.add(meta.label);existing.entities.add(meta.entity);existing.afterHash=afterHash;existing.snapshot=snapshot;if(meta.notice)existing.notice=meta.notice;
+    clearTimeout(existing.timer);existing.timer=setTimeout(()=>flushMutationSync(key),900);pendingMutationSync.set(key,existing);
+  }
+  TB.flushPendingMutationSync=async function(){await Promise.allSettled([...pendingMutationSync.keys()].map(flushMutationSync));};
+  window.addEventListener('pagehide',()=>{for(const entry of pendingMutationSync.values())TB.saveLocalVersion(entry.snapshot,[...entry.labels].at(-1)||'Atualização automática','automatic');});
+
   const mutationMap={
     saveWorkout:{label:'Salvar protocolo',entity:'treino',modal:'modal-workout',notice:'Seu protocolo de treino foi atualizado.'},
-    saveDayFolder:{label:'Salvar dia de treino',entity:'treino',modal:'modal-day-folder',notice:'A organização do seu treino foi atualizada.'},
+    saveDayFolder:{label:'Salvar dia de treino',entity:'treino',modal:'modal-day',notice:'A organização do seu treino foi atualizada.'},
     saveExercise:{label:'Salvar exercício',entity:'exercício',modal:'modal-exercise',notice:'Um exercício do seu protocolo foi atualizado.'},
     savePrescription:{label:'Salvar prescrição semanal',entity:'prescrição',modal:'modal-prescription',notice:'Sua prescrição de treino foi atualizada.'},
     saveBulkPrescription:{label:'Aplicar prescrição em massa',entity:'prescrição',modal:'modal-bulk-prescription',notice:'Sua prescrição de treino foi atualizada.'},
@@ -322,17 +410,13 @@
       let result;
       try{result=original.apply(this,arguments);if(result&&typeof result.then==='function')result=await result;}
       catch(error){throw error;}
-      if(!trainer)return result;
-      await sleep(40);
+      if(!trainer){if(MODE==='local')markPlanDraftDirty();return result;}
+      await sleep(24);
       const after=TB.snapshot(),afterHash=TB.snapshotHash(after);
       if(afterHash===beforeHash)return result;
-      TB.pushUndo(before,meta.label);
+      TB.pushUndo(before,meta.label);markPlanDraftDirty();
       if(meta.modal)storageRemove(PREFIX+draftKey(meta.modal));
-      await Promise.allSettled([
-        TB.audit(meta.label,{entity:meta.entity,metadata:{beforeHash,afterHash}}),
-        TB.saveVersion(meta.label,'automatic',after),
-        meta.notice?TB.createNotification({studentId:targetUid(),title:'Plano atualizado',body:meta.notice,type:meta.entity,dedupeMinutes:2}):Promise.resolve(false)
-      ]);
+      queueMutationSync(meta,{studentId:targetUid(),beforeHash,afterHash,snapshot:after});
       return result;
     };
   }
@@ -346,6 +430,6 @@
 
   TB.formatDateTime=value=>{const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});};
   TB.targetUid=targetUid;TB.actorUid=actorUid;TB.clone=clone;TB.cleanText=cleanText;TB.simpleHash=simpleHash;TB.ensureCloud=ensureCloud;TB.commitOperations=commitOperations;
-  document.documentElement.dataset.appVersion='10.7.2';
+  document.documentElement.dataset.appVersion='10.8.2';
   window.dispatchEvent(new CustomEvent('team-bulls-v107-ready'));
 })();
