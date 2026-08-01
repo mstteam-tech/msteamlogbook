@@ -16,4 +16,4 @@ jobs:
         with:
           node-version: '22'
       - name: Executar validação estática
-        run: python testes/validar_v10_7_1.py
+        run: python testes/validar_v10_7_2.py
