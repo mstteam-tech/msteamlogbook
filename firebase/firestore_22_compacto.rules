@@ -190,7 +190,7 @@ service cloud.firestore {
         && request.resource.data.answers.size() == request.resource.data.questions.size()
         && request.resource.data.questions.size() <= 60
         && request.resource.data.photoIds is list
-        && request.resource.data.photoIds.size() == 4
+        && request.resource.data.photoIds.size() == 6
         && request.resource.data.weight is number
         && request.resource.data.weight >= 20
         && request.resource.data.weight <= 500
@@ -205,6 +205,7 @@ service cloud.firestore {
         && request.resource.data.get('dataUrl', '') is string
         && request.resource.data.get('dataUrl', '').size() <= 950000
         && photoPath(request.resource.data.get('photoPath', ''), 'progressPhotos', request.resource.data.userId)
+        && photoPath(request.resource.data.get('thumbPath', ''), 'progressPhotoThumbs', request.resource.data.userId)
         && request.resource.data.createdAt is timestamp;
       allow update: if false;
       allow delete: if activeOwner(resource.data.userId);
