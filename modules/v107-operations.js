@@ -1,4 +1,4 @@
-/* Team Bulls v10.7.2 — central de operações, modelos, adesão e notificações. */
+/* Team Bulls v10.8.2 — central de operações otimizada, modelos, adesão e notificações. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
@@ -24,31 +24,39 @@
     activeTab=tab;setHeader();showScreen('screen-v107-operations');window.v107SelectTab(tab);
   };
   window.closeV107Operations=function(){if(CURRENT_USER?.role==='trainer'){if(VIEW_STUDENT?.uid)goTrainerStudent();else goTrainer();}else goHome();};
+  let renderSequence=0;
   window.v107SelectTab=async function(tab){
-    activeTab=tab||'overview';tabButtons();loading();
+    const requestedTab=tab||'overview',token=++renderSequence;
+    activeTab=requestedTab;tabButtons();loading();
     try{
-      if(activeTab==='overview')await renderOverview();
-      else if(activeTab==='versions')await renderVersions();
-      else if(activeTab==='templates')await renderTemplates();
-      else if(activeTab==='adherence')await renderAdherence();
-      else if(activeTab==='invites')await renderInvites();
-      else if(activeTab==='audit')await renderAudit();
-      else if(activeTab==='notices')await renderNotices();
-      else if(activeTab==='sync')await renderSync();
-    }catch(error){console.error('Central v10.7',error);const el=host();if(el)el.innerHTML=`<div class="v107-error"><strong>Não foi possível abrir esta área.</strong><span>${escHtml(error.message||error)}</span><button class="btn-add-set" onclick="v107SelectTab('${escHtml(activeTab)}')">TENTAR NOVAMENTE</button></div>`;}
+      if(requestedTab==='overview')await renderOverview(token);
+      else if(requestedTab==='versions')await renderVersions(token);
+      else if(requestedTab==='templates')await renderTemplates(token);
+      else if(requestedTab==='adherence')await renderAdherence(token);
+      else if(requestedTab==='invites')await renderInvites(token);
+      else if(requestedTab==='audit')await renderAudit(token);
+      else if(requestedTab==='notices')await renderNotices(token);
+      else if(requestedTab==='sync')await renderSync(token);
+    }catch(error){
+      if(token!==renderSequence||activeTab!==requestedTab)return;
+      console.error('Central v10.8.2',error);const el=host();
+      if(el)el.innerHTML=`<div class="v107-error"><strong>Não foi possível abrir esta área.</strong><span>${escHtml(error.message||error)}</span><button class="btn-add-set" onclick="v107SelectTab('${escHtml(requestedTab)}')">TENTAR NOVAMENTE</button></div>`;
+    }
   };
+  function renderIsCurrent(token,tab){return token==null||(token===renderSequence&&activeTab===tab);}
 
   async function completeSnapshot(){
     const studentId=requireTrainerStudent();
     let diet=null;try{diet=await loadDietDocument(studentId);}catch(error){diet=null;}
     return TB.snapshot({targetUid:studentId,workouts:VIEW_STUDENT.workouts||[],diet});
   }
-  async function renderOverview(){
+  async function renderOverview(token){
+    if(!renderIsCurrent(token,'overview'))return;
     const el=host();const trainer=CURRENT_USER?.role==='trainer';
     const draft=TB.getPlanDraft(),lastSync=TB.lastCloudSuccess(),online=navigator.onLine;
     const studentLabel=trainer?(VIEW_STUDENT?.name||'Nenhum aluno aberto'):(CURRENT_USER?.name||'Plano local');
     el.innerHTML=`
-      <div class="v107-hero"><div><span>TEAM BULLS V10.7.2</span><h2>CONTINUIDADE E CONTROLE</h2><p>${escHtml(studentLabel)} · ${online?'conectado':'offline'}</p></div><div class="v107-status-dot ${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</div></div>
+      <div class="v107-hero"><div><span>TEAM BULLS V10.8.2</span><h2>CONTINUIDADE E CONTROLE</h2><p>${escHtml(studentLabel)} · ${online?'conectado':'offline'}</p></div><div class="v107-status-dot ${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</div></div>
       <div class="v107-kpi-grid">
         <article><b>${TB.undoCount()}</b><span>ações para desfazer</span></article><article><b>${TB.redoCount()}</b><span>ações para refazer</span></article>
         <article><b>${draft?TB.formatDateTime(draft.updatedAt):'—'}</b><span>último rascunho</span></article><article><b>${lastSync?TB.formatDateTime(lastSync):'—'}</b><span>última gravação na nuvem</span></article>
@@ -73,13 +81,13 @@
     const local=TB.getLocalVersions().map(item=>({...item,origin:'local'}));
     if(CURRENT_USER?.role!=='trainer'||!VIEW_STUDENT?.uid||!await TB.ensureCloud())return local;
     let cloud=[];try{
-      const snap=await cloudGet(db.collection('planVersions').where('trainerId','==',CURRENT_USER.uid),'histórico de versões');
+      const snap=await cloudGet(db.collection('planVersions').where('trainerId','==',CURRENT_USER.uid).limit(180),'histórico de versões');
       cloud=snap.docs.filter(doc=>String(doc.data().studentId||'')===String(VIEW_STUDENT.uid)).map(doc=>{const data=doc.data();return{...data,id:doc.id,createdAt:data.createdAt?.toDate?data.createdAt.toDate().toISOString():String(data.createdAt||''),origin:'cloud'};});
     }catch(error){console.warn(error);}
     const seen=new Set();return[...cloud,...local].sort((a,b)=>ms(b.createdAt)-ms(a.createdAt)).filter(item=>{const key=(item.snapshot?TB.snapshotHash(item.snapshot):'')+'_'+item.label+'_'+Math.floor(ms(item.createdAt)/60000);if(seen.has(key))return false;seen.add(key);return true;}).slice(0,60);
   }
-  async function renderVersions(){
-    requireTrainerStudent();versionCache=await loadVersions();const el=host();
+  async function renderVersions(token){
+    requireTrainerStudent();versionCache=await loadVersions();if(!renderIsCurrent(token,'versions'))return;const el=host();
     const rows=versionCache.map((item,index)=>`<article class="v107-list-card"><div><strong>${escHtml(item.label||'Versão')}</strong><span>${TB.formatDateTime(item.createdAt)} · ${escHtml(item.source||'manual')} · ${item.origin==='cloud'?'nuvem':'aparelho'}</span><small>${item.snapshot?.workouts?.length||0} protocolos · hash ${escHtml(item.snapshot?TB.snapshotHash(item.snapshot):'—')}</small></div><button onclick="v107RestoreVersion(${index})">RESTAURAR</button></article>`).join('');
     el.innerHTML=`<div class="v107-section-head"><div><h2>HISTÓRICO DE VERSÕES</h2><p>Restaura treinos e dietas. Registros de sessões, check-ins e fotos não são apagados.</p></div><button class="btn-primary" onclick="v107CreateManualVersion()">+ SALVAR VERSÃO</button></div>${rows||empty('Nenhuma versão salva','Faça uma alteração ou salve um ponto manual.')}`;
   }
@@ -96,7 +104,7 @@
   }
   TB.loadTemplates=async function(){
     if(CURRENT_USER?.role!=='trainer'||!await TB.ensureCloud())return[];
-    const snap=await cloudGet(db.collection('planTemplates').where('trainerId','==',CURRENT_USER.uid),'modelos');
+    const snap=await cloudGet(db.collection('planTemplates').where('trainerId','==',CURRENT_USER.uid).limit(120),'modelos');
     return snap.docs.map(doc=>{const data=doc.data();return{...data,id:doc.id,createdAt:data.createdAt?.toDate?data.createdAt.toDate().toISOString():String(data.createdAt||'')};}).sort((a,b)=>ms(b.createdAt)-ms(a.createdAt));
   };
   TB.createTemplate=async function(name){
@@ -122,17 +130,17 @@
     await TB.createNotification({studentId,title:'Novo plano disponível',body:'O treinador adicionou um novo modelo ao seu arquivo. Confira os protocolos e dietas.',type:'modelo',dedupeMinutes:1});
     await renderTrainerStudent({...VIEW_STUDENT});return true;
   };
-  async function renderTemplates(){
-    requireTrainerStudent();templateCache=await TB.loadTemplates();const el=host();
+  async function renderTemplates(token){
+    requireTrainerStudent();templateCache=await TB.loadTemplates();if(!renderIsCurrent(token,'templates'))return;const el=host();
     const rows=templateCache.map((item,index)=>`<article class="v107-list-card"><div><strong>${escHtml(item.name||'Modelo')}</strong><span>${escHtml(item.description||'Treinos e dieta reutilizáveis')}</span><small>${item.snapshot?.workouts?.length||0} protocolos · ${item.snapshot?.diet?.plans?.length||0} dietas · ${TB.formatDateTime(item.createdAt)}</small></div><button onclick="v107ApplyTemplate(${index})">APLICAR</button></article>`).join('');
     el.innerHTML=`<div class="v107-section-head"><div><h2>MODELOS REUTILIZÁVEIS</h2><p>Copie protocolos e dietas para outros alunos sem alterar o modelo original.</p></div><button class="btn-primary" onclick="v107CreateTemplate()">+ CRIAR DO ALUNO</button></div>${rows||empty('Nenhum modelo cadastrado','Abra um aluno completo e salve a estrutura como modelo.')}`;
   }
   window.v107CreateTemplate=async function(){const name=window.prompt('Nome do modelo:','Modelo '+(VIEW_STUDENT?.name||''));if(!name)return;loading('Criando modelo completo...');try{await TB.createTemplate(name);showToast('✓ Modelo salvo');await renderTemplates();}catch(error){alert(error.message);await renderTemplates();}};
   window.v107ApplyTemplate=function(index){const item=templateCache[index];if(!item)return;showConfirm('Aplicar modelo',`Adicionar “${item.name}” ao arquivo de ${VIEW_STUDENT?.name}? O conteúdo atual será mantido.`,async()=>{loading('Aplicando modelo...');try{await TB.applyTemplate(item);showToast('✓ Modelo aplicado');await renderTemplates();}catch(error){alert(error.message);await renderTemplates();}});};
 
-  async function renderInvites(){
+  async function renderInvites(token){
     if(CURRENT_USER?.role!=='trainer')throw new Error('Somente o treinador acessa convites.');
-    inviteCache=await TB.loadInvites();const el=host();
+    inviteCache=await TB.loadInvites();if(!renderIsCurrent(token,'invites'))return;const el=host();
     const rows=inviteCache.map((item,index)=>{const status=item.usedBy?'USADO':item.valid?'ATIVO':'EXPIRADO/REVOGADO';return`<article class="v107-list-card"><div><strong>CONVITE ${status}</strong><span>${item.valid?'Válido até '+TB.formatDateTime(item.expiresAt):item.usedBy?'Utilizado por um aluno':'Não pode mais ser utilizado'}</span><small>ID seguro: ${escHtml(item.id.slice(0,16))}…</small></div>${item.valid?`<button class="danger" onclick="v107RevokeInvite(${index})">REVOGAR</button>`:''}</article>`;}).join('');
     el.innerHTML=`<div class="v107-section-head"><div><h2>CONVITES DE USO ÚNICO</h2><p>O código bruto aparece somente ao criar. No Firebase fica armazenado apenas o hash criptográfico.</p></div><button class="btn-primary" onclick="v107CreateInvite()">+ GERAR CONVITE</button></div><div id="v107-new-invite"></div>${rows||empty('Nenhum convite criado','Gere um convite para o próximo cadastro de aluno.')}`;
   }
@@ -158,8 +166,8 @@
     const checkins28=data.checkins.filter(item=>String(item.submittedDate||item.date||'')>=from).length,photos28=data.photos.filter(item=>String(item.date||'')>=from).length;
     return{from,recentSessions,trainingDays,recentMeals,mealCount,expectedMeals,mealAdherence,improved,tracked,checkins28,photos28};
   }
-  async function renderAdherence(){
-    const studentId=requireTrainerStudent();const data=await fetchAllForAdherence(studentId),m=calculateAdherence(data),el=host();
+  async function renderAdherence(token){
+    const studentId=requireTrainerStudent();const data=await fetchAllForAdherence(studentId);if(!renderIsCurrent(token,'adherence'))return;const m=calculateAdherence(data),el=host();
     const due=data.schedule?.nextDueDate||'',dueStatus=due?(due<=today()?'VENCIDO / DISPONÍVEL':'Próximo em '+fmt(due)):'não programado';
     const sessionRows=m.recentSessions.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,8).map(item=>`<tr><td>${fmt(item.date)}</td><td>${escHtml(item.exerciseName||item.exerciseId||'Exercício')}</td><td>${(item.sets||[]).length}</td></tr>`).join('');
     el.innerHTML=`<div class="v107-section-head"><div><h2>ADESÃO — ÚLTIMOS 28 DIAS</h2><p>Leitura operacional baseada nos registros enviados pelo aluno.</p></div><button class="btn-add-set" onclick="v107SelectTab('adherence')">ATUALIZAR</button></div>
@@ -169,8 +177,9 @@
       <div class="section-header"><span class="section-label">Últimas sessões</span></div><div class="diet-table-scroll"><table class="diet-support-table"><thead><tr><th>Data</th><th>Exercício</th><th>Séries</th></tr></thead><tbody>${sessionRows||'<tr><td colspan="3">Nenhuma sessão no período.</td></tr>'}</tbody></table></div>`;
   }
 
-  async function renderAudit(){
-    const studentId=requireTrainerStudent();const snap=await cloudGet(db.collection('auditLogs').where('trainerId','==',CURRENT_USER.uid),'auditoria');
+  async function renderAudit(token){
+    const studentId=requireTrainerStudent();const snap=await cloudGet(db.collection('auditLogs').where('trainerId','==',CURRENT_USER.uid).limit(300),'auditoria');
+    if(!renderIsCurrent(token,'audit'))return;
     const items=snap.docs.filter(doc=>String(doc.data().studentId||'')===String(studentId)).map(doc=>({...doc.data(),id:doc.id})).sort((a,b)=>ms(b.createdAt)-ms(a.createdAt)).slice(0,100),el=host();
     const rows=items.map(item=>`<article class="v107-list-card audit"><div><strong>${escHtml(item.action||'Alteração')}</strong><span>${escHtml(item.entity||'plano')} · ${TB.formatDateTime(ms(item.createdAt))}</span><small>${escHtml(item.summary||'Registro automático de alteração.')}</small></div></article>`).join('');
     el.innerHTML=`<div class="v107-section-head"><div><h2>LOG DE AUDITORIA</h2><p>Registro imutável das alterações realizadas pelo treinador.</p></div></div>${rows||empty('Nenhum evento registrado','As próximas alterações aparecerão aqui.')}`;
@@ -178,15 +187,16 @@
 
   TB.loadNotifications=async function(studentId){
     if(!studentId||!await TB.ensureCloud())return[];
-    const snap=await cloudGet(db.collection('notifications').where('studentId','==',studentId),'avisos');
+    const snap=await cloudGet(db.collection('notifications').where('studentId','==',studentId).limit(120),'avisos');
     return snap.docs.map(doc=>{const data=doc.data();return{...data,id:doc.id};}).sort((a,b)=>ms(b.createdAt)-ms(a.createdAt)).slice(0,80);
   };
-  async function renderNotices(){
+  async function renderNotices(token){
     const studentId=CURRENT_USER?.role==='trainer'?requireTrainerStudent():CURRENT_USER?.uid;if(!studentId)throw new Error('Usuário não identificado.');
     noticeCache=await TB.loadNotifications(studentId);
     if(CURRENT_USER?.role==='student'){
-      try{const schedule=await cloudGet(db.collection('checkinSchedules').doc(studentId),'agenda de check-in');const data=schedule.exists?schedule.data():null;if(data?.nextDueDate&&String(data.nextDueDate)<=today())noticeCache.unshift({id:'checkin-due',virtual:true,title:'Check-in semanal disponível',body:'Seu relatório e as quatro fotos já podem ser enviados na área de Registros.',type:'checkin',createdAt:new Date(),readAt:null});}catch(error){}
+      try{const schedule=await cloudGet(db.collection('checkinSchedules').doc(studentId),'agenda de check-in');const data=schedule.exists?schedule.data():null;if(data?.nextDueDate&&String(data.nextDueDate)<=today())noticeCache.unshift({id:'checkin-due',virtual:true,title:'Check-in semanal disponível',body:'Seu relatório e as seis fotos já podem ser enviados na área de Registros.',type:'checkin',createdAt:new Date(),readAt:null});}catch(error){}
     }
+    if(!renderIsCurrent(token,'notices'))return;
     const el=host();
     const rows=noticeCache.map((item,index)=>`<article class="v107-list-card notice ${item.readAt?'read':'unread'}"><div><strong>${escHtml(item.title||'Aviso')}</strong><span>${escHtml(item.body||'')}</span><small>${TB.formatDateTime(ms(item.createdAt))}${item.readAt?' · lido':' · novo'}</small></div>${item.virtual?`<button onclick="openCalendar()">ABRIR</button>`:CURRENT_USER?.role==='student'&&!item.readAt?`<button onclick="v107MarkNoticeRead(${index})">MARCAR LIDO</button>`:''}</article>`).join('');
     el.innerHTML=`<div class="v107-section-head"><div><h2>AVISOS</h2><p>${CURRENT_USER?.role==='trainer'?'Envie mensagens e acompanhe atualizações automáticas.':'Atualizações do treinador e do seu plano.'}</p></div>${CURRENT_USER?.role==='trainer'?'<button class="btn-primary" onclick="v107SendNotice()">+ ENVIAR AVISO</button>':''}</div>${rows||empty('Nenhum aviso','As atualizações do plano aparecerão aqui.')}`;
@@ -199,13 +209,14 @@
   };
   window.v107MarkNoticeRead=async function(index){const item=noticeCache[index];if(!item||CURRENT_USER?.role!=='student')return;try{await cloudWrite(db.collection('notifications').doc(item.id).update({readAt:firebase.firestore.FieldValue.serverTimestamp()}),'marcar aviso como lido');await renderNotices();}catch(error){alert(error.message);}};
 
-  async function renderSync(){
+  async function renderSync(token){
     const el=host(),online=navigator.onLine,last=TB.lastCloudSuccess(),localWorkouts=LOCAL_DB?.workouts||[],pendingSessions=localWorkouts.reduce((sum,w)=>sum+(w.exercises||[]).reduce((n,e)=>n+(e.sessions||[]).length,0),0),cloudBackup=CURRENT_USER?.uid?storageGet('teamms_cloud_'+CURRENT_USER.uid):null;
     let sw='não instalado';if('serviceWorker'in navigator){const registration=await navigator.serviceWorker.getRegistration().catch(()=>null);sw=registration?.active?'ativo':registration?.waiting?'aguardando atualização':'não ativo';}
     const estimate=navigator.storage?.estimate?await navigator.storage.estimate().catch(()=>null):null,used=estimate?.usage?Math.round(estimate.usage/1048576):null,quota=estimate?.quota?Math.round(estimate.quota/1048576):null;
+    if(!renderIsCurrent(token,'sync'))return;
     el.innerHTML=`<div class="v107-section-head"><div><h2>CENTRAL DE SINCRONIZAÇÃO</h2><p>Mostra o estado real do aparelho e permite tentar novamente sem apagar dados.</p></div><button class="btn-primary" onclick="v107RunSync()">SINCRONIZAR AGORA</button></div>
       <div class="v107-sync-grid"><article><span>Rede</span><b class="${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</b></article><article><span>Modo atual</span><b>${escHtml(MODE)} / ${escHtml(ACCESS_MODE||'normal')}</b></article><article><span>Última gravação</span><b>${last?TB.formatDateTime(last):'não registrada'}</b></article><article><span>Service Worker</span><b>${escHtml(sw)}</b></article><article><span>Estrutura local</span><b>${localWorkouts.length} treinos · ${pendingSessions} sessões</b></article><article><span>Espelho da nuvem</span><b>${cloudBackup?'disponível':'não encontrado'}</b></article><article><span>Armazenamento</span><b>${used==null?'não informado':used+' MB de '+quota+' MB'}</b></article><article><span>App Check</span><b>${escHtml(TB.state.appCheck||'não configurado')}</b></article></div>
-      <div class="v107-security-card"><strong>DADOS PRESERVADOS</strong><span>A sincronização não limpa treinos, sessões, fotos ou dietas.</span><small>Para trocar arquivos do GitHub, use a página recuperar.html?v=10.7.2 após a publicação.</small></div>`;
+      <div class="v107-security-card"><strong>DADOS PRESERVADOS</strong><span>A sincronização não limpa treinos, sessões, fotos ou dietas.</span><small>Para trocar arquivos do GitHub, use a página recuperar.html?v=10.8.2 após a publicação.</small></div>`;
   }
   window.v107RunSync=async function(){loading('Verificando e sincronizando...');try{if(!navigator.onLine)throw new Error('O aparelho está offline. Os dados continuam preservados localmente.');if(!await TB.ensureCloud())throw new Error('Não foi possível abrir a conexão segura.');if(CURRENT_USER?.role==='student'&&MODE==='cloud'){await migrateLocalToCloud(CURRENT_USER.uid,{background:false});await loadCloudHome();}else if(CURRENT_USER?.role==='trainer'&&VIEW_STUDENT?.uid)await renderTrainerStudent({...VIEW_STUDENT});storageSet('team_bulls_v107_last_manual_sync',String(Date.now()));showToast('✓ Sincronização concluída');await renderSync();}catch(error){alert(error.message);await renderSync();}};
 
@@ -228,7 +239,7 @@
       try{const schedule=await cloudGet(db.collection('checkinSchedules').doc(CURRENT_USER.uid),'agenda de check-in');due=!!(schedule.exists&&schedule.data()?.nextDueDate&&String(schedule.data().nextDueDate)<=today());}catch(error){}
       const unread=items.filter(item=>!item.readAt),count=unread.length+(due?1:0);['v107-nav-notice-count','v107-home-notice-count'].forEach(id=>{const badge=document.getElementById(id);if(!badge)return;badge.textContent=count?String(Math.min(99,count)):'';badge.style.display=count?'inline-flex':'none';});
       if('Notification' in window&&Notification.permission==='granted'){
-        const newest=due?{id:'checkin-'+today(),title:'Check-in semanal disponível',body:'Abra Registros para enviar o relatório e as quatro fotos.'}:unread[0];
+        const newest=due?{id:'checkin-'+today(),title:'Check-in semanal disponível',body:'Abra Registros para enviar o relatório e as seis fotos.'}:unread[0];
         if(newest){const key='team_bulls_v107_device_notice_'+newest.id;if(!storageGet(key)){new Notification(newest.title||'Team Bulls',{body:newest.body||'Você recebeu uma atualização.',icon:'icon-192-v9-8.png',tag:'team-bulls-'+newest.id});storageSet(key,'1');}}
       }
     }catch(error){}
