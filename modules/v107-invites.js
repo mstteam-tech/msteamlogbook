@@ -1,4 +1,4 @@
-/* Team Bulls v10.7.2 — convites individuais de uso único. */
+/* Team Bulls v10.8.2 — convites individuais de uso único. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
@@ -36,7 +36,7 @@
   };
   TB.loadInvites=async function(){
     if(CURRENT_USER?.role!=='trainer'||!await TB.ensureCloud())return[];
-    const snap=await cloudGet(db.collection('studentInvites').where('trainerId','==',CURRENT_USER.uid),'convites');
+    const snap=await cloudGet(db.collection('studentInvites').where('trainerId','==',CURRENT_USER.uid).limit(120),'convites');
     return snap.docs.map(doc=>{
       const data=doc.data(),expiresAt=data.expiresAt?.toDate?data.expiresAt.toDate().toISOString():String(data.expiresAt||''),createdAt=data.createdAt?.toDate?data.createdAt.toDate().toISOString():'';
       return{...data,id:doc.id,expiresAt,createdAt,valid:inviteValid(data)};
@@ -53,7 +53,7 @@
   };
   TB.inviteHash=sha256;
 
-  /* Cadastro v10.7: o código fixo foi substituído por um documento aleatório,
+  /* Cadastro seguro: o código fixo foi substituído por um documento aleatório,
      expirável e consumido na mesma transação que cria o perfil do aluno. */
   doRegister=async function(){
     clearAuthError('reg-error');
@@ -84,6 +84,7 @@
       }),CLOUD_WRITE_TIMEOUT_MS,'consumir convite');
       cacheUserProfile({...userData,uid:cred.user.uid});
       await rememberOfflineCredential(email,pass,cred.user.uid,userData);
+      window.TeamBullsAuthFields?.clearSecrets?.();
     }catch(error){
       AUTH_HANDLED=false;
       if(cred?.user){try{await cred.user.delete();}catch(cleanupError){try{await auth.signOut();}catch(signOutError){}}}
