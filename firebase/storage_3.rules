@@ -19,21 +19,26 @@ service firebase.storage {
       return signedIn() && request.auth.uid == uid && profileExists(uid)
         && profile(uid).role == 'student' && profile(uid).status == 'active';
     }
-    function validJpegUpload() {
+    function validOptimizedJpegUpload(maxBytes) {
       return request.resource != null
         && request.resource.size > 0
-        && request.resource.size <= 700 * 1024
+        && request.resource.size <= maxBytes
         && request.resource.contentType == 'image/jpeg';
     }
 
     match /progressPhotos/{uid}/{photoId}.jpg {
       allow read: if isTrainer() || activeOwner(uid);
-      allow create, update: if activeOwner(uid) && validJpegUpload();
+      allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(2 * 1024 * 1024);
+      allow delete: if activeOwner(uid);
+    }
+    match /progressPhotoThumbs/{uid}/{photoId}.jpg {
+      allow read: if isTrainer() || activeOwner(uid);
+      allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(350 * 1024);
       allow delete: if activeOwner(uid);
     }
     match /freeMealLogs/{uid}/{photoId}.jpg {
       allow read: if isTrainer() || activeOwner(uid);
-      allow create, update: if activeOwner(uid) && validJpegUpload();
+      allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(2 * 1024 * 1024);
       allow delete: if activeOwner(uid);
     }
     match /{allPaths=**} { allow read, write: if false; }
