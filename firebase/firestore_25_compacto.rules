@@ -133,19 +133,54 @@ service cloud.firestore {
       allow read: if isTrainer() || activeOwner(resource.data.studentId);
       allow create: if isTrainer() && isStudent(request.resource.data.studentId)
         && request.resource.data.trainerId == request.auth.uid
+        && request.resource.data.get('requestMode', 'full') in ['full', 'written', 'photos']
         && request.resource.data.questions is list
-        && request.resource.data.questions.size() > 0
         && request.resource.data.questions.size() <= 60
+        && (
+          (request.resource.data.get('requestMode', 'full') == 'photos'
+            && request.resource.data.questions.size() == 0
+            && request.resource.data.get('requiresPhotos', true) == true
+            && request.resource.data.get('requiredPhotoCount', 6) == 6
+            && request.resource.data.get('allQuestionsRequired', false) == false)
+          || (request.resource.data.get('requestMode', 'full') == 'written'
+            && request.resource.data.questions.size() > 0
+            && request.resource.data.get('requiresPhotos', false) == false
+            && request.resource.data.get('requiredPhotoCount', 0) == 0
+            && request.resource.data.get('allQuestionsRequired', true) == true)
+          || (request.resource.data.get('requestMode', 'full') == 'full'
+            && request.resource.data.questions.size() > 0
+            && request.resource.data.get('requiresPhotos', true) == true
+            && request.resource.data.get('requiredPhotoCount', 6) == 6
+            && request.resource.data.get('allQuestionsRequired', true) == true)
+        )
         && request.resource.data.createdAt is timestamp;
       allow update: if activeOwner(resource.data.studentId)
         && immutable('studentId') && immutable('trainerId')
         && immutable('questions') && immutable('createdAt')
+        && immutable('requiresPhotos') && immutable('requiredPhotoCount')
+        && immutable('allQuestionsRequired') && immutable('reportType')
+        && immutable('requestMode')
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['answers', 'answered', 'answeredAt'])
+          .hasOnly(['answers', 'answered', 'answeredAt', 'photoIds'])
         && request.resource.data.answers is list
-        && request.resource.data.answers.size() <= 60
+        && request.resource.data.photoIds is list
         && request.resource.data.answered == true
-        && request.resource.data.answeredAt is timestamp;
+        && request.resource.data.answeredAt is timestamp
+        && (
+          (resource.data.get('requestMode', 'full') == 'photos'
+            && request.resource.data.answers.size() == 0
+            && request.resource.data.photoIds.size() == 6)
+          || (resource.data.get('requestMode', 'full') == 'written'
+            && request.resource.data.answers.size() == resource.data.questions.size()
+            && request.resource.data.answers.size() > 0
+            && !request.resource.data.answers.hasAny([''])
+            && request.resource.data.photoIds.size() == 0)
+          || (resource.data.get('requestMode', 'full') == 'full'
+            && request.resource.data.answers.size() == resource.data.questions.size()
+            && request.resource.data.answers.size() > 0
+            && !request.resource.data.answers.hasAny([''])
+            && request.resource.data.photoIds.size() == 6)
+        );
       allow delete: if false;
     }
 
@@ -170,6 +205,35 @@ service cloud.firestore {
       allow delete: if activeOwner(resource.data.studentUid);
     }
 
+    match /reportSettings/{trainerUid} {
+      allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid)
+        && userData(request.auth.uid).trainerId == trainerUid);
+      allow create, update: if isTrainer() && request.auth.uid == trainerUid
+        && request.resource.data.trainerId == trainerUid
+        && text(request.resource.data.get('photoInstruction', ''), 1200)
+        && text(request.resource.data.get('photoGuidePath', ''), 300)
+        && text(request.resource.data.get('photoGuideName', ''), 180)
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /protocolReviewSchedules/{uid} {
+      allow read: if isTrainer() || activeOwner(uid);
+      allow create, update: if isTrainer() && isStudent(uid)
+        && request.resource.data.studentId == uid
+        && request.resource.data.trainerId == request.auth.uid
+        && isoDate(request.resource.data.startDate)
+        && request.resource.data.intervalWeeks is int
+        && request.resource.data.intervalWeeks >= 1
+        && request.resource.data.intervalWeeks <= 52
+        && request.resource.data.get('lastCompletedCycle', 0) is int
+        && request.resource.data.get('lastCompletedCycle', 0) >= 0
+        && (request.resource.data.get('lastCompletedDate', '') == '' || isoDate(request.resource.data.get('lastCompletedDate', '')))
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
     match /checkinSchedules/{uid} {
       allow read: if isTrainer() || activeOwner(uid);
       allow create, update: if isTrainer() && isStudent(uid)
@@ -188,6 +252,8 @@ service cloud.firestore {
         && request.resource.data.questions is list
         && request.resource.data.answers is list
         && request.resource.data.answers.size() == request.resource.data.questions.size()
+        && request.resource.data.answers.size() > 0
+        && !request.resource.data.answers.hasAny([''])
         && request.resource.data.questions.size() <= 60
         && request.resource.data.photoIds is list
         && request.resource.data.photoIds.size() == 6
@@ -208,7 +274,10 @@ service cloud.firestore {
         && photoPath(request.resource.data.get('thumbPath', ''), 'progressPhotoThumbs', request.resource.data.userId)
         && request.resource.data.createdAt is timestamp;
       allow update: if false;
-      allow delete: if activeOwner(resource.data.userId);
+      allow delete: if activeOwner(resource.data.userId)
+        && resource.data.get('checkinId', '') == ''
+        && resource.data.get('reportId', '') == ''
+        && resource.data.get('questionnaireId', '') == '';
     }
 
     match /freeMealLogs/{id} {
