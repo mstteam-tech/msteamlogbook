@@ -1,8 +1,8 @@
-/* Team Bulls v10.8.2 — núcleo otimizado de continuidade, versões, rascunhos e auditoria. */
+/* Team Bulls v10.9.0 — núcleo otimizado de continuidade, versões, rascunhos e auditoria. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107=window.TeamBulls107||{};
-  TB.version='10.8.2';
+  TB.version='10.9.0';
   TB.schemaVersion=1;
   TB.state={appCheck:'desativado',lastError:'',restoring:false};
   const PREFIX='team_bulls_v107_';
@@ -430,6 +430,6 @@
 
   TB.formatDateTime=value=>{const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});};
   TB.targetUid=targetUid;TB.actorUid=actorUid;TB.clone=clone;TB.cleanText=cleanText;TB.simpleHash=simpleHash;TB.ensureCloud=ensureCloud;TB.commitOperations=commitOperations;
-  document.documentElement.dataset.appVersion='10.8.2';
+  document.documentElement.dataset.appVersion='10.9.0';
   window.dispatchEvent(new CustomEvent('team-bulls-v107-ready'));
 })();
