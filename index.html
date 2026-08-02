@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v10.8.2: auditoria completa, desempenho, puxar para atualizar, recuperação de senha e retrato obrigatório. -->
+<!-- Team Bulls v10.9.0: relatórios flexíveis, guia de fotos, ciclos de protocolo e navegação móvel. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
@@ -15,7 +15,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
 <title>Team Bulls</title>
-<link href="manifest_27.json" rel="manifest"/>
+<link href="manifest_29.json" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -23,9 +23,9 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&amp;family=DM+Mono:wght@400;500&amp;family=Barlow:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
-<script src="viewport_v10_8_2.js"></script>
+<script src="viewport_v10_9_0.js"></script>
 <script src="boot_v10.js"></script>
-<link as="style" href="styles_v10_8_2.css" rel="preload"/><link href="styles_v10_8_2.css" rel="stylesheet"/><link as="script" href="app_v10_8_2_core.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<link as="style" href="styles_v10_9_0.css" rel="preload"/><link href="styles_v10_9_0.css" rel="stylesheet"/><link as="script" href="app_v10_9_0_core.js" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div id="portrait-lock-overlay" aria-hidden="true" inert>
@@ -36,7 +36,7 @@
   </div>
 </div>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.8.2</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.9.0</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
 <button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
 <button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
@@ -49,11 +49,11 @@
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
 </div>
 <div aria-label="Navegação do aluno" class="student-desktop-nav" id="student-desktop-nav">
-<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.8.2</small></div>
+<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.9.0</small></div>
 <button onclick="goHome()">⌂ INÍCIO</button>
 <button onclick="goHome();setTimeout(()=>document.getElementById('workout-list')?.scrollIntoView({behavior:'smooth'}),80)">▦ TREINOS</button>
 <button onclick="openMeals()">🍽 DIETA / SUPRIMENTOS</button>
-<button onclick="openCalendar()">▤ REGISTROS / CHECK-INS</button>
+<button onclick="openCalendar()">▤ REGISTROS / RELATÓRIOS</button>
 <button onclick="openInstructions()">📖 INSTRUÇÕES</button>
 <button onclick="openFreeMeals()">🍔 REFEIÇÕES LIVRES</button>
 <button id="v107-student-nav-notices" onclick="openV107Operations('notices')">● AVISOS <span class="v107-notice-badge" id="v107-nav-notice-count"></span></button>
@@ -169,9 +169,14 @@
 <button class="btn-primary" onclick="openAnswerQuestionnaire(document.getElementById('quest-banner').dataset.qid)" style="margin-top:8px;padding:8px">RESPONDER</button>
 </div>
 <div class="feedback-banner weekly-checkin-home-banner" id="weekly-checkin-home-banner" style="display:none">
-<div class="feedback-banner-label">Check-in semanal // relatório + 6 fotos</div>
-<div class="feedback-banner-text" id="weekly-checkin-home-text">Seu check-in semanal está disponível.</div>
+<div class="feedback-banner-label">Relatório semanal // 6 fotos obrigatórias</div>
+<div class="feedback-banner-text" id="weekly-checkin-home-text">Seu relatório semanal está disponível.</div>
 <button class="btn-primary" onclick="openCalendar()" style="margin-top:8px;padding:8px">ABRIR REGISTROS</button>
+</div>
+<div class="feedback-banner protocol-review-home-banner" id="protocol-review-home-banner" style="display:none">
+<div class="feedback-banner-label" id="protocol-review-home-label">Atualização completa dos protocolos</div>
+<div class="feedback-banner-text" id="protocol-review-home-text">Carregando o cronograma de atualização...</div>
+<button class="btn-primary" onclick="openProtocolReviewInfo()" style="margin-top:8px;padding:8px">VER CRONOGRAMA</button>
 </div>
 <div class="home-hero">
 <div class="home-hero-eyebrow" id="hero-eyebrow">// modo offline</div>
@@ -298,9 +303,9 @@
 <div class="cal-grid" id="cal-grid"></div>
 <div class="cal-summary" id="cal-summary">—</div>
 <div class="weekly-checkin-card" id="weekly-checkin-card" style="display:none">
-<div class="weekly-checkin-head"><div><span class="weekly-checkin-kicker">CHECK-IN SEMANAL</span><strong id="weekly-checkin-title">Relatório + 6 fotos</strong></div><span class="quest-status pending" id="weekly-checkin-status">PENDENTE</span></div>
+<div class="weekly-checkin-head"><div><span class="weekly-checkin-kicker">RELATÓRIO SEMANAL</span><strong id="weekly-checkin-title">Relatório + 6 fotos</strong></div><span class="quest-status pending" id="weekly-checkin-status">PENDENTE</span></div>
 <div class="weekly-checkin-meta" id="weekly-checkin-meta">Carregando programação...</div>
-<button class="btn-primary" id="weekly-checkin-action" onclick="openWeeklyCheckinModal()">ENVIAR RELATÓRIO E 4 FOTOS</button>
+<button class="btn-primary" id="weekly-checkin-action" onclick="openWeeklyCheckinModal()">ENVIAR RELATÓRIO E 6 FOTOS</button>
 </div>
 <div class="records-shortcuts">
 <button class="btn-add-set" onclick="openPhotos()">◉ ARQUIVO DE FOTOS</button>
@@ -413,14 +418,14 @@
 <div class="screen" id="screen-my-quest">
 <div class="header">
 <button class="btn-icon" onclick="goHome()">←</button>
-<div class="header-title">QUESTIONÁRIOS</div>
+<div class="header-title">RELATÓRIOS</div>
 </div>
 <div class="content">
-<div class="section-header"><span class="section-label">Check-ins semanais</span></div><div id="my-weekly-checkin-list"></div><div class="section-header"><span class="section-label">Questionários avulsos</span></div><div id="my-quest-list"></div>
+<div class="section-header"><span class="section-label">Relatórios semanais</span></div><div id="my-weekly-checkin-list"></div><div class="section-header"><span class="section-label">Relatórios personalizados</span></div><div id="my-quest-list"></div>
 <div class="empty-state" id="my-quest-empty" style="display:none">
 <div class="empty-icon">📝</div>
-<div class="empty-label">Nenhum questionário recebido</div>
-<div class="empty-hint">Seu treinador ainda não enviou nenhum</div>
+<div class="empty-label">Nenhum relatório recebido</div>
+<div class="empty-hint">Seu treinador ainda não enviou nenhum relatório</div>
 </div>
 </div>
 </div>
@@ -439,6 +444,7 @@
 <div class="trainer-title">CENTRAL<br/><span class="dim">DE COMANDO</span></div>
 </div>
 <div class="stats-grid" id="trainer-stats"></div>
+<button class="feedback-banner trainer-protocol-alert" id="trainer-protocol-alert" type="button" style="display:none" onclick="focusFirstPendingProtocolReview()"><div class="feedback-banner-label">ATUALIZAÇÕES COMPLETAS PENDENTES</div><div class="feedback-banner-text" id="trainer-protocol-alert-text">Verificando os ciclos dos alunos...</div></button>
 <div class="content">
 <button class="btn-add-set" onclick="openFoodOptions()" style="margin-bottom:14px">🍎 Opções de alimentos (tabela de substituições)</button>
 <button class="btn-add-set" onclick="openFreeMealCatalog()" style="margin-bottom:14px">🍔 Tabela de calorias — refeições livres</button>
@@ -464,7 +470,7 @@
 <button class="btn-icon ghost" onclick="openTsMeals()" title="Plano alimentar">🍽</button>
 <button class="btn-icon ghost" onclick="openTsFreeMeals()" title="Registros de refeições livres">🍔</button>
 <button class="btn-icon ghost" onclick="openTsPhotos()" title="Fotos de progresso">📷</button>
-<button class="btn-icon ghost" onclick="openTsQuestionnaires()" title="Questionários">📝</button>
+<button class="btn-icon ghost" onclick="openTsQuestionnaires()" title="Relatórios">📝</button>
 <button class="btn-icon ghost" onclick="openV107Operations('overview')" title="Central de operações">◉</button>
 <button class="btn-icon ghost" onclick="openFeedbackModal()" title="Enviar transmissão">💬</button>
 </div>
@@ -475,11 +481,21 @@
 <div class="archive-file-meta">AGUARDE A SINCRONIZAÇÃO DO SISTEMA</div>
 </div>
 <div class="trainer-checkin-schedule" id="trainer-checkin-schedule">
-<div class="trainer-checkin-head"><div><span>CHECK-IN SEMANAL</span><strong>Relatório + 6 fotos obrigatórias</strong></div><span class="quest-status pending" id="trainer-checkin-state">CARREGANDO</span></div>
+<div class="trainer-checkin-head"><div><span>RELATÓRIO SEMANAL</span><strong>Relatório + 6 fotos obrigatórias</strong></div><span class="quest-status pending" id="trainer-checkin-state">CARREGANDO</span></div>
 <div class="trainer-checkin-grid"><label class="form-group"><span class="form-label">Próxima data prescrita</span><input class="form-input" id="trainer-checkin-date" type="date"/></label><label class="form-group"><span class="form-label">Intervalo</span><select class="form-input" id="trainer-checkin-interval"><option value="7">A cada 7 dias</option></select></label></div>
-<div class="trainer-checkin-actions"><button class="btn-primary" onclick="saveTrainerCheckinSchedule()">SALVAR PROGRAMAÇÃO</button><button class="btn-add-set" onclick="requestExtraWeeklyCheckin()">PEDIR RELATÓRIO + FOTOS AGORA</button></div>
-<div class="plan-help" id="trainer-checkin-help">O aluno receberá o pedido na aba Registros. Você pode alterar a próxima data quando necessário.</div>
+<div class="trainer-checkin-actions"><button class="btn-primary" onclick="saveTrainerCheckinSchedule()">SALVAR PROGRAMAÇÃO</button><button class="btn-add-set" onclick="requestExtraWeeklyCheckin()">PEDIR RELATÓRIO + FOTOS AGORA</button><button class="btn-add-set" onclick="openReportGuideManager()">GUIA DE FOTOS (PDF)</button></div>
+<div class="plan-help" id="trainer-checkin-help">O aluno receberá o relatório na aba Registros. Todas as perguntas e as seis fotos serão obrigatórias.</div>
 <div class="cycle-link-note" id="trainer-cycle-link-note">As datas do treino e da dieta ativos serão usadas para alinhar as semanas, os registros e a atualização do ciclo.</div>
+</div>
+<div class="trainer-checkin-schedule protocol-review-card" id="trainer-protocol-review-card">
+<div class="trainer-checkin-head"><div><span>ATUALIZAÇÃO COMPLETA</span><strong>Treino e dieta — ciclo administrativo</strong></div><span class="quest-status pending" id="trainer-protocol-review-state">CARREGANDO</span></div>
+<div class="trainer-checkin-grid protocol-review-grid">
+<label class="form-group"><span class="form-label">Início exato do protocolo</span><input class="form-input" id="trainer-protocol-start-date" type="date"/></label>
+<label class="form-group"><span class="form-label">Revisão completa a cada</span><div class="protocol-week-input"><input class="form-input" id="trainer-protocol-interval-weeks" type="number" min="1" max="52" step="1" value="4" inputmode="numeric"/><span>semanas</span></div></label>
+</div>
+<div class="trainer-checkin-actions protocol-review-actions"><button class="btn-primary" onclick="saveProtocolReviewSchedule()">SALVAR CICLO</button><button class="btn-add-set" id="trainer-protocol-review-complete" onclick="markProtocolReviewCompleted()">MARCAR ATUALIZAÇÃO COMPLETA</button></div>
+<div class="plan-help" id="trainer-protocol-review-help">O padrão é 4 semanas. Ajustes semanais em treino ou dieta não reiniciam esta contagem.</div>
+<div class="cycle-link-note" id="trainer-protocol-review-next">Próxima atualização completa: —</div>
 </div>
 <div class="section-header"><span class="section-label">Protocolos do aluno</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted)">prescrição do treinador</span></div>
 <div id="ts-workout-list"></div>
@@ -647,15 +663,20 @@
 <div class="screen" id="screen-ts-quest">
 <div class="header">
 <button class="btn-icon" onclick="goTrainerStudent()">←</button>
-<div class="header-title">QUESTIONÁRIOS</div>
+<div class="header-title">RELATÓRIOS</div>
 </div>
 <div class="content" style="padding-top:12px">
-<button class="btn-primary" onclick="sendDefaultQuestionnaire()" style="margin-bottom:10px">📋 ENVIAR QUESTIONÁRIO SEMANAL PADRÃO</button>
-<button class="btn-add-set" onclick="openSendQuestionnaireModal()" style="margin-bottom:14px">+ QUESTIONÁRIO PERSONALIZADO</button>
-<div class="section-header"><span class="section-label">Check-ins semanais</span></div><div id="ts-weekly-checkin-list"></div><div class="section-header"><span class="section-label">Questionários avulsos</span></div><div id="ts-quest-list"></div>
+<div class="report-request-grid">
+<button class="btn-primary" onclick="sendDefaultQuestionnaire('full')">📋 RELATÓRIO COMPLETO EXTRA</button>
+<button class="btn-add-set" onclick="requestWrittenOnlyReport()">✎ SOMENTE RELATÓRIO ESCRITO</button>
+<button class="btn-add-set" onclick="requestPhotoOnlyReport()">◉ SOMENTE 6 FOTOS</button>
+<button class="btn-add-set" onclick="openSendQuestionnaireModal('full')">＋ PERSONALIZADO</button>
+</div>
+<div class="plan-help report-request-help">O relatório semanal programado continua separado. Solicitações extras podem exigir texto e fotos, somente texto ou somente as seis fotos.</div>
+<div class="section-header"><span class="section-label">Relatórios semanais</span></div><div id="ts-weekly-checkin-list"></div><div class="section-header"><span class="section-label">Relatórios personalizados</span></div><div id="ts-quest-list"></div>
 <div class="empty-state" id="ts-quest-empty" style="display:none">
 <div class="empty-icon">📝</div>
-<div class="empty-label">Nenhum questionário enviado</div>
+<div class="empty-label">Nenhum relatório enviado</div>
 </div>
 </div>
 </div>
@@ -718,7 +739,7 @@
 </div>
 </div>
 
-<!-- CENTRAL DE OPERAÇÕES V10.8.2 -->
+<!-- CENTRAL DE OPERAÇÕES V10.9.0 -->
 <div class="screen" id="screen-v107-operations">
   <div class="header">
     <button class="btn-icon" onclick="closeV107Operations()">←</button>
@@ -763,7 +784,7 @@
 <div class="fab-wrap" id="fab-ts-meals" style="display:none"><button class="fab" onclick="openAddDietModal()"><span class="fab-icon">+</span> NOVA DIETA</button></div>
 <div class="fab-wrap" id="fab-diet-meal" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
 <div class="fab-wrap" id="fab-ts-diet-meal" style="display:none"><button class="fab" onclick="openAddMealModal()"><span class="fab-icon">+</span> REFEIÇÃO</button></div>
-<div class="fab-wrap" id="fab-photos" style="display:none"><button class="fab" onclick="triggerPhotoUpload()"><span class="fab-icon">+</span> CHECK-IN 4 FOTOS</button></div>
+<div class="fab-wrap" id="fab-photos" style="display:none"><button class="fab" onclick="triggerPhotoUpload()"><span class="fab-icon">+</span> RELATÓRIO + 6 FOTOS</button></div>
 <div class="fab-wrap" id="fab-free-meals" style="display:none"><button class="fab" onclick="openFreeMealLogModal()"><span class="fab-icon">+</span> REGISTRAR</button></div>
 <!-- MODAL: Workout -->
 <div class="modal-backdrop" id="modal-workout">
@@ -1163,14 +1184,16 @@
 <button class="btn-ghost" onclick="closeModal('modal-free-meal-view')">FECHAR</button>
 </div>
 </div>
-<!-- MODAL: Visualizar check-in semanal -->
-<div class="modal-backdrop" id="modal-weekly-checkin-view"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="weekly-checkin-view-title">Check-in semanal</div><div id="weekly-checkin-view-body"></div><button class="btn-ghost" onclick="closeModal('modal-weekly-checkin-view')">FECHAR</button></div></div>
-<!-- MODAL: Check-in semanal obrigatório -->
-<div class="modal-backdrop" id="modal-weekly-checkin"><div class="modal-sheet weekly-checkin-sheet"><div class="modal-handle"></div><div class="modal-title">Check-in semanal</div>
+<!-- MODAL: Visualizar relatório semanal -->
+<div class="modal-backdrop" id="modal-weekly-checkin-view"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="weekly-checkin-view-title">Relatório semanal</div><div id="weekly-checkin-view-body"></div><button class="btn-ghost" onclick="closeModal('modal-weekly-checkin-view')">FECHAR</button></div></div>
+<!-- MODAL: Relatório semanal obrigatório -->
+<div class="modal-backdrop" id="modal-weekly-checkin"><div class="modal-sheet weekly-checkin-sheet"><div class="modal-handle"></div><div class="modal-title">Relatório semanal</div>
 <div class="weekly-checkin-due" id="weekly-checkin-modal-due">Relatório + 6 fotos obrigatórias</div>
 <div class="form-group"><label class="form-label">Peso atual (kg)</label><input class="form-input" id="weekly-checkin-weight" type="number" min="20" max="500" step="0.1" inputmode="decimal" placeholder="Ex.: 82,5"/></div>
 <div id="weekly-checkin-questions"></div>
 <div class="section-header"><span class="section-label">6 fotos obrigatórias</span></div>
+<div class="report-photo-guidance" id="weekly-report-photo-instruction">Tire as fotos exatamente conforme o Guia de Fotos e as orientações prescritas. Fotos fora do padrão de posição, enquadramento, distância ou iluminação prejudicam a comparação e podem comprometer a análise.</div>
+<div class="report-guide-card" id="weekly-report-guide-card"><span>GUIA DE FOTOS (PDF)</span><small>Carregando material do treinador...</small></div>
 <div class="checkin-photo-grid">
 <label class="checkin-photo-slot"><span>1 · Frente</span><input accept="image/*" id="weekly-photo-0" type="file" onchange="previewWeeklyCheckinPhoto(0,event)"/><img id="weekly-photo-preview-0" alt="Frente"/></label>
 <label class="checkin-photo-slot"><span>2 · Costas</span><input accept="image/*" id="weekly-photo-1" type="file" onchange="previewWeeklyCheckinPhoto(1,event)"/><img id="weekly-photo-preview-1" alt="Costas"/></label>
@@ -1186,12 +1209,12 @@
 <div class="modal-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title">Nova evidência</div>
-<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">As novas fotos de evolução são enviadas exclusivamente pelo check-in da aba Registros, sempre com relatório e exatamente seis fotos.</p>
+<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">As novas fotos de evolução são enviadas exclusivamente por um relatório da aba Registros, sempre com exatamente seis fotos.</p>
 <div class="form-group">
 <label class="form-label">Peso atual (kg)</label>
 <input class="form-input" id="input-photo-weight" inputmode="decimal" max="500" min="20" placeholder="Ex.: 82,5" step="0.1" type="number"/>
 </div>
-<button class="btn-primary" onclick="closeModal('modal-photo-upload');openWeeklyCheckinModal()">ABRIR CHECK-IN OBRIGATÓRIO</button>
+<button class="btn-primary" onclick="closeModal('modal-photo-upload');openWeeklyCheckinModal()">ABRIR RELATÓRIO OBRIGATÓRIO</button>
 <button class="btn-ghost" onclick="closeModal('modal-photo-upload')">CANCELAR</button>
 </div>
 </div>
@@ -1227,13 +1250,15 @@
 <div class="modal-backdrop" id="modal-send-quest">
 <div class="modal-sheet">
 <div class="modal-handle"></div>
-<div class="modal-title">Questionário personalizado</div>
-<div class="form-group">
-<label class="form-label">Perguntas</label>
+<div class="modal-title">Relatório personalizado</div>
+<div class="form-group"><label class="form-label">Tipo da solicitação</label><select class="form-input" id="questionnaire-request-mode" onchange="syncQuestionnaireModeEditor()"><option value="full">Relatório escrito + 6 fotos</option><option value="written">Somente relatório escrito</option><option value="photos">Somente 6 fotos</option></select></div>
+<div class="form-group" id="questionnaire-extra-questions-wrap">
+<label class="form-label">Perguntas adicionais (opcional)</label>
+<div class="plan-help">As 18 perguntas padrão serão incluídas automaticamente. A pergunta 18 será: “Em uma escala de 0/10, o quanto você recomenda o meu trabalho para alguém? E por quê?”</div>
 <div id="quest-questions-editor"></div>
-<button class="btn-add-set" onclick="addQuestionRow()">+ ADICIONAR PERGUNTA</button>
+<button class="btn-add-set" onclick="addQuestionRow()">+ ADICIONAR PERGUNTA EXTRA</button>
 </div>
-<button class="btn-primary" onclick="sendQuestionnaire()">ENVIAR AO ALUNO</button>
+<button class="btn-primary" id="questionnaire-send-button" onclick="sendQuestionnaire()">ENVIAR RELATÓRIO AO ALUNO</button>
 <button class="btn-ghost" onclick="closeModal('modal-send-quest')">CANCELAR</button>
 </div>
 </div>
@@ -1241,17 +1266,32 @@
 <div class="modal-backdrop" id="modal-answer-quest">
 <div class="modal-sheet">
 <div class="modal-handle"></div>
-<div class="modal-title">Responder questionário</div>
-<div id="quest-answer-form"></div>
-<button class="btn-primary" onclick="submitQuestionnaireAnswers()">ENVIAR RESPOSTAS</button>
-<button class="btn-ghost" onclick="closeModal('modal-answer-quest')">DEPOIS</button>
+<div class="modal-title" id="quest-answer-title">Responder relatório</div>
+<div class="plan-help" id="quest-answer-requirements">Todas as perguntas e as seis fotos abaixo são obrigatórias para concluir o envio.</div>
+<div id="questionnaire-written-section"><div id="quest-answer-form"></div></div>
+<div id="questionnaire-photo-section">
+<div class="section-header"><span class="section-label">6 fotos obrigatórias</span></div>
+<div class="report-photo-guidance" id="questionnaire-report-photo-instruction">Tire as fotos exatamente conforme o Guia de Fotos e as orientações prescritas. Fotos fora do padrão de posição, enquadramento, distância ou iluminação prejudicam a comparação e podem comprometer a análise.</div>
+<div class="report-guide-card" id="questionnaire-report-guide-card"><span>GUIA DE FOTOS (PDF)</span><small>Carregando material do treinador...</small></div>
+<div class="checkin-photo-grid" id="questionnaire-report-photo-grid">
+<label class="checkin-photo-slot"><span>1 · Frente</span><input accept="image/*" id="report-photo-0" type="file" onchange="previewQuestionnaireReportPhoto(0,event)"/><img id="report-photo-preview-0" alt="Frente"/></label>
+<label class="checkin-photo-slot"><span>2 · Costas</span><input accept="image/*" id="report-photo-1" type="file" onchange="previewQuestionnaireReportPhoto(1,event)"/><img id="report-photo-preview-1" alt="Costas"/></label>
+<label class="checkin-photo-slot"><span>3 · Lado direito</span><input accept="image/*" id="report-photo-2" type="file" onchange="previewQuestionnaireReportPhoto(2,event)"/><img id="report-photo-preview-2" alt="Lado direito"/></label>
+<label class="checkin-photo-slot"><span>4 · Lado esquerdo</span><input accept="image/*" id="report-photo-3" type="file" onchange="previewQuestionnaireReportPhoto(3,event)"/><img id="report-photo-preview-3" alt="Lado esquerdo"/></label>
+<label class="checkin-photo-slot"><span>5 · Frente contraída</span><input accept="image/*" id="report-photo-4" type="file" onchange="previewQuestionnaireReportPhoto(4,event)"/><img id="report-photo-preview-4" alt="Frente contraída"/></label>
+<label class="checkin-photo-slot"><span>6 · Costas contraída</span><input accept="image/*" id="report-photo-5" type="file" onchange="previewQuestionnaireReportPhoto(5,event)"/><img id="report-photo-preview-5" alt="Costas contraída"/></label>
+</div>
+<div class="plan-help">As fotos são comprimidas e convertidas em miniaturas antes do envio, mantendo o aplicativo leve no celular do aluno.</div>
+</div>
+<button class="btn-primary" id="questionnaire-submit-button" onclick="submitQuestionnaireAnswers()">ENVIAR RELATÓRIO + 6 FOTOS</button>
+<button class="btn-ghost" onclick="cancelQuestionnaireReport()">DEPOIS</button>
 </div>
 </div>
 <!-- MODAL: View Questionnaire (read-only, both sides) -->
 <div class="modal-backdrop" id="modal-view-quest">
 <div class="modal-sheet">
 <div class="modal-handle"></div>
-<div class="modal-title">Questionário respondido</div>
+<div class="modal-title" id="quest-view-title">Relatório respondido</div>
 <div id="quest-view-body"></div>
 <button class="btn-ghost" onclick="closeModal('modal-view-quest')">FECHAR</button>
 </div>
@@ -1277,6 +1317,17 @@
 <button class="btn-primary" onclick="saveTechnique()">SALVAR TÉCNICA</button><button class="btn-ghost" onclick="closeModal('modal-technique-editor')">CANCELAR</button></div></div>
 <!-- MODAL: Detalhes da técnica -->
 <div class="modal-backdrop center" id="modal-technique-detail"><div class="modal-dialog technique-detail-dialog"><div class="modal-title" id="technique-detail-title">Técnica</div><div id="technique-detail-body"></div><button class="btn-primary" id="technique-detail-video-btn" style="display:none">▶ VER VÍDEO</button><button class="btn-ghost" onclick="closeModal('modal-technique-detail')">FECHAR</button></div></div>
+<!-- MODAL: Guia de fotos em PDF -->
+<div class="modal-backdrop" id="modal-report-guide-manager"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title">Guia de fotos dos relatórios</div>
+<div class="form-group"><label class="form-label">Orientação exibida ao aluno</label><textarea class="form-input" id="input-report-photo-instruction" maxlength="1200" rows="5"></textarea></div>
+<div class="form-group"><label class="form-label">Arquivo PDF</label><input class="form-input" id="input-report-guide-pdf" type="file" accept="application/pdf,.pdf"/><div class="plan-help">Envie ou substitua o guia. O limite de segurança do PDF é 25 MB.</div></div>
+<div class="report-guide-manager-status" id="report-guide-manager-status">Nenhum guia carregado.</div>
+<button class="btn-primary" onclick="saveReportGuideSettings()">SALVAR ORIENTAÇÃO E PDF</button>
+<button class="btn-ghost" id="btn-open-current-report-guide" onclick="openReportPhotoGuide()" style="display:none">ABRIR PDF ATUAL</button>
+<button class="btn-ghost" id="btn-remove-report-guide" onclick="removeReportGuidePdf()" style="display:none;color:var(--danger)">REMOVER PDF</button>
+<button class="btn-ghost" onclick="closeModal('modal-report-guide-manager')">FECHAR</button></div></div>
+<!-- MODAL: Cronograma de atualização completa -->
+<div class="modal-backdrop" id="modal-protocol-review-info"><div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title">Atualização completa dos protocolos</div><div id="protocol-review-info-body"></div><button class="btn-ghost" onclick="closeModal('modal-protocol-review-info')">FECHAR</button></div></div>
 <!-- MODAL: Confirm -->
 <div class="modal-backdrop center" id="modal-confirm">
 <div class="modal-dialog">
@@ -1289,10 +1340,10 @@
 </div>
 </div>
 <script defer src="config_v10_7.js"></script>
-<script defer src="app_v10_8_2_core.js"></script>
+<script defer src="app_v10_9_0_core.js"></script>
 <script defer src="modules/v107-core.js"></script>
 <script defer src="modules/v107-invites.js"></script>
 <script defer src="modules/v107-operations.js"></script>
-<script defer src="interaction_v10_8_2.js"></script>
+<script defer src="interaction_v10_9_0.js"></script>
 </body>
 </html>
