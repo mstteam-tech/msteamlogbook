@@ -121,7 +121,12 @@ service cloud.firestore {
       allow read: if isTrainer() || activeOwner(resource.data.studentId);
       allow create: if isTrainer() && isStudent(request.resource.data.studentId)
         && request.resource.data.trainerId == request.auth.uid
-        && requiredText(request.resource.data.message, 5000)
+        && requiredText(request.resource.data.message, 30000)
+        && text(request.resource.data.get('title', ''), 160)
+        && request.resource.data.get('feedbackType', 'general') in ['general', 'weekly_report', 'protocol_update']
+        && text(request.resource.data.get('protocolStartDate', ''), 10)
+        && request.resource.data.get('protocolCycle', 0) is int
+        && request.resource.data.get('protocolCycle', 0) >= 0
         && request.resource.data.createdAt is timestamp;
       allow update: if activeOwner(resource.data.studentId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
@@ -181,6 +186,16 @@ service cloud.firestore {
             && !request.resource.data.answers.hasAny([''])
             && request.resource.data.photoIds.size() == 6)
         );
+      allow delete: if false;
+    }
+
+    match /trainerSupplementCatalog/{trainerUid} {
+      allow read: if isTrainer() && request.auth.uid == trainerUid;
+      allow create, update: if isTrainer() && request.auth.uid == trainerUid
+        && request.resource.data.trainerId == trainerUid
+        && request.resource.data.get('items', []) is list
+        && request.resource.data.get('items', []).size() <= 300
+        && request.resource.data.updatedAt is timestamp;
       allow delete: if false;
     }
 
