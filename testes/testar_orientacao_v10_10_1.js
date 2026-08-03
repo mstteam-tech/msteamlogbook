@@ -3,8 +3,8 @@
 const fs=require('fs');
 const vm=require('vm');
 const path=require('path');
-const interactionPath=path.join(__dirname,'..','interaction_v10_10_1.js');
-let source=fs.readFileSync(interactionPath,'utf8').split('\n/* Team Bulls v10.10.1 — navegação móvel')[0];
+const interactionPath=path.join(__dirname,'..','interaction_v10_10_3.js');
+let source=fs.readFileSync(interactionPath,'utf8').split('\n/* Team Bulls v10.10.3 — navegação móvel')[0];
 source=source.replace(/\}\)\(\);\s*$/, 'globalThis.__orientationTest={isPhysicalLandscape};})();');
 if(!source.includes('__orientationTest'))throw new Error('Não foi possível instrumentar o teste de orientação.');
 function editableInput(){return{disabled:false,readOnly:false,type:'email',matches(selector){if(selector==='textarea,[contenteditable="true"]')return false;if(selector==='input')return true;return false;},closest(){return null;}};}
@@ -26,7 +26,7 @@ function evaluate({type='',angle=undefined,legacy=undefined,screenWidth=0,screen
     matchMedia(){return{matches:true};},addEventListener(){},removeEventListener(){},visualViewport:null
   };
   context.window=context;context.globalThis=context;
-  vm.createContext(context);vm.runInContext(source,context,{filename:'interaction_v10_10_1.js'});
+  vm.createContext(context);vm.runInContext(source,context,{filename:'interaction_v10_10_3.js'});
   return context.__orientationTest.isPhysicalLandscape();
 }
 const cases=[
