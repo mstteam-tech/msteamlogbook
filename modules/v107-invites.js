@@ -1,4 +1,4 @@
-/* Team Bulls v10.10.1 — convites individuais de uso único. */
+/* Team Bulls v10.10.3 — convites individuais de uso único. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
