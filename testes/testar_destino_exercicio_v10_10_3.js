@@ -2,8 +2,8 @@
 const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
-const source=fs.readFileSync(path.join(__dirname,'..','interaction_v10_10_3.js'),'utf8');
-const marker='/* Team Bulls v10.10.3 — navegação móvel integrada ao histórico e ao contexto interno. */';
+const source=fs.readFileSync(path.join(__dirname,'..','interaction_v10_10_5.js'),'utf8');
+const marker='/* Team Bulls v10.10.5 — navegação móvel integrada ao histórico e ao contexto interno. */';
 const navigation=marker+source.split(marker)[1];
 
 let activeScreen='screen-ts-day';
@@ -41,7 +41,7 @@ const context={
 };
 context.window=context;
 vm.createContext(context);
-vm.runInContext(navigation,context,{filename:'interaction_v10_10_3-navigation.js'});
+vm.runInContext(navigation,context,{filename:'interaction_v10_10_5-navigation.js'});
 
 function assert(condition,message){if(!condition)throw new Error(message);}
 
@@ -62,7 +62,7 @@ context.history.back();
 assert(context.VIEW_STUDENT_DAY==='Dia A','o gesto voltar não recuperou o contexto anterior');
 
 
-const core=fs.readFileSync(path.join(__dirname,'..','app_v10_10_3_core.js'),'utf8');
+const core=fs.readFileSync(path.join(__dirname,'..','app_v10_10_5_core.js'),'utf8');
 const trainerSync=core.indexOf("syncExerciseDestinationBeforeClose('student',localWorkout,dayName)");
 const trainerClose=core.indexOf("closeModal('modal-exercise');",trainerSync);
 assert(trainerSync>=0&&trainerClose>trainerSync,'o destino do treinador não é fixado antes de fechar o editor');
