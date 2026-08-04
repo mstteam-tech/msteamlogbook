@@ -2,7 +2,7 @@
 const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
-const corePath=path.join(__dirname,'..','app_v10_10_3_core.js');
+const corePath=path.join(__dirname,'..','app_v10_10_5_core.js');
 const source=fs.readFileSync(corePath,'utf8');
 function extractFunction(name){
   const marker='function '+name+'(';
