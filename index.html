@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 
-<!-- Team Bulls v10.10.5: destino seguro de exercícios, relatórios, guia de fotos e navegação móvel. -->
+<!-- Team Bulls v10.10.7: destino seguro de exercícios, relatórios, guia de fotos e navegação móvel. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta content="10.10.5" name="team-bulls-version"/>
+<meta content="10.10.7" name="team-bulls-version"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" name="viewport"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -16,7 +16,7 @@
 <meta content="strict-origin-when-cross-origin" name="referrer"/>
 <meta content="default-src 'self'; script-src 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-elem 'self' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com; media-src 'self' blob: https://firebasestorage.googleapis.com; connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://www.recaptcha.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" http-equiv="Content-Security-Policy"/>
 <title>Team Bulls</title>
-<link href="manifest.json?v=10.10.5" rel="manifest"/>
+<link href="manifest.json?v=10.10.7" rel="manifest"/>
 <!-- Ícones do navegador e da tela inicial -->
 <link href="icon-192-v9-8.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="apple-touch-icon-v9-8.png" rel="apple-touch-icon" sizes="180x180"/>
@@ -24,9 +24,9 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&amp;family=DM+Mono:wght@400;500&amp;family=Barlow:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <!-- Firebase é carregado sob demanda após a interface ficar disponível. -->
-<script src="viewport_v10_10_5.js?v=10.10.5"></script>
-<script src="boot_v10.js?v=10.10.5"></script>
-<link as="style" href="styles_v10_10_5.css?v=10.10.5" rel="preload"/><link href="styles_v10_10_5.css?v=10.10.5" rel="stylesheet"/><link as="script" href="app_v10_10_5_core.js?v=10.10.5" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
+<script src="viewport_v10_10_7.js?v=10.10.7"></script>
+<script src="boot_v10.js?v=10.10.7"></script>
+<link as="style" href="styles_v10_10_7.css?v=10.10.7" rel="preload"/><link href="styles_v10_10_7.css?v=10.10.7" rel="stylesheet"/><link as="script" href="app_v10_10_7_core.js?v=10.10.7" rel="preload"/><link as="image" href="team-bulls-auth-bg-v9-8-2.webp" rel="preload" type="image/webp"/>
 <link crossorigin="anonymous" href="https://www.gstatic.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firestore.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://firebasestorage.googleapis.com" rel="preconnect"/></head>
 <body>
 <div id="portrait-lock-overlay" aria-hidden="true" inert>
@@ -37,10 +37,10 @@
   </div>
 </div>
 <div aria-label="Navegação do treinador" class="trainer-desktop-nav" id="trainer-desktop-nav">
-<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.10.5</small></div>
+<div class="trainer-desktop-logo">TEAM <span>BULLS</span><small style="display:block;font-family:'DM Mono',monospace;font-size:7px;color:#766a60;letter-spacing:1px;margin-top:8px">PAINEL DO TREINADOR // V10.10.7</small></div>
 <button onclick="goTrainer()">▦ ARQUIVOS DOS ALUNOS</button>
-<button onclick="openFoodOptions()">◇ OPÇÕES DE ALIMENTOS</button>
-<button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES E VÍDEOS</button>
+<button onclick="openFoodOptions()">◇ OPÇÕES DE SUPRIMENTOS</button>
+<button onclick="openExerciseOptions()">↺ SUBSTITUIÇÕES DE EXERCÍCIOS</button>
 <button onclick="openInstructions()">▤ INSTRUÇÕES GERAIS</button>
 <button onclick="openTechniques()">⚙ TÉCNICAS DE TREINO</button>
 <button onclick="openV107Operations('overview')">◉ CENTRAL DE OPERAÇÕES</button>
@@ -50,14 +50,18 @@
 <button onclick="confirmLogout()">↪ SAIR DA CONTA</button>
 </div>
 <div aria-label="Navegação do aluno" class="student-desktop-nav" id="student-desktop-nav">
-<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.10.5</small></div>
+<div class="student-desktop-logo">TEAM <span>BULLS</span><small>ÁREA DO ALUNO // V10.10.7</small></div>
 <button onclick="goHome()">⌂ INÍCIO</button>
 <button onclick="goHome();setTimeout(()=>document.getElementById('workout-list')?.scrollIntoView({behavior:'smooth'}),80)">▦ TREINOS</button>
-<button onclick="openMeals()">🍽 DIETA / SUPRIMENTOS</button>
-<button onclick="openCalendar()">▤ REGISTROS / RELATÓRIOS</button>
-<button onclick="openInstructions()">📖 INSTRUÇÕES</button>
-<button onclick="openFreeMeals()">🍔 REFEIÇÕES LIVRES</button>
+<button onclick="openInstructions()">▤ INSTRUÇÕES</button>
+<button onclick="openMeals()">🍴 SUPRIMENTOS</button>
+<button onclick="openFoodOptions()">◇ OPÇÕES DE SUPRIMENTOS</button>
+<button onclick="openTechniques()">⌁ TÉCNICAS</button>
+<button onclick="openExerciseOptions()">⇄ SUBSTITUIÇÕES DE EXERCÍCIOS</button>
+<button onclick="openMyQuestionnaires()">▤ RELATÓRIOS</button>
+<button onclick="openPhotos()">◉ EVIDÊNCIAS</button>
 <button id="v107-student-nav-notices" onclick="openV107Operations('notices')">● AVISOS <span class="v107-notice-badge" id="v107-nav-notice-count"></span></button>
+<button onclick="openCalendar()">☑ REGISTROS</button>
 <button onclick="openV107Operations('sync')">⇄ SINCRONIZAÇÃO</button>
 <button onclick="openSettings()">⚙ CONFIGURAÇÕES</button>
 <div class="nav-spacer"></div>
@@ -184,17 +188,43 @@
 <div class="home-hero-title">SALA<br/><span class="dim">VERMELHA</span></div>
 </div>
 <div class="stats-grid" id="home-stats"></div>
-<div class="quick-nav">
-<button class="quick-nav-btn" onclick="openCalendar()"><span>▦</span>Registros</button>
-<button class="quick-nav-btn" onclick="openMeals()"><span>▣</span>Suprimentos</button>
-<button class="quick-nav-btn" onclick="openFreeMeals()"><span>◈</span>Refeição livre</button>
-<button class="quick-nav-btn" onclick="openPhotos()"><span>◉</span>Evidências</button>
-<button class="quick-nav-btn" onclick="openMyQuestionnaires()"><span>▤</span>Relatórios</button>
-<button class="quick-nav-btn" id="qn-food" onclick="openFoodOptions()"><span>◇</span>Alimentos</button>
-<button class="quick-nav-btn" id="qn-exopt" onclick="openExerciseOptions()"><span>↺</span>Substituir</button>
-<button class="quick-nav-btn" onclick="openInstructions()"><span>▤</span>Instruções</button>
-<button class="quick-nav-btn" onclick="openTechniques()"><span>⌁</span>Técnicas</button>
-<button class="quick-nav-btn" id="v107-home-notices" onclick="openV107Operations('notices')"><span>●</span>Avisos <b class="v107-notice-badge" id="v107-home-notice-count"></b></button>
+<div class="quick-nav" aria-label="Atalhos do aluno">
+<button class="quick-nav-btn" onclick="openInstructions()" type="button" aria-label="Instruções">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg>
+<span class="quick-nav-label">Instruções</span>
+</button>
+<button class="quick-nav-btn" onclick="openMeals()" type="button" aria-label="Suprimentos">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v8"/><path d="M4 2v5a3 3 0 0 0 6 0V2"/><path d="M7 10v12"/><path d="M17 2v20"/><path d="M17 2c3 2 3 7 0 9"/></svg>
+<span class="quick-nav-label">Suprimentos</span>
+</button>
+<button class="quick-nav-btn" id="qn-food" onclick="openFoodOptions()" type="button" aria-label="Opções de Suprimentos">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-5-3-9 1-8 7 1 6 5 8 8 5 3 3 7 1 8-5 1-6-3-10-8-7Z"/><path d="M12 7c0-3 2-5 5-5"/><path d="M13 4c1 0 3 0 4-2"/></svg>
+<span class="quick-nav-label">Opções de Suprimentos</span>
+</button>
+<button class="quick-nav-btn" onclick="openTechniques()" type="button" aria-label="Técnicas">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6"/><path d="M6 7v10"/><path d="M9 5v14"/><path d="M15 5v14"/><path d="M18 7v10"/><path d="M21 9v6"/><path d="M9 12h6"/></svg>
+<span class="quick-nav-label">Técnicas</span>
+</button>
+<button class="quick-nav-btn" id="qn-exopt" onclick="openExerciseOptions()" type="button" aria-label="Substituições de exercícios">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h14"/><path d="m15 4 3 3-3 3"/><path d="M20 17H6"/><path d="m9 14-3 3 3 3"/></svg>
+<span class="quick-nav-label">Substituições de exercícios</span>
+</button>
+<button class="quick-nav-btn" onclick="openMyQuestionnaires()" type="button" aria-label="Relatórios">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l4 4v16H6Z"/><path d="M15 2v5h5"/><path d="M9 11h6"/><path d="M9 15h6"/><path d="M9 19h4"/></svg>
+<span class="quick-nav-label">Relatórios</span>
+</button>
+<button class="quick-nav-btn" onclick="openPhotos()" type="button" aria-label="Evidências">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4Z"/><circle cx="12" cy="13" r="4"/></svg>
+<span class="quick-nav-label">Evidências</span>
+</button>
+<button class="quick-nav-btn" id="v107-home-notices" onclick="openV107Operations('notices')" type="button" aria-label="Avisos">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+<span class="quick-nav-label">Avisos</span><b class="v107-notice-badge" id="v107-home-notice-count"></b>
+</button>
+<button class="quick-nav-btn" onclick="openCalendar()" type="button" aria-label="Registros">
+<svg class="quick-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6Z"/><path d="M9 3V1h6v2"/><path d="m9 9 1.5 1.5L13 8"/><path d="M14 10h2"/><path d="m9 15 1.5 1.5L13 14"/><path d="M14 16h2"/></svg>
+<span class="quick-nav-label">Registros</span>
+</button>
 </div>
 <div class="content">
 <div class="section-header"><span class="section-label">Protocolos ativos</span></div>
@@ -318,11 +348,17 @@
 <div class="screen" id="screen-meals">
 <div class="header">
 <button class="btn-icon" onclick="goHome()">←</button>
-<div class="header-title">DIETA / SUPRIMENTOS</div>
+<div class="header-title">SUPRIMENTOS</div>
 </div>
 <div class="readonly-banner" id="meals-readonly-note" style="display:none">👁 Dietas montadas pelo seu treinador</div>
 <div class="content">
-<div class="diet-page-intro"><strong>PLANOS ALIMENTARES</strong><span>Abra uma dieta para visualizar refeições, suplementos, protocolo hormonal e a lista de alimentos.</span></div>
+<div class="diet-page-intro"><strong>SUPRIMENTOS E PLANO ALIMENTAR</strong><span>Consulte sua dieta, suplementação, protocolo e registros de refeição livre em uma única área.</span></div>
+<button class="supplements-free-meal-card" type="button" onclick="openFreeMeals()" aria-label="Abrir refeições livres">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v8"/><path d="M4 2v5a3 3 0 0 0 6 0V2"/><path d="M7 10v12"/><path d="M17 2v20"/><path d="M17 2c3 2 3 7 0 9"/></svg>
+  <span><strong>REFEIÇÕES LIVRES</strong><small>Tabela de aproximações, fotos e registros vinculados à sua conta.</small></span>
+  <b>ABRIR ›</b>
+</button>
+<div class="section-header supplements-plan-heading"><span class="section-label">Dietas e suplementos prescritos</span></div>
 <div id="meals-list"></div>
 <div class="empty-state" id="meals-empty" style="display:none">
 <div class="empty-icon">🍽</div>
@@ -356,7 +392,7 @@
 <!-- FREE MEALS — aluno -->
 <div class="screen" id="screen-free-meals">
 <div class="header">
-<button class="btn-icon" onclick="goHome()">←</button>
+<button class="btn-icon" onclick="openMeals()">←</button>
 <div class="header-title">REFEIÇÕES LIVRES</div>
 </div>
 <div class="content">
@@ -644,7 +680,7 @@
 <div class="screen" id="screen-food-options">
 <div class="header">
 <button class="btn-icon" onclick="goBackFromFoodOptions()">←</button>
-<div class="header-title">Opções de alimentos</div>
+<div class="header-title">OPÇÕES DE SUPRIMENTOS</div>
 </div>
 <div class="content" id="food-options-content" style="padding-top:12px"></div>
 </div>
@@ -747,7 +783,7 @@
 </div>
 <div class="settings-card app-update-settings-card">
 <h3>Atualizações do aplicativo</h3>
-<div class="setting-row"><div class="setting-label">Versão instalada<span class="setting-value">v10.10.5 · atualização sem reinstalação</span></div></div>
+<div class="setting-row"><div class="setting-label">Versão instalada<span class="setting-value">v10.10.7 · atualização sem reinstalação</span></div></div>
 <button class="btn-add-set full" type="button" onclick="TeamBullsUpdater?.manualCheck?.()">VERIFICAR ATUALIZAÇÃO</button>
 <div class="pdf-note">Quando uma versão nova estiver disponível, o Team Bulls exibirá o botão “Atualizar agora”. Login, instalação e dados locais são preservados.</div>
 </div>
@@ -756,14 +792,14 @@
 </div>
 </div>
 
-<!-- CENTRAL DE OPERAÇÕES V10.10.5 -->
+<!-- ÁREA RESTRITA DO TREINADOR E UTILITÁRIOS DO ALUNO V10.10.7 -->
 <div class="screen" id="screen-v107-operations">
   <div class="header">
     <button class="btn-icon" onclick="closeV107Operations()">←</button>
     <div class="header-title" id="v107-operations-title">CENTRAL DE OPERAÇÕES</div>
   </div>
-  <div class="v107-tabs" role="tablist" aria-label="Áreas da central de operações">
-    <button data-v107-tab="overview" onclick="v107SelectTab('overview')">VISÃO GERAL</button>
+  <div class="v107-tabs" role="tablist" aria-label="Áreas administrativas e utilitários">
+    <button data-v107-tab="overview" data-v107-trainer-only onclick="v107SelectTab('overview')">VISÃO GERAL</button>
     <button data-v107-tab="versions" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('versions')">VERSÕES</button>
     <button data-v107-tab="templates" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('templates')">MODELOS</button>
     <button data-v107-tab="adherence" data-v107-trainer-only data-v107-student-required onclick="v107SelectTab('adherence')">ADESÃO</button>
@@ -1384,12 +1420,12 @@
 </div>
 </div>
 </div>
-<script defer src="config_v10_7.js?v=10.10.5"></script>
-<script defer src="update_v10_10_5.js?v=10.10.5"></script>
-<script defer src="app_v10_10_5_core.js?v=10.10.5"></script>
-<script defer src="modules/v107-core.js?v=10.10.5"></script>
-<script defer src="modules/v107-invites.js?v=10.10.5"></script>
-<script defer src="modules/v107-operations.js?v=10.10.5"></script>
-<script defer src="interaction_v10_10_5.js?v=10.10.5"></script>
+<script defer src="config_v10_7.js?v=10.10.7"></script>
+<script defer src="update_v10_10_7.js?v=10.10.7"></script>
+<script defer src="app_v10_10_7_core.js?v=10.10.7"></script>
+<script defer src="modules/v107-core.js?v=10.10.7"></script>
+<script defer src="modules/v107-invites.js?v=10.10.7"></script>
+<script defer src="modules/v107-operations.js?v=10.10.7"></script>
+<script defer src="interaction_v10_10_7.js?v=10.10.7"></script>
 </body>
 </html>

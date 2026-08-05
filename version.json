@@ -1,7 +1,7 @@
 {
-  "version": "10.10.5",
-  "publishedAt": "2026-08-04T11:00:00Z",
-  "minimumCompatibleVersion": "10.10.4",
+  "version": "10.10.7",
+  "publishedAt": "2026-08-04T20:50:00Z",
+  "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Atualização automática sem reinstalação disponível."
+  "message": "Nova navegação temática e área de Suprimentos unificada."
 }
