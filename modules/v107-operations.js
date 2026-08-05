@@ -1,8 +1,11 @@
-/* Team Bulls v10.10.5 — central de operações otimizada, modelos, adesão e notificações. */
+/* Team Bulls v10.10.7 — central de operações otimizada, modelos, adesão e notificações. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
   let activeTab='overview',templateCache=[],versionCache=[],inviteCache=[],noticeCache=[];
+  const STUDENT_ALLOWED_TABS=new Set(['notices','sync']);
+  const isTrainer=()=>CURRENT_USER?.role==='trainer';
+  const studentCanOpen=tab=>STUDENT_ALLOWED_TABS.has(String(tab||''));
   const escHtml=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const ms=value=>{if(value?.toMillis)return value.toMillis();if(value?.toDate)return value.toDate().getTime();const n=new Date(value||0).getTime();return Number.isFinite(n)?n:0;};
   const isoDateLocal=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
@@ -17,17 +20,24 @@
   function empty(title,detail=''){return`<div class="empty-state v107-empty"><div class="empty-icon">▦</div><div class="empty-label">${escHtml(title)}</div>${detail?`<div class="empty-hint">${escHtml(detail)}</div>`:''}</div>`;}
   function tabButtons(){document.querySelectorAll('[data-v107-tab]').forEach(button=>button.classList.toggle('active',button.dataset.v107Tab===activeTab));}
   function setHeader(){
-    const title=document.getElementById('v107-operations-title');if(title)title.textContent=CURRENT_USER?.role==='trainer'?(VIEW_STUDENT?.name?'OPERAÇÕES // '+VIEW_STUDENT.name.toUpperCase():'CENTRAL DE OPERAÇÕES'):'AVISOS E SINCRONIZAÇÃO';
+    const title=document.getElementById('v107-operations-title');if(!title)return;
+    if(isTrainer())title.textContent=VIEW_STUDENT?.name?'OPERAÇÕES // '+VIEW_STUDENT.name.toUpperCase():'CENTRAL DE OPERAÇÕES';
+    else title.textContent=activeTab==='sync'?'SINCRONIZAÇÃO':'AVISOS';
   }
   window.openV107Operations=function(tab='overview'){
-    if(CURRENT_USER?.role==='trainer'&&!VIEW_STUDENT?.uid&&['versions','templates','adherence','audit','notices'].includes(tab)){showToast('Abra primeiro o arquivo de um aluno.',true);goTrainer();return;}
-    activeTab=tab;setHeader();showScreen('screen-v107-operations');window.v107SelectTab(tab);
+    tab=String(tab||'overview');
+    if(!isTrainer()&&!studentCanOpen(tab)){showToast('Esta área é exclusiva do treinador.',true);goHome();return false;}
+    if(isTrainer()&&!VIEW_STUDENT?.uid&&['versions','templates','adherence','audit','notices'].includes(tab)){showToast('Abra primeiro o arquivo de um aluno.',true);goTrainer();return false;}
+    activeTab=tab;setHeader();showScreen('screen-v107-operations');window.v107SelectTab(tab);return true;
   };
+  window.TeamBullsOperationsCanOpen=tab=>isTrainer()||studentCanOpen(tab);
   window.closeV107Operations=function(){if(CURRENT_USER?.role==='trainer'){if(VIEW_STUDENT?.uid)goTrainerStudent();else goTrainer();}else goHome();};
   let renderSequence=0;
   window.v107SelectTab=async function(tab){
-    const requestedTab=tab||'overview',token=++renderSequence;
-    activeTab=requestedTab;tabButtons();loading();
+    const requestedTab=String(tab||'overview');
+    if(!isTrainer()&&!studentCanOpen(requestedTab)){showToast('Esta área é exclusiva do treinador.',true);goHome();return false;}
+    const token=++renderSequence;
+    activeTab=requestedTab;setHeader();updateTabVisibility();tabButtons();loading();
     try{
       if(requestedTab==='overview')await renderOverview(token);
       else if(requestedTab==='versions')await renderVersions(token);
@@ -39,7 +49,7 @@
       else if(requestedTab==='sync')await renderSync(token);
     }catch(error){
       if(token!==renderSequence||activeTab!==requestedTab)return;
-      console.error('Central v10.10.5',error);const el=host();
+      console.error('Central v10.10.7',error);const el=host();
       if(el)el.innerHTML=`<div class="v107-error"><strong>Não foi possível abrir esta área.</strong><span>${escHtml(error.message||error)}</span><button class="btn-add-set" onclick="v107SelectTab('${escHtml(requestedTab)}')">TENTAR NOVAMENTE</button></div>`;
     }
   };
@@ -56,7 +66,7 @@
     const draft=TB.getPlanDraft(),lastSync=TB.lastCloudSuccess(),online=navigator.onLine;
     const studentLabel=trainer?(VIEW_STUDENT?.name||'Nenhum aluno aberto'):(CURRENT_USER?.name||'Plano local');
     el.innerHTML=`
-      <div class="v107-hero"><div><span>TEAM BULLS V10.10.5</span><h2>CONTINUIDADE E CONTROLE</h2><p>${escHtml(studentLabel)} · ${online?'conectado':'offline'}</p></div><div class="v107-status-dot ${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</div></div>
+      <div class="v107-hero"><div><span>TEAM BULLS V10.10.7</span><h2>CONTINUIDADE E CONTROLE</h2><p>${escHtml(studentLabel)} · ${online?'conectado':'offline'}</p></div><div class="v107-status-dot ${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</div></div>
       <div class="v107-kpi-grid">
         <article><b>${TB.undoCount()}</b><span>ações para desfazer</span></article><article><b>${TB.redoCount()}</b><span>ações para refazer</span></article>
         <article><b>${draft?TB.formatDateTime(draft.updatedAt):'—'}</b><span>último rascunho</span></article><article><b>${lastSync?TB.formatDateTime(lastSync):'—'}</b><span>última gravação na nuvem</span></article>
@@ -221,14 +231,19 @@
   window.v107RunSync=async function(){loading('Verificando e sincronizando...');try{if(!navigator.onLine)throw new Error('O aparelho está offline. Os dados continuam preservados localmente.');if(!await TB.ensureCloud())throw new Error('Não foi possível abrir a conexão segura.');if(CURRENT_USER?.role==='student'&&MODE==='cloud'){await migrateLocalToCloud(CURRENT_USER.uid,{background:false});await loadCloudHome();}else if(CURRENT_USER?.role==='trainer'&&VIEW_STUDENT?.uid)await renderTrainerStudent({...VIEW_STUDENT});storageSet('team_bulls_v107_last_manual_sync',String(Date.now()));showToast('✓ Sincronização concluída');await renderSync();}catch(error){alert(error.message);await renderSync();}};
 
   function updateTabVisibility(){
-    const trainer=CURRENT_USER?.role==='trainer';document.querySelectorAll('[data-v107-trainer-only]').forEach(el=>el.style.display=trainer?'':'none');
+    const trainer=isTrainer();
+    document.querySelectorAll('[data-v107-trainer-only]').forEach(el=>el.style.display=trainer?'':'none');
     const studentOpen=!!VIEW_STUDENT?.uid;document.querySelectorAll('[data-v107-student-required]').forEach(el=>el.style.display=trainer&&studentOpen?'':'none');
+    const screen=document.getElementById('screen-v107-operations');if(screen){screen.classList.toggle('v107-student-utility',!trainer);screen.setAttribute('aria-label',trainer?'Central de operações do treinador':activeTab==='sync'?'Sincronização do aluno':'Avisos do aluno');}
   }
   window.addEventListener('team-bulls-v107-context',()=>{setHeader();updateTabVisibility();});
   window.addEventListener('online',()=>{if(document.getElementById('screen-v107-operations')?.classList.contains('active'))v107SelectTab(activeTab);});
   window.addEventListener('offline',()=>{if(document.getElementById('screen-v107-operations')?.classList.contains('active'))v107SelectTab(activeTab);});
   const baseShowScreen=showScreen;
-  showScreen=function(id,token=null){const result=baseShowScreen(id,token);if(id==='screen-v107-operations'){setHeader();updateTabVisibility();tabButtons();}return result;};
+  showScreen=function(id,token=null){
+    if(id==='screen-v107-operations'&&!isTrainer()&&!studentCanOpen(activeTab)){showToast('Esta área é exclusiva do treinador.',true);return baseShowScreen('screen-home',token);}
+    const result=baseShowScreen(id,token);if(id==='screen-v107-operations'){setHeader();updateTabVisibility();tabButtons();}return result;
+  };
 
   let lastBadgeLoad=0;
   TB.refreshNoticeBadge=async function(force=false){
