@@ -1,7 +1,7 @@
-/* Team Bulls v10.10.7 — Service Worker estável e atualização sem reinstalação. */
+/* Team Bulls v10.10.9 — Service Worker estável e atualização sem reinstalação. */
 'use strict';
 
-const APP_VERSION='10.10.7';
+const APP_VERSION='10.10.9';
 const SHELL_CACHE=`team-bulls-shell-${APP_VERSION.replace(/\./g,'-')}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${APP_VERSION.replace(/\./g,'-')}`;
 const AUDIO_CACHE_NAME='team-bulls-v9-5-security-audio';
@@ -14,19 +14,19 @@ const REQUIRED_SHELL=[
   './index.html',
   './manifest.json',
   './version.json',
-  './viewport_v10_10_7.js?v=10.10.7',
-  './boot_v10.js?v=10.10.7',
-  './config_v10_7.js?v=10.10.7',
-  './update_v10_10_7.js?v=10.10.7',
-  './app_v10_10_7_core.js?v=10.10.7',
-  './modules/v107-core.js?v=10.10.7',
-  './modules/v107-invites.js?v=10.10.7',
-  './modules/v107-operations.js?v=10.10.7',
-  './interaction_v10_10_7.js?v=10.10.7',
-  './styles_v10_10_7.css?v=10.10.7',
+  './viewport_v10_10_9.js?v=10.10.9',
+  './boot_v10.js?v=10.10.9',
+  './config_v10_7.js?v=10.10.9',
+  './update_v10_10_9.js?v=10.10.9',
+  './app_v10_10_9_core.js?v=10.10.9',
+  './modules/v107-core.js?v=10.10.9',
+  './modules/v107-invites.js?v=10.10.9',
+  './modules/v107-operations.js?v=10.10.9',
+  './interaction_v10_10_9.js?v=10.10.9',
+  './styles_v10_10_9.css?v=10.10.9',
   './recuperar.html',
-  './recovery_v10.js?v=10.10.7',
-  './recovery_v10.css?v=10.10.7',
+  './recovery_v10.js?v=10.10.9',
+  './recovery_v10.css?v=10.10.9',
   './icon-192-v9-8.png',
   './icon-512-v9-8.png',
   './icon-maskable-192-v9-8.png',
