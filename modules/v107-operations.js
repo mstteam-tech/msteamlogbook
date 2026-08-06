@@ -1,4 +1,4 @@
-/* Team Bulls v10.10.7 — central de operações otimizada, modelos, adesão e notificações. */
+/* Team Bulls v10.10.9 — central de operações otimizada, modelos, adesão e notificações. */
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
@@ -49,7 +49,7 @@
       else if(requestedTab==='sync')await renderSync(token);
     }catch(error){
       if(token!==renderSequence||activeTab!==requestedTab)return;
-      console.error('Central v10.10.7',error);const el=host();
+      console.error('Central v10.10.9',error);const el=host();
       if(el)el.innerHTML=`<div class="v107-error"><strong>Não foi possível abrir esta área.</strong><span>${escHtml(error.message||error)}</span><button class="btn-add-set" onclick="v107SelectTab('${escHtml(requestedTab)}')">TENTAR NOVAMENTE</button></div>`;
     }
   };
@@ -66,7 +66,7 @@
     const draft=TB.getPlanDraft(),lastSync=TB.lastCloudSuccess(),online=navigator.onLine;
     const studentLabel=trainer?(VIEW_STUDENT?.name||'Nenhum aluno aberto'):(CURRENT_USER?.name||'Plano local');
     el.innerHTML=`
-      <div class="v107-hero"><div><span>TEAM BULLS V10.10.7</span><h2>CONTINUIDADE E CONTROLE</h2><p>${escHtml(studentLabel)} · ${online?'conectado':'offline'}</p></div><div class="v107-status-dot ${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</div></div>
+      <div class="v107-hero"><div><span>TEAM BULLS V10.10.9</span><h2>CONTINUIDADE E CONTROLE</h2><p>${escHtml(studentLabel)} · ${online?'conectado':'offline'}</p></div><div class="v107-status-dot ${online?'ok':'warn'}">${online?'ONLINE':'OFFLINE'}</div></div>
       <div class="v107-kpi-grid">
         <article><b>${TB.undoCount()}</b><span>ações para desfazer</span></article><article><b>${TB.redoCount()}</b><span>ações para refazer</span></article>
         <article><b>${draft?TB.formatDateTime(draft.updatedAt):'—'}</b><span>último rascunho</span></article><article><b>${lastSync?TB.formatDateTime(lastSync):'—'}</b><span>última gravação na nuvem</span></article>
