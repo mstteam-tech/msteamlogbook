@@ -22,6 +22,13 @@ const REQUIRED_SHELL=[
   './modules/v107-core.js?v=10.10.9',
   './modules/v107-invites.js?v=10.10.9',
   './modules/v107-operations.js?v=10.10.9',
+  './modules/stability_v10_10_9.js?v=10.10.9',
+  './modules/photo-guide-v10_10_9.js?v=10.10.9',
+  './assets/photo-guide/page-1.png?v=10.10.9',
+  './assets/photo-guide/page-2.png?v=10.10.9',
+  './assets/photo-guide/page-3.png?v=10.10.9',
+  './assets/photo-guide/page-4.png?v=10.10.9',
+  './assets/photo-guide/page-5.png?v=10.10.9',
   './interaction_v10_10_9.js?v=10.10.9',
   './styles_v10_10_9.css?v=10.10.9',
   './recuperar.html',
@@ -91,7 +98,7 @@ async function cacheOne(cache,path,required){
 }
 async function prepareShell(){
   const cache=await caches.open(SHELL_CACHE);
-  for(const path of REQUIRED_SHELL)await cacheOne(cache,path,true);
+  await Promise.all(REQUIRED_SHELL.map(path=>cacheOne(cache,path,true)));
   await Promise.allSettled(OPTIONAL_SHELL.map(path=>cacheOne(cache,path,false)));
   return true;
 }
