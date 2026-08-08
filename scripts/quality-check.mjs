@@ -11,7 +11,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -42,6 +42,7 @@ const config=read('config_v10_7.js');
 assert(config.includes('modules/stability_v10_10_9.js'),'Loader não inclui a camada de estabilidade.');
 assert(config.includes('modules/app-update-v10_10_9.js'),'Loader não inclui a atualização de UX/performance.');
 assert(config.includes('modules/diet-scroll-fix-v10_10_9.js'),'Loader não inclui a correção do scroll real da dieta.');
+assert(config.includes('modules/modal-form-guard-v10_10_9.js'),'Loader não inclui a proteção de modais de edição.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
 
 const update=read('modules/app-update-v10_10_9.js');
@@ -55,6 +56,12 @@ const dietScroll=read('modules/diet-scroll-fix-v10_10_9.js');
 assert(dietScroll.includes("document.getElementById('app')"),'Correção de dieta não usa o scroller real #app.');
 assert(dietScroll.includes('scroller.scrollTop=state.appTop'),'Correção de dieta não restaura o scrollTop do #app.');
 assert(dietScroll.includes("'saveDietSupportItem'"),'Salvar suplemento não está protegido contra regressão de rolagem.');
+
+const modalGuard=read('modules/modal-form-guard-v10_10_9.js');
+assert(modalGuard.includes("classList.contains('modal-backdrop')"),'Proteção de modal não identifica o backdrop corretamente.');
+assert(modalGuard.includes('input:not([type="hidden"]),textarea,select'),'Proteção de modal não reconhece campos editáveis.');
+assert(modalGuard.includes("event.stopImmediatePropagation()"),'Proteção de modal não bloqueia listeners antigos de fechamento por backdrop.');
+assert(modalGuard.includes("if(event.type==='click')event.preventDefault()"),'Proteção de modal não bloqueia o clique de fechamento no fundo.');
 
 const firestore=read('firebase/firestore_26_compacto.rules');
 assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins ausente.');
