@@ -6,7 +6,8 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
 });
 
 /* Extensões carregadas em ordem determinística depois que o núcleo estiver pronto.
-   O guia visual é carregado sob demanda para não disputar rede com login/Firebase. */
+   A rede é aquecida em paralelo por preload, mas a execução permanece serial para
+   preservar as dependências entre os hotfixes. O guia visual continua sob demanda. */
 (()=>{
   let requested=false;
   const modules=[
@@ -14,9 +15,18 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/app-update-v10_10_9.js?v=10.10.9',
     './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
     './modules/modal-form-guard-v10_10_9.js?v=10.10.9',
-    './modules/trainer-workspace-v10_10_9.js?v=10.10.9',
-    './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'
+    './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2',
+    './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1',
+    './modules/global-performance-v10_10_9.js?v=10.10.9-perf1'
   ];
+  const preloadModules=()=>{
+    modules.forEach(src=>{
+      if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;
+      const link=document.createElement('link');
+      link.rel='preload';link.as='script';link.href=src;
+      document.head.appendChild(link);
+    });
+  };
   const loadScript=src=>new Promise(resolve=>{
     const script=document.createElement('script');
     script.src=src;
@@ -28,6 +38,7 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
   const load=async()=>{
     if(requested)return;
     requested=true;
+    preloadModules();
     for(const src of modules)await loadScript(src);
   };
   if(window.TeamBulls107)load();
