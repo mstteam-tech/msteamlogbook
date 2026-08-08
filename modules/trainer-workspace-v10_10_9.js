@@ -9,6 +9,10 @@
     'screen-ts-meals','screen-ts-diet-detail'
   ]);
   const NOTE_MAX=5000;
+  const REPORT_CACHE_TTL=45000;
+  const REPORT_CACHE_MAX_STUDENTS=12;
+  const reportCache=new Map();
+  const observedModals=new WeakSet();
   let reportLoadToken=0;
   let reportViewerTransition=false;
   let dockSyncFrame=0;
@@ -64,7 +68,7 @@
   function ensureReportsModal(){
     let modal=document.getElementById('tb-trainer-reports-modal');if(modal)return modal;
     modal=document.createElement('div');modal.id='tb-trainer-reports-modal';modal.className='modal-backdrop';modal.dataset.tbBackdropClose='allow';modal.innerHTML=`<div class="modal-sheet tb-workspace-sheet"><div class="modal-handle"></div><div class="modal-title" id="tb-trainer-reports-title">Relatórios e fotos</div><div class="tb-workspace-title-sub" id="tb-trainer-reports-sub"></div><div id="tb-trainer-reports-content" class="tb-workspace-list"></div><button type="button" class="btn-ghost" id="tb-trainer-reports-refresh">ATUALIZAR</button><button type="button" class="btn-ghost" onclick="closeModal('tb-trainer-reports-modal')">FECHAR</button></div>`;
-    document.body.appendChild(modal);modal.querySelector('#tb-trainer-reports-refresh').addEventListener('click',loadQuickReports);return modal;
+    document.body.appendChild(modal);modal.querySelector('#tb-trainer-reports-refresh').addEventListener('click',()=>loadQuickReports(true));return modal;
   }
   function questionnaireLabel(q){
     try{if(typeof v109ReportModeLabel==='function'&&typeof v109ReportMode==='function')return v109ReportModeLabel(v109ReportMode(q));}catch(error){}
@@ -95,8 +99,20 @@
     host.querySelectorAll('[data-tb-weekly]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbWeekly;if(typeof viewWeeklyCheckin==='function')openExistingReport(()=>viewWeeklyCheckin(id));}));
     host.querySelectorAll('[data-tb-questionnaire]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbQuestionnaire;if(typeof viewQuestionnaire==='function')openExistingReport(()=>viewQuestionnaire(id,true));}));
   }
-  async function loadQuickReports(){
+  function cachedReports(studentUid){
+    const entry=reportCache.get(String(studentUid||''));
+    if(!entry||Date.now()-entry.savedAt>REPORT_CACHE_TTL)return null;
+    return entry;
+  }
+  function storeReports(studentUid,weekly,questionnaires){
+    const key=String(studentUid||'');if(!key)return;
+    reportCache.delete(key);
+    reportCache.set(key,{savedAt:Date.now(),weekly,questionnaires});
+    while(reportCache.size>REPORT_CACHE_MAX_STUDENTS)reportCache.delete(reportCache.keys().next().value);
+  }
+  async function loadQuickReports(force=false){
     const student=trainerStudent(),host=document.getElementById('tb-trainer-reports-content');if(!student||!host)return;
+    if(!force){const cached=cachedReports(student.uid);if(cached){renderQuickReports(cached.weekly,cached.questionnaires);return;}}
     const token=++reportLoadToken;host.innerHTML='<div class="tb-workspace-empty">Carregando relatórios e referências fotográficas…</div>';
     try{
       const weeklyPromise=typeof fetchWeeklyCheckins==='function'?fetchWeeklyCheckins(student.uid):cloudGet(db.collection('weeklyCheckins').where('studentId','==',student.uid),'relatórios semanais rápidos').then(s=>s.docs.map(d=>({...d.data(),id:d.id})));
@@ -104,13 +120,14 @@
       const [weeklyRaw,questionnairesRaw]=await Promise.all([weeklyPromise,questionnairePromise]);if(token!==reportLoadToken||trainerStudent()?.uid!==student.uid)return;
       const weekly=(Array.isArray(weeklyRaw)?weeklyRaw:[]).sort((a,b)=>String(b.submittedDate||b.dueDate||'').localeCompare(String(a.submittedDate||a.dueDate||'')));
       const questionnaires=(Array.isArray(questionnairesRaw)?questionnairesRaw:[]).sort((a,b)=>(b.answeredAt?.seconds||b.createdAt?.seconds||0)-(a.answeredAt?.seconds||a.createdAt?.seconds||0));
+      storeReports(student.uid,weekly,questionnaires);
       if(typeof WEEKLY_CHECKINS!=='undefined')WEEKLY_CHECKINS=weekly;
       if(typeof TS_QUEST_CACHE!=='undefined')TS_QUEST_CACHE=questionnaires;
       renderQuickReports(weekly,questionnaires);
     }catch(error){if(token!==reportLoadToken)return;host.innerHTML='<div class="tb-workspace-empty">Não foi possível carregar os relatórios agora. Verifique a conexão e tente novamente.</div>';}
   }
   function openQuickReports(){
-    const student=trainerStudent();if(!student)return;ensureReportsModal();document.getElementById('tb-trainer-reports-title').textContent='Relatórios e fotos';document.getElementById('tb-trainer-reports-sub').textContent=studentName()+' · consulta rápida sem sair da prescrição';openModal('tb-trainer-reports-modal');syncDock();loadQuickReports();
+    const student=trainerStudent();if(!student)return;ensureReportsModal();document.getElementById('tb-trainer-reports-title').textContent='Relatórios e fotos';document.getElementById('tb-trainer-reports-sub').textContent=studentName()+' · consulta rápida sem sair da prescrição';openModal('tb-trainer-reports-modal');syncDock();loadQuickReports(false);
   }
 
   function ensureNoteModal(){
@@ -138,16 +155,26 @@
     finally{if(typeof endAction==='function')endAction('trainer-private-note','tb-trainer-note-modal');}
   }
 
-  function wrapShowScreen(){
-    const base=window.showScreen;if(typeof base!=='function'||base.__tbTrainerWorkspace)return;
-    const wrapped=function(){const result=base.apply(this,arguments);scheduleDockSync();return result;};wrapped.__tbTrainerWorkspace=true;window.showScreen=wrapped;
+  function wrapUiFunction(name){
+    const base=window[name];if(typeof base!=='function'||base.__tbTrainerWorkspace)return;
+    const wrapped=function(){const result=base.apply(this,arguments);scheduleDockSync();return result;};
+    wrapped.__tbTrainerWorkspace=true;window[name]=wrapped;
+  }
+  function observeModal(modal){
+    if(!(modal instanceof HTMLElement)||!modal.classList.contains('modal-backdrop')||observedModals.has(modal))return;
+    observedModals.add(modal);
+    const observer=new MutationObserver(scheduleDockSync);
+    observer.observe(modal,{attributes:true,attributeFilter:['class']});
+  }
+  function bindModalObservers(root=document){
+    if(root instanceof HTMLElement&&root.classList.contains('modal-backdrop'))observeModal(root);
+    root.querySelectorAll?.('.modal-backdrop').forEach(observeModal);
   }
   function watchModalState(){
-    const observer=new MutationObserver(records=>{
-      if(records.some(record=>record.type==='childList'||(record.type==='attributes'&&record.target instanceof Element&&record.target.classList.contains('modal-backdrop'))))scheduleDockSync();
-    });
-    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+    bindModalObservers(document);
+    const additionsObserver=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node instanceof HTMLElement)bindModalObservers(node);}))); 
+    additionsObserver.observe(document.body,{subtree:true,childList:true});
   }
-  function install(){ensureStyles();ensureDock();ensureReportsModal();ensureNoteModal();wrapShowScreen();watchModalState();syncDock();window.addEventListener('pageshow',scheduleDockSync,{passive:true});window.TeamBullsTrainerWorkspace=Object.freeze({sync:syncDock,openReports:openQuickReports,openNote:openPrivateNote});}
+  function install(){ensureStyles();ensureDock();ensureReportsModal();ensureNoteModal();['showScreen','openModal','closeModal'].forEach(wrapUiFunction);watchModalState();syncDock();window.addEventListener('pageshow',scheduleDockSync,{passive:true});window.TeamBullsTrainerWorkspace=Object.freeze({sync:syncDock,openReports:openQuickReports,openNote:openPrivateNote,refreshReports:()=>loadQuickReports(true)});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();

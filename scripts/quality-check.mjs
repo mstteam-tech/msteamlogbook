@@ -5,13 +5,14 @@ import {spawnSync} from 'node:child_process';
 const root=process.cwd();
 const fail=[];
 const read=rel=>fs.readFileSync(path.join(root,rel),'utf8');
+const bytes=rel=>fs.statSync(path.join(root,rel)).size;
 const requireFile=rel=>{if(!fs.existsSync(path.join(root,rel)))fail.push(`Arquivo obrigatório ausente: ${rel}`);};
 const assert=(condition,message)=>{if(!condition)fail.push(message);};
 
 [
-  'index.html','manifest.json','version.json','sw.js','config_v10_7.js',
+  'index.html','manifest.json','version.json','sw.js','sw_47.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -38,13 +39,21 @@ assert(/<meta content="10\.10\.9" name="team-bulls-version"/.test(read('index.ht
 assert(version==='10.10.9','version.json não corresponde a 10.10.9.');
 assert(/const APP_VERSION='10\.10\.9'/.test(read('sw.js')),'Service Worker com versão divergente.');
 
+// Orçamentos amplos: alertam crescimento acidental sem bloquear evolução normal do produto.
+assert(bytes('app_v10_10_9_core.js')<900*1024,'Núcleo JavaScript ultrapassou 900 KiB; revisar divisão/carregamento sob demanda.');
+assert(bytes('styles_v10_10_9.css')<280*1024,'CSS principal ultrapassou 280 KiB; revisar regras duplicadas e estilos críticos.');
+assert(bytes('index.html')<190*1024,'index.html ultrapassou 190 KiB; revisar HTML crítico e conteúdo injetado.');
+
 const config=read('config_v10_7.js');
 assert(config.includes('modules/stability_v10_10_9.js'),'Loader não inclui a camada de estabilidade.');
 assert(config.includes('modules/app-update-v10_10_9.js'),'Loader não inclui a atualização de UX/performance.');
 assert(config.includes('modules/diet-scroll-fix-v10_10_9.js'),'Loader não inclui a correção do scroll real da dieta.');
 assert(config.includes('modules/modal-form-guard-v10_10_9.js'),'Loader não inclui a proteção de modais de edição.');
-assert(config.includes('modules/trainer-workspace-v10_10_9.js'),'Loader não inclui as ferramentas privadas do treinador.');
+assert(config.includes('modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'),'Loader não usa cache-bust da versão otimizada do workspace.');
 assert(config.includes('modules/cardio-timer-fix-v10_10_9.js'),'Loader não inclui a correção do cronômetro de cardio.');
+assert(config.includes('modules/global-performance-v10_10_9.js?v=10.10.9-perf1'),'Loader não inclui a camada global de performance.');
+assert(config.includes("link.rel='preload';link.as='script';link.href=src"),'Hotfixes não recebem preload de rede antes da execução serial.');
+assert(config.includes('for(const src of modules)await loadScript(src)'),'Execução determinística dos hotfixes foi removida.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
 
 const update=read('modules/app-update-v10_10_9.js');
@@ -79,7 +88,12 @@ assert(workspace.includes('function anyOpenModal()')&&workspace.includes('!anyOp
 assert(workspace.includes("closeModal('tb-trainer-reports-modal')"),'Consulta rápida deve fechar antes de abrir o visualizador definitivo.');
 assert(workspace.includes('openExistingReport(()=>viewWeeklyCheckin(id))'),'Relatório semanal ainda pode ser aberto com transição segura de modal.');
 assert(workspace.includes('openExistingReport(()=>viewQuestionnaire(id,true))'),'Relatório solicitado ainda pode ser aberto com transição segura de modal.');
-assert(workspace.includes("observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})"),'Workspace não acompanha abertura/fechamento de modais para sincronizar o dock.');
+assert(workspace.includes('const REPORT_CACHE_TTL=45000')&&workspace.includes('function cachedReports(studentUid)'),'Cache curto de relatórios do workspace não foi encontrado.');
+assert(workspace.includes("loadQuickReports(true)"),'Botão Atualizar deixou de forçar consulta fresca dos relatórios.');
+assert(workspace.includes("['showScreen','openModal','closeModal'].forEach(wrapUiFunction)"),'Workspace não sincroniza dock pelas funções reais de navegação/modal.');
+assert(workspace.includes("observer.observe(modal,{attributes:true,attributeFilter:['class']})"),'Modais individuais não são observados para sincronizar o dock.');
+assert(workspace.includes("additionsObserver.observe(document.body,{subtree:true,childList:true})"),'Workspace não acompanha modais adicionados dinamicamente.');
+assert(!workspace.includes("observer.observe(document.body,{subtree:true,childList:true,attributes:true"),'Workspace voltou a observar mudanças de classe de toda a árvore do documento.');
 
 const cardioFix=read('modules/cardio-timer-fix-v10_10_9.js');
 assert(cardioFix.includes("((Number(state.endAt)||0)-Date.now())/1000"),'Cronômetro de cardio não subtrai o horário atual do endAt corretamente.');
@@ -89,9 +103,33 @@ assert(cardioFix.includes('ensureCardioTimerTicker=fixedEnsureCardioTimerTicker'
 assert(cardioFix.includes('stopCardioTimerTicker()'),'Ticker do cardio não é interrompido fora da tela.');
 assert(cardioFix.includes("document.addEventListener('visibilitychange',syncVisibleTimer"),'Cronômetro não sincroniza ao retornar do segundo plano.');
 
+const performance=read('modules/global-performance-v10_10_9.js');
+assert(performance.includes('touch-action:manipulation'),'Camada global não otimiza resposta de toque.');
+assert(performance.includes('backdrop-filter:none!important'),'Camada móvel não reduz blur caro em GPU.');
+assert(performance.includes('body::after{box-shadow:inset 0 0 58px'),'Vignette móvel não foi reduzida.');
+assert(performance.includes('input[type="number"]')&&performance.includes('font-size:16px'),'Campos móveis não protegem contra zoom automático em edição.');
+assert(performance.includes('html.tb-page-hidden *{animation-play-state:paused!important}'),'Animações não são pausadas quando a página fica oculta.');
+assert(performance.includes("document.addEventListener('visibilitychange',syncVisibilityState"),'Estado de visibilidade não alimenta a otimização global.');
+
 const core=read('app_v10_10_9_core.js');
 assert(core.includes('state.endAt=Date.now()+state.remainingSeconds*1000'),'Fluxo principal deixou de persistir endAt ao iniciar o cardio.');
 assert(core.includes('function pauseCardioTimer()')&&core.includes('function resetCardioTimer()'),'Controles de pausa/reinício do cardio estão ausentes.');
+
+const sw=read('sw.js');
+const bridge=read('sw_47.js');
+assert(sw.includes("const CACHE_REVISION='perf1'"),'Service Worker não separa revisão de cache da versão pública.');
+assert(sw.includes('const SHELL_FETCH_CONCURRENCY=4'),'Service Worker não limita concorrência do cache crítico.');
+assert(sw.includes('async function cachePathsWithLimit'),'Service Worker não possui preparação de shell com concorrência controlada.');
+assert(sw.includes("'./modules/app-update-v10_10_9.js?v=10.10.9'"),'App-update não está disponível no shell offline.');
+assert(sw.includes("'./modules/diet-scroll-fix-v10_10_9.js?v=10.10.9'"),'Correção de rolagem não está disponível no shell offline.');
+assert(sw.includes("'./modules/modal-form-guard-v10_10_9.js?v=10.10.9'"),'Proteção de modal não está disponível no shell offline.');
+assert(sw.includes("'./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'"),'Workspace otimizado não está disponível no shell offline.');
+assert(sw.includes("'./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'"),'Cronômetro corrigido não está disponível no shell offline.');
+assert(sw.includes("'./modules/global-performance-v10_10_9.js?v=10.10.9-perf1'"),'Camada global de performance não está disponível no shell offline.');
+assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'Ponte legada sw_47.js divergiu do Service Worker principal.');
+const requiredShellBlock=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
+assert(!requiredShellBlock.includes('photo-guide'),'Guia de fotos deve permanecer fora do shell crítico.');
+assert(!/\.mp3/i.test(requiredShellBlock),'Áudio pesado não pode entrar no shell crítico do PWA.');
 
 const firestore=read('firebase/firestore_26_compacto.rules');
 assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins ausente.');

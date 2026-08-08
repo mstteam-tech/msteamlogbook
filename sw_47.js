@@ -2,12 +2,16 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const SHELL_CACHE=`team-bulls-shell-${APP_VERSION.replace(/\./g,'-')}`;
-const RUNTIME_CACHE=`team-bulls-runtime-${APP_VERSION.replace(/\./g,'-')}`;
+const CACHE_REVISION='perf1';
+const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}`;
+const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
+const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
 const AUDIO_CACHE_NAME='team-bulls-v9-5-security-audio';
 const CACHE_PREFIX='team-bulls-';
 const NETWORK_TIMEOUT_MS=4500;
 const AUDIO_NETWORK_TIMEOUT_MS=2500;
+const SHELL_FETCH_CONCURRENCY=4;
+const OPTIONAL_FETCH_CONCURRENCY=2;
 const AUDIO_NAME_PATTERN=/^team-bulls-music-[a-z0-9-]+\.mp3$/i;
 
 const REQUIRED_SHELL=[
@@ -23,12 +27,12 @@ const REQUIRED_SHELL=[
   './modules/v107-invites.js?v=10.10.9',
   './modules/v107-operations.js?v=10.10.9',
   './modules/stability_v10_10_9.js?v=10.10.9',
-  './modules/photo-guide-v10_10_9.js?v=10.10.9',
-  './assets/photo-guide/page-1.png?v=10.10.9',
-  './assets/photo-guide/page-2.png?v=10.10.9',
-  './assets/photo-guide/page-3.png?v=10.10.9',
-  './assets/photo-guide/page-4.png?v=10.10.9',
-  './assets/photo-guide/page-5.png?v=10.10.9',
+  './modules/app-update-v10_10_9.js?v=10.10.9',
+  './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
+  './modules/modal-form-guard-v10_10_9.js?v=10.10.9',
+  './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2',
+  './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1',
+  './modules/global-performance-v10_10_9.js?v=10.10.9-perf1',
   './interaction_v10_10_9.js?v=10.10.9',
   './styles_v10_10_9.css?v=10.10.9',
   './recuperar.html',
@@ -42,7 +46,13 @@ const REQUIRED_SHELL=[
 ];
 const OPTIONAL_SHELL=[
   './team-bulls-auth-bg-v9-8-2.webp',
-  './team-bulls-desktop-menu-v10-5-6.webp'
+  './team-bulls-desktop-menu-v10-5-6.webp',
+  './modules/photo-guide-v10_10_9.js?v=10.10.9',
+  './assets/photo-guide/page-1.png?v=10.10.9',
+  './assets/photo-guide/page-2.png?v=10.10.9',
+  './assets/photo-guide/page-3.png?v=10.10.9',
+  './assets/photo-guide/page-4.png?v=10.10.9',
+  './assets/photo-guide/page-5.png?v=10.10.9'
 ];
 const VERSIONED_PATH_PATTERN=/(?:v\d+(?:[._-]\d+)+|_v\d+(?:_\d+)+)\.(?:js|css|json|png|webp)$/i;
 const MUTABLE_PATHS=new Set([
@@ -96,10 +106,25 @@ async function cacheOne(cache,path,required){
     return false;
   }
 }
+async function cachePathsWithLimit(cache,paths,{required=false,limit=4}={}){
+  const queue=Array.from(paths||[]);if(!queue.length)return true;
+  let next=0;const failures=[];
+  const worker=async()=>{
+    while(true){
+      const index=next++;if(index>=queue.length)return;
+      try{await cacheOne(cache,queue[index],required);}
+      catch(error){failures.push(error);}
+    }
+  };
+  const count=Math.min(Math.max(1,Math.trunc(Number(limit)||1)),queue.length);
+  await Promise.all(Array.from({length:count},worker));
+  if(required&&failures.length)throw failures[0];
+  return failures.length===0;
+}
 async function prepareShell(){
   const cache=await caches.open(SHELL_CACHE);
-  await Promise.all(REQUIRED_SHELL.map(path=>cacheOne(cache,path,true)));
-  await Promise.allSettled(OPTIONAL_SHELL.map(path=>cacheOne(cache,path,false)));
+  await cachePathsWithLimit(cache,REQUIRED_SHELL,{required:true,limit:SHELL_FETCH_CONCURRENCY});
+  await cachePathsWithLimit(cache,OPTIONAL_SHELL,{required:false,limit:OPTIONAL_FETCH_CONCURRENCY});
   return true;
 }
 async function broadcast(message){
