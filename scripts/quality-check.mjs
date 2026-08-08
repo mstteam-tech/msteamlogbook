@@ -11,7 +11,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -44,6 +44,7 @@ assert(config.includes('modules/app-update-v10_10_9.js'),'Loader não inclui a a
 assert(config.includes('modules/diet-scroll-fix-v10_10_9.js'),'Loader não inclui a correção do scroll real da dieta.');
 assert(config.includes('modules/modal-form-guard-v10_10_9.js'),'Loader não inclui a proteção de modais de edição.');
 assert(config.includes('modules/trainer-workspace-v10_10_9.js'),'Loader não inclui as ferramentas privadas do treinador.');
+assert(config.includes('modules/cardio-timer-fix-v10_10_9.js'),'Loader não inclui a correção do cronômetro de cardio.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
 
 const update=read('modules/app-update-v10_10_9.js');
@@ -79,6 +80,18 @@ assert(workspace.includes("closeModal('tb-trainer-reports-modal')"),'Consulta r�
 assert(workspace.includes('openExistingReport(()=>viewWeeklyCheckin(id))'),'Relatório semanal ainda pode ser aberto com transição segura de modal.');
 assert(workspace.includes('openExistingReport(()=>viewQuestionnaire(id,true))'),'Relatório solicitado ainda pode ser aberto com transição segura de modal.');
 assert(workspace.includes("observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})"),'Workspace não acompanha abertura/fechamento de modais para sincronizar o dock.');
+
+const cardioFix=read('modules/cardio-timer-fix-v10_10_9.js');
+assert(cardioFix.includes("((Number(state.endAt)||0)-Date.now())/1000"),'Cronômetro de cardio não subtrai o horário atual do endAt corretamente.');
+assert(!cardioFix.includes('(Number(state.endAt)||0-Date.now())'),'Regressão de precedência do cronômetro de cardio reapareceu.');
+assert(cardioFix.includes('readCardioTimer=fixedReadCardioTimer'),'Hotfix não substitui a leitura defeituosa do estado do cardio.');
+assert(cardioFix.includes('ensureCardioTimerTicker=fixedEnsureCardioTimerTicker'),'Ticker otimizado do cardio não foi instalado.');
+assert(cardioFix.includes('stopCardioTimerTicker()'),'Ticker do cardio não é interrompido fora da tela.');
+assert(cardioFix.includes("document.addEventListener('visibilitychange',syncVisibleTimer"),'Cronômetro não sincroniza ao retornar do segundo plano.');
+
+const core=read('app_v10_10_9_core.js');
+assert(core.includes('state.endAt=Date.now()+state.remainingSeconds*1000'),'Fluxo principal deixou de persistir endAt ao iniciar o cardio.');
+assert(core.includes('function pauseCardioTimer()')&&core.includes('function resetCardioTimer()'),'Controles de pausa/reinício do cardio estão ausentes.');
 
 const firestore=read('firebase/firestore_26_compacto.rules');
 assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins ausente.');
