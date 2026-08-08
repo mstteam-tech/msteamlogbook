@@ -12,7 +12,8 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
   const modules=[
     './modules/stability_v10_10_9.js?v=10.10.9',
     './modules/app-update-v10_10_9.js?v=10.10.9',
-    './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9'
+    './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
+    './modules/modal-form-guard-v10_10_9.js?v=10.10.9'
   ];
   const loadScript=src=>new Promise(resolve=>{
     const script=document.createElement('script');
