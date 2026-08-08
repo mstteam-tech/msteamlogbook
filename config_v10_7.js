@@ -14,7 +14,8 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/app-update-v10_10_9.js?v=10.10.9',
     './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
     './modules/modal-form-guard-v10_10_9.js?v=10.10.9',
-    './modules/trainer-workspace-v10_10_9.js?v=10.10.9'
+    './modules/trainer-workspace-v10_10_9.js?v=10.10.9',
+    './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'
   ];
   const loadScript=src=>new Promise(resolve=>{
     const script=document.createElement('script');
