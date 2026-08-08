@@ -28,10 +28,6 @@
   function guardBackdropEvent(event){
     const backdrop=event.currentTarget;
     if(!shouldProtect(backdrop)||!outsideSheet(event,backdrop))return;
-
-    // Impede os listeners antigos de interpretarem o clique no fundo como
-    // comando para fechar. Não bloqueamos o comportamento padrão em pointer/
-    // touch down, permitindo que o teclado virtual perca foco normalmente.
     event.stopPropagation();
     event.stopImmediatePropagation();
     if(event.type==='click')event.preventDefault();
@@ -48,6 +44,26 @@
     root.querySelectorAll?.('.modal-backdrop').forEach(bindBackdrop);
   }
 
+  function closeTopModalWithEscape(event){
+    if(event.key!=='Escape'||event.repeat)return;
+    const modals=[...document.querySelectorAll('.modal-backdrop.open')];
+    const modal=modals[modals.length-1];if(!modal)return;
+    try{
+      if(typeof ACTION_LOCKS!=='undefined'&&ACTION_LOCKS?.size){
+        event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+        if(typeof showToast==='function')showToast('Aguarde a operação terminar para fechar.',true);
+        return;
+      }
+    }catch(error){}
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    try{
+      if(typeof closeModal==='function'&&modal.id)closeModal(modal.id);
+      else modal.classList.remove('open');
+    }catch(error){modal.classList.remove('open');}
+  }
+
   function install(){
     bindAll(document);
     const observer=new MutationObserver(records=>{
@@ -56,10 +72,12 @@
       }));
     });
     observer.observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('keydown',closeTopModalWithEscape,{capture:true});
 
     window.TeamBullsModalFormGuard=Object.freeze({
       shouldProtect,
       refresh:()=>bindAll(document),
+      closeTopModal(){const modal=[...document.querySelectorAll('.modal-backdrop.open')].pop();if(modal?.id&&typeof closeModal==='function')closeModal(modal.id);},
       allowBackdropClose(id,allow=true){
         const modal=document.getElementById(String(id||''));
         if(modal?.classList.contains('modal-backdrop'))modal.dataset.tbBackdropClose=allow?'allow':'block';

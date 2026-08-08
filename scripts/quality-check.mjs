@@ -11,7 +11,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -43,6 +43,7 @@ assert(config.includes('modules/stability_v10_10_9.js'),'Loader não inclui a ca
 assert(config.includes('modules/app-update-v10_10_9.js'),'Loader não inclui a atualização de UX/performance.');
 assert(config.includes('modules/diet-scroll-fix-v10_10_9.js'),'Loader não inclui a correção do scroll real da dieta.');
 assert(config.includes('modules/modal-form-guard-v10_10_9.js'),'Loader não inclui a proteção de modais de edição.');
+assert(config.includes('modules/trainer-workspace-v10_10_9.js'),'Loader não inclui as ferramentas privadas do treinador.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
 
 const update=read('modules/app-update-v10_10_9.js');
@@ -60,13 +61,25 @@ assert(dietScroll.includes("'saveDietSupportItem'"),'Salvar suplemento não est�
 const modalGuard=read('modules/modal-form-guard-v10_10_9.js');
 assert(modalGuard.includes("classList.contains('modal-backdrop')"),'Proteção de modal não identifica o backdrop corretamente.');
 assert(modalGuard.includes('input:not([type="hidden"]),textarea,select'),'Proteção de modal não reconhece campos editáveis.');
-assert(modalGuard.includes("event.stopImmediatePropagation()"),'Proteção de modal não bloqueia listeners antigos de fechamento por backdrop.');
+assert(modalGuard.includes('event.stopImmediatePropagation()'),'Proteção de modal não bloqueia listeners antigos de fechamento por backdrop.');
 assert(modalGuard.includes("if(event.type==='click')event.preventDefault()"),'Proteção de modal não bloqueia o clique de fechamento no fundo.');
+assert(modalGuard.includes("event.key!=='Escape'"),'Proteção de modal não garante fechamento por ESC.');
+assert(modalGuard.includes("document.addEventListener('keydown',closeTopModalWithEscape,{capture:true})"),'ESC não está interceptado antes dos listeners legados.');
+
+const workspace=read('modules/trainer-workspace-v10_10_9.js');
+assert(workspace.includes('RELATÓRIOS / FOTOS')&&workspace.includes('RASCUNHO'),'Atalhos rápidos de prescrição não foram encontrados.');
+assert(workspace.includes("'screen-ts-workout'")&&workspace.includes("'screen-ts-diet-detail'"),'Ferramentas privadas não cobrem treino e dieta do treinador.');
+assert(workspace.includes("db.collection('trainerSupplementCatalog').doc(user.uid)"),'Rascunho privado não usa o documento trainer-only já protegido.');
+assert(workspace.includes('studentNotes'),'Rascunho não está separado individualmente por aluno.');
+assert(!workspace.includes("db.collection('reportSettings')"),'Rascunho privado não pode ser salvo em reportSettings, pois alunos podem ler essa coleção.');
+assert(workspace.includes("db.collection('questionnaires').where('studentId','==',student.uid)"),'Consulta rápida de relatórios solicitados ausente.');
+assert(workspace.includes('fetchWeeklyCheckins(student.uid)'),'Consulta rápida de relatórios semanais ausente.');
 
 const firestore=read('firebase/firestore_26_compacto.rules');
 assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins ausente.');
 assert(firestore.includes('request.resource.data.photoIds.size() == 6'),'Regra semanal deixou de exigir 6 fotos.');
 assert(firestore.includes("request.resource.data.get('requiredPhotoCount', 6) == 6"),'Regra de questionários deixou de exigir 6 fotos quando aplicável.');
+assert(firestore.includes('match /trainerSupplementCatalog/{trainerUid}')&&firestore.includes('allow read: if isTrainer() && request.auth.uid == trainerUid'),'Documento usado pelo rascunho deixou de ser privado do próprio treinador.');
 
 const storage=read('firebase/storage_5.rules');
 assert(storage.includes('match /progressPhotos/{uid}/{photoId}.jpg'),'Regra de Storage para fotos principais ausente.');
