@@ -10,7 +10,7 @@ const requireFile=rel=>{if(!fs.existsSync(path.join(root,rel)))fail.push(`Arquiv
 const assert=(condition,message)=>{if(!condition)fail.push(message);};
 
 [
-  'index.html','manifest.json','version.json','sw.js','config_v10_7.js',
+  'index.html','manifest.json','version.json','sw.js','sw_47.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
   'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
@@ -116,6 +116,8 @@ assert(core.includes('state.endAt=Date.now()+state.remainingSeconds*1000'),'Flux
 assert(core.includes('function pauseCardioTimer()')&&core.includes('function resetCardioTimer()'),'Controles de pausa/reinício do cardio estão ausentes.');
 
 const sw=read('sw.js');
+const bridge=read('sw_47.js');
+assert(sw.includes("const CACHE_REVISION='perf1'"),'Service Worker não separa revisão de cache da versão pública.');
 assert(sw.includes('const SHELL_FETCH_CONCURRENCY=4'),'Service Worker não limita concorrência do cache crítico.');
 assert(sw.includes('async function cachePathsWithLimit'),'Service Worker não possui preparação de shell com concorrência controlada.');
 assert(sw.includes("'./modules/app-update-v10_10_9.js?v=10.10.9'"),'App-update não está disponível no shell offline.');
@@ -124,6 +126,7 @@ assert(sw.includes("'./modules/modal-form-guard-v10_10_9.js?v=10.10.9'"),'Prote�
 assert(sw.includes("'./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'"),'Workspace otimizado não está disponível no shell offline.');
 assert(sw.includes("'./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'"),'Cronômetro corrigido não está disponível no shell offline.');
 assert(sw.includes("'./modules/global-performance-v10_10_9.js?v=10.10.9-perf1'"),'Camada global de performance não está disponível no shell offline.');
+assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'Ponte legada sw_47.js divergiu do Service Worker principal.');
 const requiredShellBlock=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
 assert(!requiredShellBlock.includes('photo-guide'),'Guia de fotos deve permanecer fora do shell crítico.');
 assert(!/\.mp3/i.test(requiredShellBlock),'Áudio pesado não pode entrar no shell crítico do PWA.');
