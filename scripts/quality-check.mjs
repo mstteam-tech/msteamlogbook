@@ -74,6 +74,11 @@ assert(workspace.includes('studentNotes'),'Rascunho não está separado individu
 assert(!workspace.includes("db.collection('reportSettings')"),'Rascunho privado não pode ser salvo em reportSettings, pois alunos podem ler essa coleção.');
 assert(workspace.includes("db.collection('questionnaires').where('studentId','==',student.uid)"),'Consulta rápida de relatórios solicitados ausente.');
 assert(workspace.includes('fetchWeeklyCheckins(student.uid)'),'Consulta rápida de relatórios semanais ausente.');
+assert(workspace.includes('function anyOpenModal()')&&workspace.includes('!anyOpenModal()'),'Dock privado deve desaparecer enquanto qualquer modal estiver aberto.');
+assert(workspace.includes("closeModal('tb-trainer-reports-modal')"),'Consulta rápida deve fechar antes de abrir o visualizador definitivo.');
+assert(workspace.includes('openExistingReport(()=>viewWeeklyCheckin(id))'),'Relatório semanal ainda pode ser aberto com transição segura de modal.');
+assert(workspace.includes('openExistingReport(()=>viewQuestionnaire(id,true))'),'Relatório solicitado ainda pode ser aberto com transição segura de modal.');
+assert(workspace.includes("observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})"),'Workspace não acompanha abertura/fechamento de modais para sincronizar o dock.');
 
 const firestore=read('firebase/firestore_26_compacto.rules');
 assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins ausente.');
