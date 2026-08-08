@@ -10,6 +10,8 @@
   ]);
   const NOTE_MAX=5000;
   let reportLoadToken=0;
+  let reportViewerTransition=false;
+  let dockSyncFrame=0;
 
   function trainerStudent(){
     if(typeof CURRENT_USER==='undefined'||CURRENT_USER?.role!=='trainer')return null;
@@ -18,6 +20,7 @@
   }
   function activeScreenId(){return document.querySelector('.screen.active')?.id||'';}
   function studentName(){return String(trainerStudent()?.name||'Aluno').trim()||'Aluno';}
+  function anyOpenModal(){return !!document.querySelector('.modal-backdrop.open');}
   function safe(value){return typeof esc==='function'?esc(value):String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
   function dateLabel(value){
     try{
@@ -31,7 +34,7 @@
   function ensureStyles(){
     if(document.getElementById('tb-trainer-workspace-style'))return;
     const style=document.createElement('style');style.id='tb-trainer-workspace-style';style.textContent=`
-      .tb-trainer-tools{position:fixed;right:14px;bottom:18px;z-index:7600;display:none;gap:8px;align-items:center;padding:7px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(12,12,12,.94);box-shadow:0 12px 36px rgba(0,0,0,.45);backdrop-filter:blur(10px)}
+      .tb-trainer-tools{position:fixed;right:14px;bottom:18px;z-index:4200;display:none;gap:8px;align-items:center;padding:7px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(12,12,12,.94);box-shadow:0 12px 36px rgba(0,0,0,.45);backdrop-filter:blur(10px)}
       .tb-trainer-tools.visible{display:flex}.tb-trainer-tool{min-height:40px;border:1px solid rgba(198,61,61,.42);border-radius:10px;background:#211313;color:#fff;padding:0 11px;font:800 10px/1 'DM Mono',monospace;letter-spacing:.04em;cursor:pointer;white-space:nowrap}.tb-trainer-tool.secondary{background:#171717;border-color:rgba(255,255,255,.14)}
       .tb-workspace-sheet{max-width:720px}.tb-workspace-title-sub{margin:-5px 0 14px;color:#888;font:500 10px/1.4 'DM Mono',monospace}.tb-workspace-list{display:grid;gap:8px;max-height:min(58vh,560px);overflow:auto;padding-right:3px}.tb-workspace-section{margin:13px 0 7px;color:#aaa;font:800 10px/1.2 'DM Mono',monospace;letter-spacing:.07em}.tb-workspace-report{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:#171717;color:#eee;padding:11px 12px}.tb-workspace-report[disabled]{opacity:.55}.tb-workspace-report strong{display:block;font-size:12px}.tb-workspace-report small{display:block;margin-top:4px;color:#888;font:500 9px/1.35 'DM Mono',monospace}.tb-workspace-status{flex:0 0 auto;color:#c7c7c7;font:800 9px/1 'DM Mono',monospace}.tb-workspace-empty{padding:16px;border:1px dashed rgba(255,255,255,.12);border-radius:10px;color:#777;font:500 10px/1.5 'DM Mono',monospace}.tb-private-note{width:100%;min-height:250px;resize:vertical}.tb-private-note-hint{margin:8px 0 14px;color:#777;font:500 9px/1.45 'DM Mono',monospace}.tb-note-status{min-height:18px;margin-top:8px;color:#888;font:600 9px/1.35 'DM Mono',monospace}
       @media(max-width:899px){.tb-trainer-tools{right:10px;bottom:74px;left:10px;justify-content:center}.tb-trainer-tool{flex:1;padding:0 7px}.tb-workspace-sheet{max-height:88vh}.tb-workspace-list{max-height:52vh}}
@@ -48,8 +51,14 @@
     return dock;
   }
   function syncDock(){
-    const dock=ensureDock(),student=trainerStudent(),visible=!!student&&PRESCRIPTION_SCREENS.has(activeScreenId());dock.classList.toggle('visible',visible);
+    const dock=ensureDock(),student=trainerStudent();
+    const visible=!!student&&PRESCRIPTION_SCREENS.has(activeScreenId())&&!reportViewerTransition&&!anyOpenModal();
+    dock.classList.toggle('visible',visible);
     if(visible){dock.querySelector('#tb-open-private-note').title='Rascunho privado de '+studentName();dock.querySelector('#tb-open-student-reports').title='Relatórios e fotos de '+studentName();}
+  }
+  function scheduleDockSync(){
+    if(dockSyncFrame)cancelAnimationFrame(dockSyncFrame);
+    dockSyncFrame=requestAnimationFrame(()=>{dockSyncFrame=0;syncDock();});
   }
 
   function ensureReportsModal(){
@@ -61,6 +70,18 @@
     try{if(typeof v109ReportModeLabel==='function'&&typeof v109ReportMode==='function')return v109ReportModeLabel(v109ReportMode(q));}catch(error){}
     return q?.reportType==='photo-only'?'Somente fotos':q?.reportType==='written-only'?'Relatório escrito':'Relatório solicitado';
   }
+  function openExistingReport(viewer){
+    reportViewerTransition=true;
+    try{
+      if(document.getElementById('tb-trainer-reports-modal')?.classList.contains('open'))closeModal('tb-trainer-reports-modal');
+    }catch(error){document.getElementById('tb-trainer-reports-modal')?.classList.remove('open');}
+    syncDock();
+    requestAnimationFrame(()=>{
+      try{viewer();}
+      catch(error){console.error('[Team Bulls] Falha ao abrir relatório rápido',error);if(typeof showToast==='function')showToast('Não foi possível abrir o relatório.',true);}
+      requestAnimationFrame(()=>{reportViewerTransition=false;syncDock();});
+    });
+  }
   function renderQuickReports(weekly,questionnaires){
     const host=document.getElementById('tb-trainer-reports-content');if(!host)return;
     const parts=[];
@@ -71,8 +92,8 @@
     if(questionnaires.length)parts.push(...questionnaires.slice(0,12).map(q=>{const answered=!!q.answered,photos=Array.isArray(q.photoIds)?q.photoIds.length:0;return`<button type="button" class="tb-workspace-report" data-tb-questionnaire="${safe(q.id)}" ${answered?'':'disabled'}><span><strong>${safe(questionnaireLabel(q))}</strong><small>${safe(dateLabel(q.answeredAt||q.createdAt))}${answered?` · ${photos} foto(s)`:' · aguardando aluno'}</small></span><span class="tb-workspace-status">${answered?'ABRIR ›':'PENDENTE'}</span></button>`;}));
     else parts.push('<div class="tb-workspace-empty">Nenhuma solicitação de relatório encontrada.</div>');
     host.innerHTML=parts.join('');
-    host.querySelectorAll('[data-tb-weekly]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbWeekly;if(typeof viewWeeklyCheckin==='function')viewWeeklyCheckin(id);}));
-    host.querySelectorAll('[data-tb-questionnaire]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbQuestionnaire;if(typeof viewQuestionnaire==='function')viewQuestionnaire(id,true);}));
+    host.querySelectorAll('[data-tb-weekly]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbWeekly;if(typeof viewWeeklyCheckin==='function')openExistingReport(()=>viewWeeklyCheckin(id));}));
+    host.querySelectorAll('[data-tb-questionnaire]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbQuestionnaire;if(typeof viewQuestionnaire==='function')openExistingReport(()=>viewQuestionnaire(id,true));}));
   }
   async function loadQuickReports(){
     const student=trainerStudent(),host=document.getElementById('tb-trainer-reports-content');if(!student||!host)return;
@@ -89,7 +110,7 @@
     }catch(error){if(token!==reportLoadToken)return;host.innerHTML='<div class="tb-workspace-empty">Não foi possível carregar os relatórios agora. Verifique a conexão e tente novamente.</div>';}
   }
   function openQuickReports(){
-    const student=trainerStudent();if(!student)return;ensureReportsModal();document.getElementById('tb-trainer-reports-title').textContent='Relatórios e fotos';document.getElementById('tb-trainer-reports-sub').textContent=studentName()+' · consulta rápida sem sair da prescrição';openModal('tb-trainer-reports-modal');loadQuickReports();
+    const student=trainerStudent();if(!student)return;ensureReportsModal();document.getElementById('tb-trainer-reports-title').textContent='Relatórios e fotos';document.getElementById('tb-trainer-reports-sub').textContent=studentName()+' · consulta rápida sem sair da prescrição';openModal('tb-trainer-reports-modal');syncDock();loadQuickReports();
   }
 
   function ensureNoteModal(){
@@ -102,7 +123,7 @@
     const ref=trainerPrivateRef();if(!ref)return'';const snap=await cloudGet(ref,'rascunho privado do treinador');if(!snap.exists)return'';const data=snap.data()||{},entry=data.studentNotes&&typeof data.studentNotes==='object'?data.studentNotes[studentUid]:null;return String(typeof entry==='string'?entry:entry?.text||'').slice(0,NOTE_MAX);
   }
   async function openPrivateNote(){
-    const student=trainerStudent();if(!student)return;ensureNoteModal();const text=document.getElementById('tb-private-note-text'),status=document.getElementById('tb-private-note-status');document.getElementById('tb-private-note-student').textContent=studentName()+' · rascunho individual deste aluno';text.value='';text.dataset.studentUid=student.uid;status.textContent='Carregando…';openModal('tb-trainer-note-modal');
+    const student=trainerStudent();if(!student)return;ensureNoteModal();const text=document.getElementById('tb-private-note-text'),status=document.getElementById('tb-private-note-status');document.getElementById('tb-private-note-student').textContent=studentName()+' · rascunho individual deste aluno';text.value='';text.dataset.studentUid=student.uid;status.textContent='Carregando…';openModal('tb-trainer-note-modal');syncDock();
     try{const value=await readPrivateNote(student.uid);if(text.dataset.studentUid!==student.uid)return;text.value=value;status.textContent=value?'Rascunho carregado.':'Nenhuma anotação salva ainda.';}catch(error){status.textContent='Não foi possível carregar agora.';}
   }
   async function savePrivateNote(){
@@ -119,8 +140,14 @@
 
   function wrapShowScreen(){
     const base=window.showScreen;if(typeof base!=='function'||base.__tbTrainerWorkspace)return;
-    const wrapped=function(){const result=base.apply(this,arguments);requestAnimationFrame(syncDock);return result;};wrapped.__tbTrainerWorkspace=true;window.showScreen=wrapped;
+    const wrapped=function(){const result=base.apply(this,arguments);scheduleDockSync();return result;};wrapped.__tbTrainerWorkspace=true;window.showScreen=wrapped;
   }
-  function install(){ensureStyles();ensureDock();ensureReportsModal();ensureNoteModal();wrapShowScreen();syncDock();window.addEventListener('pageshow',syncDock,{passive:true});window.TeamBullsTrainerWorkspace=Object.freeze({sync:syncDock,openReports:openQuickReports,openNote:openPrivateNote});}
+  function watchModalState(){
+    const observer=new MutationObserver(records=>{
+      if(records.some(record=>record.type==='childList'||(record.type==='attributes'&&record.target instanceof Element&&record.target.classList.contains('modal-backdrop'))))scheduleDockSync();
+    });
+    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  }
+  function install(){ensureStyles();ensureDock();ensureReportsModal();ensureNoteModal();wrapShowScreen();watchModalState();syncDock();window.addEventListener('pageshow',scheduleDockSync,{passive:true});window.TeamBullsTrainerWorkspace=Object.freeze({sync:syncDock,openReports:openQuickReports,openNote:openPrivateNote});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
