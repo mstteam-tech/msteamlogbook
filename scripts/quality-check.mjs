@@ -1,0 +1,66 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+
+const root=process.cwd();
+const fail=[];
+const read=rel=>fs.readFileSync(path.join(root,rel),'utf8');
+const requireFile=rel=>{if(!fs.existsSync(path.join(root,rel)))fail.push(`Arquivo obrigatório ausente: ${rel}`);};
+const assert=(condition,message)=>{if(!condition)fail.push(message);};
+
+[
+  'index.html','manifest.json','version.json','sw.js','config_v10_7.js',
+  'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
+].forEach(requireFile);
+
+function walk(dir){
+  const out=[];
+  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+    if(['.git','node_modules'].includes(entry.name))continue;
+    const full=path.join(dir,entry.name);
+    if(entry.isDirectory())out.push(...walk(full));
+    else if(entry.isFile()&&entry.name.endsWith('.js'))out.push(full);
+  }
+  return out;
+}
+for(const file of walk(root)){
+  const result=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+  if(result.status!==0)fail.push(`JavaScript inválido em ${path.relative(root,file)}: ${result.stderr.trim()}`);
+}
+
+for(const rel of ['manifest.json','version.json']){
+  try{JSON.parse(read(rel));}catch(error){fail.push(`${rel} não é JSON válido: ${error.message}`);}
+}
+const version=JSON.parse(read('version.json')).version;
+assert(/<meta content="10\.10\.9" name="team-bulls-version"/.test(read('index.html')),'Meta de versão do index não corresponde a 10.10.9.');
+assert(version==='10.10.9','version.json não corresponde a 10.10.9.');
+assert(/const APP_VERSION='10\.10\.9'/.test(read('sw.js')),'Service Worker com versão divergente.');
+
+const config=read('config_v10_7.js');
+assert(config.includes('modules/stability_v10_10_9.js'),'Loader não inclui a camada de estabilidade.');
+assert(config.includes('modules/app-update-v10_10_9.js'),'Loader não inclui a atualização de UX/performance.');
+assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
+
+const update=read('modules/app-update-v10_10_9.js');
+assert(update.includes('input.multiple=true'),'Seletor múltiplo de fotos não foi encontrado.');
+assert(update.includes('Lado direito braços estendidos')&&update.includes('Lado esquerdo braços estendidos'),'Novos nomes das poses não estão presentes.');
+assert(update.includes("pass.autocomplete='current-password'"),'Autocomplete seguro de senha não foi configurado.');
+assert(update.includes("where('studentId','==',studentUid).where('requestKey','==',request.requestKey)"),'Proteção contra regressão do permission-denied semanal ausente.');
+assert(!/localStorage\.setItem\([^\n]*(pass|password|senha)/i.test(update),'A atualização não pode armazenar senha em texto no localStorage.');
+
+const firestore=read('firebase/firestore_26_compacto.rules');
+assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins ausente.');
+assert(firestore.includes('request.resource.data.photoIds.size() == 6'),'Regra semanal deixou de exigir 6 fotos.');
+assert(firestore.includes("request.resource.data.get('requiredPhotoCount', 6) == 6"),'Regra de questionários deixou de exigir 6 fotos quando aplicável.');
+
+const storage=read('firebase/storage_5.rules');
+assert(storage.includes('match /progressPhotos/{uid}/{photoId}.jpg'),'Regra de Storage para fotos principais ausente.');
+assert(storage.includes('match /progressPhotoThumbs/{uid}/{photoId}.jpg'),'Regra de Storage para miniaturas ausente.');
+
+if(fail.length){
+  console.error('\nFalhas de qualidade:\n- '+fail.join('\n- '));
+  process.exit(1);
+}
+console.log(`Quality check OK — ${walk(root).length} arquivos JavaScript verificados.`);
