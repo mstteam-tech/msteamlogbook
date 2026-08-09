@@ -12,7 +12,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','sw_47.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/anton-font-v10_10_9.js','modules/student-menu-design-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -52,9 +52,6 @@ assert(config.includes('modules/modal-form-guard-v10_10_9.js'),'Loader não incl
 assert(config.includes('modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'),'Loader não usa cache-bust da versão otimizada do workspace.');
 assert(config.includes('modules/cardio-timer-fix-v10_10_9.js'),'Loader não inclui a correção do cronômetro de cardio.');
 assert(config.includes('modules/global-performance-v10_10_9.js?v=10.10.9-perf1'),'Loader não inclui a camada global de performance.');
-assert(config.includes('modules/anton-font-v10_10_9.js?v=10.10.9-anton1'),'Loader não inclui a fonte Anton da identidade aprovada.');
-assert(config.includes('modules/student-menu-design-v10_10_9.js?v=10.10.9-menu1'),'Loader não inclui o novo menu visual do aluno.');
-assert(config.indexOf('anton-font-v10_10_9.js')<config.indexOf('student-menu-design-v10_10_9.js'),'Anton precisa ser solicitada antes do menu visual.');
 assert(config.includes("link.rel='preload';link.as='script';link.href=src"),'Hotfixes não recebem preload de rede antes da execução serial.');
 assert(config.includes('for(const src of modules)await loadScript(src)'),'Execução determinística dos hotfixes foi removida.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
@@ -114,30 +111,13 @@ assert(performance.includes('input[type="number"]')&&performance.includes('font-
 assert(performance.includes('html.tb-page-hidden *{animation-play-state:paused!important}'),'Animações não são pausadas quando a página fica oculta.');
 assert(performance.includes("document.addEventListener('visibilitychange',syncVisibilityState"),'Estado de visibilidade não alimenta a otimização global.');
 
-const anton=read('modules/anton-font-v10_10_9.js');
-assert(anton.includes('family=Anton&display=swap'),'Fonte Anton não está sendo solicitada do provedor permitido.');
-assert(anton.includes("link.rel='stylesheet'"),'Fonte Anton não é carregada como stylesheet.');
-
-const studentMenu=read('modules/student-menu-design-v10_10_9.js');
-assert(studentMenu.includes("font-family:'Anton'"),'Nome TEAM BULLS do novo menu não usa Anton como fonte principal.');
-for(const label of ['INSTRUÇÕES','SUPRIMENTOS','OPÇÕES DE<br>SUPRIMENTOS','TÉCNICAS','SUBSTITUIÇÕES DE<br>EXERCÍCIOS','RELATÓRIOS','EVIDÊNCIAS','AVISOS','REGISTROS'])assert(studentMenu.includes(label),`Item obrigatório ausente no novo menu: ${label}`);
-for(const action of ['openInstructions()','openMeals()','openFoodOptions()','openTechniques()','openExerciseOptions()','openMyQuestionnaires()','openPhotos()','openV107Operations(\'notices\')','openCalendar()'])assert(studentMenu.includes(action),`Ação original não preservada no novo menu: ${action}`);
-assert(studentMenu.includes("body.student-desktop .student-desktop-nav{display:none!important}"),'Menu lateral antigo do aluno não é substituído no desktop.');
-assert(studentMenu.includes("body.student-desktop #app{margin-left:0!important;width:100%!important"),'Layout desktop não recupera a largura após ocultar a sidebar antiga.');
-assert(studentMenu.includes('grid-template-columns:repeat(3,minmax(0,1fr))'),'Menu aprovado não preserva grade de três colunas em telas maiores.');
-assert(studentMenu.includes('grid-template-columns:repeat(2,minmax(0,1fr))'),'Menu não possui adaptação móvel em duas colunas.');
-assert(studentMenu.includes("document.getElementById('v107-nav-notice-count')"),'Badge de Avisos não acompanha a contagem já existente.');
-assert(studentMenu.includes("data-tb-secondary=\"sync\"")&&studentMenu.includes("data-tb-secondary=\"settings\"")&&studentMenu.includes("data-tb-secondary=\"logout\""),'Ações secundárias necessárias foram perdidas ao substituir a sidebar.');
-assert(studentMenu.includes("if(user?.role==='trainer')return false"),'Menu visual do aluno não está isolado do painel do treinador.');
-assert(studentMenu.includes("className='modal-backdrop'"),'Novo menu não integra o sistema existente de modais/ESC.');
-
 const core=read('app_v10_10_9_core.js');
 assert(core.includes('state.endAt=Date.now()+state.remainingSeconds*1000'),'Fluxo principal deixou de persistir endAt ao iniciar o cardio.');
 assert(core.includes('function pauseCardioTimer()')&&core.includes('function resetCardioTimer()'),'Controles de pausa/reinício do cardio estão ausentes.');
 
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
-assert(sw.includes("const CACHE_REVISION='menu1'"),'Service Worker não criou revisão atômica para o novo design.');
+assert(sw.includes("const CACHE_REVISION='perf1'"),'Service Worker não separa revisão de cache da versão pública.');
 assert(sw.includes('const SHELL_FETCH_CONCURRENCY=4'),'Service Worker não limita concorrência do cache crítico.');
 assert(sw.includes('async function cachePathsWithLimit'),'Service Worker não possui preparação de shell com concorrência controlada.');
 assert(sw.includes("'./modules/app-update-v10_10_9.js?v=10.10.9'"),'App-update não está disponível no shell offline.');
@@ -146,8 +126,6 @@ assert(sw.includes("'./modules/modal-form-guard-v10_10_9.js?v=10.10.9'"),'Prote�
 assert(sw.includes("'./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'"),'Workspace otimizado não está disponível no shell offline.');
 assert(sw.includes("'./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'"),'Cronômetro corrigido não está disponível no shell offline.');
 assert(sw.includes("'./modules/global-performance-v10_10_9.js?v=10.10.9-perf1'"),'Camada global de performance não está disponível no shell offline.');
-assert(sw.includes("'./modules/anton-font-v10_10_9.js?v=10.10.9-anton1'"),'Carregador da Anton não está disponível no shell offline.');
-assert(sw.includes("'./modules/student-menu-design-v10_10_9.js?v=10.10.9-menu1'"),'Novo menu visual não está disponível no shell offline.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'Ponte legada sw_47.js divergiu do Service Worker principal.');
 const requiredShellBlock=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
 assert(!requiredShellBlock.includes('photo-guide'),'Guia de fotos deve permanecer fora do shell crítico.');
