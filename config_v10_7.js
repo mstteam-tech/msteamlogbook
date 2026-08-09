@@ -17,7 +17,8 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/modal-form-guard-v10_10_9.js?v=10.10.9',
     './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2',
     './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1',
-    './modules/global-performance-v10_10_9.js?v=10.10.9-perf1'
+    './modules/global-performance-v10_10_9.js?v=10.10.9-perf1',
+    './modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'
   ];
   const preloadModules=()=>{
     modules.forEach(src=>{
