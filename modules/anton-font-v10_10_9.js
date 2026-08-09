@@ -9,6 +9,5 @@
   link.id=id;
   link.rel='stylesheet';
   link.href='https://fonts.googleapis.com/css2?family=Anton&display=swap';
-  link.crossOrigin='anonymous';
   document.head.appendChild(link);
 })();
