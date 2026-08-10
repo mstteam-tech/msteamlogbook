@@ -59,6 +59,12 @@
     try{if(typeof showToast==='function')showToast('Não foi possível executar esta ação. Tente novamente.',true);}catch(inner){}
     return false;
   }
+  function fallbackOriginalClick(key){
+    const target=originalActions()[key];
+    if(!target||target.disabled)return false;
+    target.click();
+    return true;
+  }
   function runAction(key){
     if(key!=='cancel'&&!validEditingTarget())return false;
     let result=false;
@@ -80,6 +86,7 @@
         default:return false;
       }
     }catch(error){return actionError(key,error);}
+    if(result===false)return fallbackOriginalClick(key);
     if(result&&typeof result.then==='function')result.catch(error=>actionError(key,error));
     return result;
   }
