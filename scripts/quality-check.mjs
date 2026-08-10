@@ -12,7 +12,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','sw_47.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/workout-ux-fix-v10_10_9.js','modules/desktop-performance-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/workout-ux-fix-v10_10_9.js','modules/desktop-performance-v10_10_9.js','modules/ger-bulk-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -54,8 +54,10 @@ assert(config.includes('modules/cardio-timer-fix-v10_10_9.js'),'Loader não incl
 assert(config.includes('modules/global-performance-v10_10_9.js?v=10.10.9-perf1'),'Loader não inclui a camada global de performance.');
 assert(config.includes('modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'),'Loader não inclui a correção de scroll/touch do treino.');
 assert(config.includes('modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1'),'Loader não inclui a otimização específica de desktop.');
+assert(config.includes('modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1'),'Loader não inclui os controles de GER em lote.');
 assert(config.indexOf('global-performance-v10_10_9.js')<config.indexOf('workout-ux-fix-v10_10_9.js'),'Correção do treino precisa executar depois da camada global.');
 assert(config.indexOf('workout-ux-fix-v10_10_9.js')<config.indexOf('desktop-performance-v10_10_9.js'),'Otimização desktop precisa executar depois da correção do treino.');
+assert(config.indexOf('desktop-performance-v10_10_9.js')<config.indexOf('ger-bulk-v10_10_9.js'),'Controles de GER devem executar depois das camadas de UX/performance.');
 assert(config.includes("link.rel='preload';link.as='script';link.href=src"),'Hotfixes não recebem preload de rede antes da execução serial.');
 assert(config.includes('for(const src of modules)await loadScript(src)'),'Execução determinística dos hotfixes foi removida.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
@@ -131,9 +133,22 @@ assert(desktopPerformance.includes("image.loading='lazy'")&&desktopPerformance.i
 assert(desktopPerformance.includes("frame.loading='lazy'")&&desktopPerformance.includes("video.preload='metadata'"),'Mídia incorporada do desktop não está sob demanda.');
 assert(!desktopPerformance.includes('MutationObserver'),'Otimização desktop não deve adicionar observador permanente da árvore DOM.');
 
+const gerBulk=read('modules/ger-bulk-v10_10_9.js');
+assert(gerBulk.includes('GER S<span id="tb-ger-week-label">1</span> → TODOS EXERCÍCIOS'),'Controle de GER da semana para todos os exercícios não foi encontrado.');
+assert(gerBulk.includes('GER → 8 SEMANAS DESTE EXERCÍCIO'),'Controle de GER das 8 semanas do exercício não foi encontrado.');
+assert(gerBulk.includes("next['w'+week]=setsWithGer(resolved.sets,ger)"),'GER da semana não materializa somente a semana alvo quando a prescrição era herdada.');
+assert(gerBulk.includes("Object.prototype.hasOwnProperty.call(next,planKey)"),'GER das 8 semanas deixou de preservar a estrutura de herança da prescrição.');
+assert(gerBulk.includes("changes.forEach(change=>batch.update(db.collection('exercises').doc(change.exercise.id),{weeklyPlan:change.next}))"),'Alteração coletiva de GER não usa batch atômico do Firestore.');
+assert(gerBulk.includes('changes.forEach(change=>{change.exercise.weeklyPlan=change.before;})'),'Modo local não restaura os planos se a gravação coletiva falhar.');
+assert(gerBulk.includes("CURRENT_USER?.role==='trainer'"),'Controle de GER em lote não restringe a edição cloud ao treinador.');
+assert(gerBulk.includes('updateEditorGer(ger)')&&!gerBulk.includes("db.collection('sessions')"),'GER em lote não deve alterar registros de sessões realizadas.');
+assert(!gerBulk.includes('weeklyTechniquePlan:'),'GER em lote não pode sobrescrever técnicas semanais.');
+
 const core=read('app_v10_10_9_core.js');
 assert(core.includes('state.endAt=Date.now()+state.remainingSeconds*1000'),'Fluxo principal deixou de persistir endAt ao iniciar o cardio.');
 assert(core.includes('function pauseCardioTimer()')&&core.includes('function resetCardioTimer()'),'Controles de pausa/reinício do cardio estão ausentes.');
+assert(core.includes('function resolveWeekPrescription(exercise,week)'),'Resolução de prescrição herdada necessária ao GER em lote está ausente.');
+assert(core.includes("function refreshPlanViewsAfterWeeklyTechniqueChange(exercise,week)"),'Atualização segura das telas de prescrição está ausente.');
 
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
@@ -148,6 +163,7 @@ assert(sw.includes("'./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'")
 assert(sw.includes("'./modules/global-performance-v10_10_9.js?v=10.10.9-perf1'"),'Camada global de performance não está disponível no shell offline.');
 assert(sw.includes("'./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'"),'Correção de scroll/touch do treino não está disponível no shell offline.');
 assert(sw.includes("'./modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1'"),'Otimização desktop não está disponível no shell offline.');
+assert(sw.includes("'./modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1'"),'Controles de GER em lote não estão disponíveis no shell offline.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'Ponte legada sw_47.js divergiu do Service Worker principal.');
 const requiredShellBlock=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
 assert(!requiredShellBlock.includes('photo-guide'),'Guia de fotos deve permanecer fora do shell crítico.');
@@ -158,6 +174,7 @@ assert(/match \/weeklyCheckins\/{id}/.test(firestore),'Regra de weeklyCheckins a
 assert(firestore.includes('request.resource.data.photoIds.size() == 6'),'Regra semanal deixou de exigir 6 fotos.');
 assert(firestore.includes("request.resource.data.get('requiredPhotoCount', 6) == 6"),'Regra de questionários deixou de exigir 6 fotos quando aplicável.');
 assert(firestore.includes('match /trainerSupplementCatalog/{trainerUid}')&&firestore.includes('allow read: if isTrainer() && request.auth.uid == trainerUid'),'Documento usado pelo rascunho deixou de ser privado do próprio treinador.');
+assert(firestore.includes('match /exercises/{id}')&&firestore.includes("request.resource.data.get('weeklyPlan', {}) is map"),'Regras de exercícios deixaram de aceitar atualização do weeklyPlan pelo treinador.');
 
 const storage=read('firebase/storage_5.rules');
 assert(storage.includes('match /progressPhotos/{uid}/{photoId}.jpg'),'Regra de Storage para fotos principais ausente.');
