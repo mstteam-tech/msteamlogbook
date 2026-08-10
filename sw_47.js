@@ -2,7 +2,7 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const CACHE_REVISION='perf1';
+const CACHE_REVISION='desktop1';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -33,6 +33,8 @@ const REQUIRED_SHELL=[
   './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2',
   './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1',
   './modules/global-performance-v10_10_9.js?v=10.10.9-perf1',
+  './modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1',
+  './modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1',
   './interaction_v10_10_9.js?v=10.10.9',
   './styles_v10_10_9.css?v=10.10.9',
   './recuperar.html',
