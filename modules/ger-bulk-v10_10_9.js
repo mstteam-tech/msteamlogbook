@@ -119,8 +119,11 @@
     setBusy(false);
     if(typeof endAction==='function')endAction(key,'modal-prescription');
   }
-  function refreshAfterBulk(exercise,week){
-    try{if(typeof loadPrescriptionEditor==='function')loadPrescriptionEditor();}catch(error){}
+  function updateEditorGer(ger){
+    document.querySelectorAll('#prescription-editor .plan-set-row:not([data-backoff="1"]) [data-f="ger"]').forEach(select=>{select.value=String(ger);});
+  }
+  function refreshAfterBulk(exercise,week,ger){
+    updateEditorGer(ger);
     try{if(typeof refreshPlanViewsAfterWeeklyTechniqueChange==='function')refreshPlanViewsAfterWeeklyTechniqueChange(exercise,week);}catch(error){}
     syncControls();
   }
@@ -155,7 +158,7 @@
       }
       if(!changes.length){showToast(`GER ${ger} já está aplicado ou não há prescrições na semana ${week}.`,true);return;}
       await writePlanChanges(changes,'aplicar GER na semana para todos os exercícios');
-      refreshAfterBulk(exercise,week);
+      refreshAfterBulk(exercise,week,ger);
       showToast(`✓ GER ${ger} aplicado na semana ${week} de ${changes.length} exercício${changes.length===1?'':'s'}`);
     }catch(error){
       alert(cloudWriteError(error,'aplicar o GER da semana em todos os exercícios'));
@@ -180,7 +183,7 @@
       if(!prescribedSources){showToast('Este exercício ainda não possui prescrição semanal para alterar.',true);return;}
       if(samePlan(before,next)){showToast(`GER ${ger} já está aplicado em todas as semanas deste exercício.`,true);return;}
       await writePlanChanges([{exercise,before,next}],'aplicar GER nas 8 semanas do exercício');
-      refreshAfterBulk(exercise,week);
+      refreshAfterBulk(exercise,week,ger);
       showToast(`✓ GER ${ger} aplicado às 8 semanas de ${exercise.name}`);
     }catch(error){
       alert(cloudWriteError(error,'aplicar o GER em todas as semanas deste exercício'));
