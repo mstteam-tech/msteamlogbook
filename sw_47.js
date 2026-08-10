@@ -35,6 +35,7 @@ const REQUIRED_SHELL=[
   './modules/global-performance-v10_10_9.js?v=10.10.9-perf1',
   './modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1',
   './modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1',
+  './modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1',
   './interaction_v10_10_9.js?v=10.10.9',
   './styles_v10_10_9.css?v=10.10.9',
   './recuperar.html',
