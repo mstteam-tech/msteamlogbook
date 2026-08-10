@@ -1,4 +1,4 @@
-/* Team Bulls v10.10.9 — organiza as ações da prescrição sem trocar o design nem os handlers existentes. */
+/* Team Bulls v10.10.9 — organiza as ações da prescrição sem trocar o design; as ações chamam os handlers reais diretamente. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_PRESCRIPTION_ACTIONS_LAYOUT_V10109__)return;
@@ -53,6 +53,42 @@
   }
   function validEditingTarget(){
     try{return PLAN_EDIT_TARGET==='trainer'||PLAN_EDIT_TARGET==='local';}catch(error){return false;}
+  }
+  function actionError(key,error){
+    console.error('[Team Bulls] Falha ao executar ação organizada:',key,error);
+    try{if(typeof showToast==='function')showToast('Não foi possível executar esta ação. Tente novamente.',true);}catch(inner){}
+    return false;
+  }
+  function fallbackOriginalClick(key){
+    const target=originalActions()[key];
+    if(!target||target.disabled)return false;
+    target.click();
+    return true;
+  }
+  function runAction(key){
+    if(key!=='cancel'&&!validEditingTarget())return false;
+    let result=false;
+    try{
+      switch(key){
+        case 'saveAll':result=typeof savePrescription==='function'?savePrescription(false):false;break;
+        case 'saveTech':result=typeof saveCurrentWeekTechniques==='function'?saveCurrentWeekTechniques():false;break;
+        case 'removeTech':result=typeof clearCurrentWeekTechniques==='function'?clearCurrentWeekTechniques():false;break;
+        case 'replicate':result=typeof confirmReplicatePrescription==='function'?confirmReplicatePrescription():false;break;
+        case 'copyWeekAll':result=typeof confirmCopyCurrentWeekToAllExercises==='function'?confirmCopyCurrentWeekToAllExercises():false;break;
+        case 'copyAllWeeks':result=typeof confirmCopyAllWeeksToAllExercises==='function'?confirmCopyAllWeeksToAllExercises():false;break;
+        case 'techComplete':result=typeof propagateTechniquesCompleteOneClick==='function'?propagateTechniquesCompleteOneClick():false;break;
+        case 'techBelowCurrent':result=typeof confirmPropagateWeekTechniques==='function'?confirmPropagateWeekTechniques('below-current'):false;break;
+        case 'techFuture':result=typeof confirmPropagateWeekTechniques==='function'?confirmPropagateWeekTechniques('source-future'):false;break;
+        case 'techBelowFuture':result=typeof confirmPropagateWeekTechniques==='function'?confirmPropagateWeekTechniques('below-future'):false;break;
+        case 'restoreTech':result=typeof restoreWeekTechniquesToDefault==='function'?restoreWeekTechniquesToDefault():false;break;
+        case 'clearWeek':result=typeof clearPrescriptionWeek==='function'?clearPrescriptionWeek():false;break;
+        case 'cancel':result=typeof closeModal==='function'?closeModal('modal-prescription'):false;break;
+        default:return false;
+      }
+    }catch(error){return actionError(key,error);}
+    if(result===false)return fallbackOriginalClick(key);
+    if(result&&typeof result.then==='function')result.catch(error=>actionError(key,error));
+    return result;
   }
 
   function installStyles(){
@@ -117,11 +153,7 @@
     const button=document.createElement('button');button.type='button';button.className=primary?'btn-primary tb-action-primary':'btn-ghost';
     if(danger)button.classList.add('tb-action-danger');
     button.textContent=label;button.dataset.tbActionProxy=key;
-    button.addEventListener('click',()=>{
-      const target=originalActions()[key];
-      if(!target||target.disabled)return;
-      target.click();
-    });
+    button.addEventListener('click',()=>runAction(key));
     proxies.set(key,button);return button;
   }
   function makeSeriesOnlyButton(){
@@ -234,7 +266,7 @@
     if(!buildCenter())return;
     document.getElementById('input-prescription-week')?.addEventListener('change',()=>requestAnimationFrame(syncState));
     ['openPrescriptionModal','loadPrescriptionEditor','onWeekTechniqueSelectionChange'].forEach(wrapUiFunction);
-    window.TeamBullsPrescriptionActions=Object.freeze({version:'10.10.9-actions1',refresh:syncState,saveSeriesOnly});
+    window.TeamBullsPrescriptionActions=Object.freeze({version:'10.10.9-actions2',refresh:syncState,saveSeriesOnly,runAction});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
