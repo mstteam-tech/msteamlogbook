@@ -12,7 +12,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','sw_47.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/workout-ux-fix-v10_10_9.js','modules/desktop-performance-v10_10_9.js','modules/ger-bulk-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/workout-ux-fix-v10_10_9.js','modules/desktop-performance-v10_10_9.js','modules/ger-bulk-v10_10_9.js','modules/prescription-actions-layout-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -55,9 +55,11 @@ assert(config.includes('modules/global-performance-v10_10_9.js?v=10.10.9-perf1')
 assert(config.includes('modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'),'Loader não inclui a correção de scroll/touch do treino.');
 assert(config.includes('modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1'),'Loader não inclui a otimização específica de desktop.');
 assert(config.includes('modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1'),'Loader não inclui os controles de GER em lote.');
+assert(config.includes('modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions1'),'Loader não inclui a organização das ações de prescrição.');
 assert(config.indexOf('global-performance-v10_10_9.js')<config.indexOf('workout-ux-fix-v10_10_9.js'),'Correção do treino precisa executar depois da camada global.');
 assert(config.indexOf('workout-ux-fix-v10_10_9.js')<config.indexOf('desktop-performance-v10_10_9.js'),'Otimização desktop precisa executar depois da correção do treino.');
 assert(config.indexOf('desktop-performance-v10_10_9.js')<config.indexOf('ger-bulk-v10_10_9.js'),'Controles de GER devem executar depois das camadas de UX/performance.');
+assert(config.indexOf('ger-bulk-v10_10_9.js')<config.indexOf('prescription-actions-layout-v10_10_9.js'),'Organização das ações deve executar depois dos controles de GER em lote.');
 assert(config.includes("link.rel='preload';link.as='script';link.href=src"),'Hotfixes não recebem preload de rede antes da execução serial.');
 assert(config.includes('for(const src of modules)await loadScript(src)'),'Execução determinística dos hotfixes foi removida.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
@@ -144,6 +146,22 @@ assert(gerBulk.includes("CURRENT_USER?.role==='trainer'"),'Controle de GER em lo
 assert(gerBulk.includes('updateEditorGer(ger)')&&!gerBulk.includes("db.collection('sessions')"),'GER em lote não deve alterar registros de sessões realizadas.');
 assert(!gerBulk.includes('weeklyTechniquePlan:'),'GER em lote não pode sobrescrever técnicas semanais.');
 
+const prescriptionActions=read('modules/prescription-actions-layout-v10_10_9.js');
+assert(prescriptionActions.includes("const CENTER_ID='tb-prescription-actions-center'"),'Central organizada de ações da semana não foi encontrada.');
+assert(prescriptionActions.includes("'saveAll','saveTech','removeTech','replicate','copyWeekAll','copyAllWeeks'"),'Central de ações não exige a presença dos controles principais antes de substituir o layout antigo.');
+assert(prescriptionActions.includes("REQUIRED_KEYS.every(key=>actions[key])"),'Fallback do layout antigo foi removido quando algum controle esperado estiver ausente.');
+assert(prescriptionActions.includes('SALVAR TODA A SEMANA')&&prescriptionActions.includes('SALVAR SOMENTE SÉRIES, REPS E GER')&&prescriptionActions.includes('SALVAR SOMENTE AS TÉCNICAS'),'Grupo Salvar não contém as três ações aprovadas.');
+assert(prescriptionActions.includes('REPASSAR / APLICAR')&&prescriptionActions.includes('SÉRIES / PRESCRIÇÃO / GER')&&prescriptionActions.includes('TÉCNICAS EM LOTE'),'Ações de propagação não estão separadas por intenção.');
+assert(prescriptionActions.includes('REMOVER TODAS AS TÉCNICAS')&&prescriptionActions.includes('SEM EXERCÍCIO NESTA SEMANA')&&prescriptionActions.includes('RESTAURAR TÉCNICAS AO PADRÃO'),'Grupo Limpar/Restaurar está incompleto.');
+assert(prescriptionActions.includes("target.click()"),'Novo layout deixou de reutilizar os handlers originais das ações existentes.');
+assert(prescriptionActions.includes("db.collection('exercises').doc(exercise.id).update({weeklyPlan})"),'Salvar somente séries/reps/GER não atualiza exclusivamente weeklyPlan.');
+assert(!prescriptionActions.includes("db.collection('sessions')"),'Organização de ações não pode alterar sessões realizadas.');
+assert(!prescriptionActions.includes('weeklyTechniquePlan:'),'Salvar somente séries/reps/GER não pode sobrescrever técnicas semanais.');
+assert(prescriptionActions.includes('exercise.weeklyPlan=previous')&&prescriptionActions.includes('if(!localSave())'),'Salvar somente séries em modo local não possui rollback em falha.');
+assert(prescriptionActions.includes("#tb-ger-bulk-tools")&&prescriptionActions.includes('window.TeamBullsGerBulk?.applyWeek?.()'),'GER em lote não foi integrado à central organizada.');
+assert(prescriptionActions.includes('@media(max-width:899px)'),'Central de ações não possui adaptação para mobile.');
+assert(!prescriptionActions.includes('MutationObserver'),'Central de ações não deve adicionar observador permanente do DOM.');
+
 const core=read('app_v10_10_9_core.js');
 assert(core.includes('state.endAt=Date.now()+state.remainingSeconds*1000'),'Fluxo principal deixou de persistir endAt ao iniciar o cardio.');
 assert(core.includes('function pauseCardioTimer()')&&core.includes('function resetCardioTimer()'),'Controles de pausa/reinício do cardio estão ausentes.');
@@ -152,7 +170,7 @@ assert(core.includes("function refreshPlanViewsAfterWeeklyTechniqueChange(exerci
 
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
-assert(sw.includes("const CACHE_REVISION='desktop1'"),'Service Worker não criou uma revisão de cache atômica para a otimização desktop.');
+assert(sw.includes("const CACHE_REVISION='actions1'"),'Service Worker não criou uma revisão de cache atômica para a organização final da prescrição.');
 assert(sw.includes('const SHELL_FETCH_CONCURRENCY=4'),'Service Worker não limita concorrência do cache crítico.');
 assert(sw.includes('async function cachePathsWithLimit'),'Service Worker não possui preparação de shell com concorrência controlada.');
 assert(sw.includes("'./modules/app-update-v10_10_9.js?v=10.10.9'"),'App-update não está disponível no shell offline.');
@@ -164,6 +182,7 @@ assert(sw.includes("'./modules/global-performance-v10_10_9.js?v=10.10.9-perf1'")
 assert(sw.includes("'./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'"),'Correção de scroll/touch do treino não está disponível no shell offline.');
 assert(sw.includes("'./modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1'"),'Otimização desktop não está disponível no shell offline.');
 assert(sw.includes("'./modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1'"),'Controles de GER em lote não estão disponíveis no shell offline.');
+assert(sw.includes("'./modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions1'"),'Central organizada de ações não está disponível no shell offline.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'Ponte legada sw_47.js divergiu do Service Worker principal.');
 const requiredShellBlock=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
 assert(!requiredShellBlock.includes('photo-guide'),'Guia de fotos deve permanecer fora do shell crítico.');
