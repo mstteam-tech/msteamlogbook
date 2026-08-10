@@ -13,6 +13,9 @@
   function openModals(){
     return [...document.querySelectorAll(MODAL_SELECTOR+'.open')];
   }
+  function orderedOpenModals(){
+    return openModals().sort((a,b)=>(Number(a.dataset.tbModalOpenSeq)||0)-(Number(b.dataset.tbModalOpenSeq)||0));
+  }
   function actionInProgress(){
     try{return typeof ACTION_LOCKS!=='undefined'&&ACTION_LOCKS?.size>0;}
     catch(error){return false;}
@@ -40,7 +43,7 @@
     delete modal.dataset.tbNestedConfirm;
   }
   function recoverOrphanedTop(){
-    const modals=openModals();if(!modals.length||actionInProgress())return false;
+    const modals=orderedOpenModals();if(!modals.length||actionInProgress())return false;
     const top=modals[modals.length-1];
     if(visiblePanel(top))return false;
     console.warn('[Team Bulls] Backdrop órfão recuperado:',top.id||'(sem id)');
@@ -61,7 +64,7 @@
     },1800);
   }
   function syncLayers(){
-    const modals=openModals().sort((a,b)=>(Number(a.dataset.tbModalOpenSeq)||0)-(Number(b.dataset.tbModalOpenSeq)||0));
+    const modals=orderedOpenModals();
     modals.forEach((modal,index)=>{
       if(!modal.dataset.tbModalOpenSeq)markOpened(modal);
       modal.style.zIndex=String(BASE_Z+index*4);
