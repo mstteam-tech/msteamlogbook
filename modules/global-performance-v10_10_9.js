@@ -43,12 +43,15 @@
     document.head.appendChild(style);
   }
 
+  function elementAnimations(element){
+    if(!(element instanceof Element)||typeof element.getAnimations!=='function')return[];
+    try{return element.getAnimations({subtree:false});}
+    catch(error){try{return element.getAnimations();}catch(inner){return[];}}
+  }
+
   function finishElementAnimations(element){
-    if(!(element instanceof Element))return false;
-    let animations=[];
-    try{animations=typeof element.getAnimations==='function'?element.getAnimations({subtree:false}):[];}catch(error){animations=[];}
     let finished=false;
-    animations.forEach(animation=>{
+    elementAnimations(element).forEach(animation=>{
       try{
         if(animation.playState==='paused'||animation.playState==='running'){
           animation.finish();
