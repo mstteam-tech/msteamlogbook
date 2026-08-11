@@ -13,7 +13,8 @@
     style.textContent=`
       :where(button,a,[role="button"],label[for],input[type="button"],input[type="submit"]){touch-action:manipulation}
       :where(.modal-sheet,.tb-workspace-list,.weekly-plan-scroll,.technique-picker){scrollbar-gutter:stable}
-      html.tb-page-hidden *{animation-play-state:paused!important}
+      html.tb-page-hidden :where(.spinner,.survival-pulse,.pull-refresh-spinner){animation-play-state:paused!important}
+      html.tb-page-hidden .feedback-banner-label::before{animation-play-state:paused!important}
       #pull-refresh-indicator:not(.visible):not(.refreshing){will-change:auto}
 
       @media (max-width:899px),(pointer:coarse){
@@ -42,8 +43,33 @@
     document.head.appendChild(style);
   }
 
+  function finishElementAnimations(element){
+    if(!(element instanceof Element))return false;
+    let animations=[];
+    try{animations=typeof element.getAnimations==='function'?element.getAnimations({subtree:false}):[];}catch(error){animations=[];}
+    let finished=false;
+    animations.forEach(animation=>{
+      try{
+        if(animation.playState==='paused'||animation.playState==='running'){
+          animation.finish();
+          finished=true;
+        }
+      }catch(error){}
+    });
+    return finished;
+  }
+
+  function settleTransientUiAnimations(){
+    if(document.hidden)return;
+    requestAnimationFrame(()=>{
+      finishElementAnimations(document.querySelector('.screen.active'));
+      document.querySelectorAll('.modal-backdrop.open > .modal-sheet,.modal-backdrop.open > .modal-dialog').forEach(finishElementAnimations);
+    });
+  }
+
   function syncVisibilityState(){
     ROOT.classList.toggle('tb-page-hidden',document.hidden);
+    if(!document.hidden)settleTransientUiAnimations();
   }
 
   function syncCapabilityClasses(){
@@ -60,10 +86,11 @@
     syncVisibilityState();
     syncCapabilityClasses();
     document.addEventListener('visibilitychange',syncVisibilityState,{passive:true});
-    window.addEventListener('pageshow',()=>{syncVisibilityState();syncCapabilityClasses();},{passive:true});
+    window.addEventListener('pageshow',()=>{syncVisibilityState();syncCapabilityClasses();settleTransientUiAnimations();},{passive:true});
+    window.addEventListener('focus',settleTransientUiAnimations,{passive:true});
     window.TeamBullsPerformance=Object.freeze({
-      refresh(){syncVisibilityState();syncCapabilityClasses();},
-      version:'10.10.9-perf1'
+      refresh(){syncVisibilityState();syncCapabilityClasses();settleTransientUiAnimations();},
+      version:'10.10.9-perf2'
     });
   }
 
