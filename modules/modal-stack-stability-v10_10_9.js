@@ -1,38 +1,48 @@
-/* Team Bulls v10.10.9 — estabilidade de pilha de modais e recuperação de backdrop órfão. */
+/* Team Bulls v10.10.9 — estabilidade de pilha de modais e recuperação conservadora de backdrop órfão. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_MODAL_STACK_STABILITY_V10109__)return;
   window.__TEAM_BULLS_MODAL_STACK_STABILITY_V10109__=true;
 
   const MODAL_SELECTOR='.modal-backdrop';
-  const PANEL_SELECTOR='.modal-sheet,.modal-dialog';
+  const PANEL_SELECTOR='.modal-sheet,.modal-dialog,[role="dialog"],[role="alertdialog"]';
   const BASE_Z=100;
+  const HEALTH_CHECK_MS=1200;
+  const ORPHAN_CONFIRMATIONS=2;
+  const orphanMisses=new WeakMap();
   let openSequence=0;
   let healthTimer=0;
 
   function openModals(){
     return [...document.querySelectorAll(MODAL_SELECTOR+'.open')];
   }
+  function markOpened(modal){
+    if(!(modal instanceof HTMLElement))return;
+    modal.dataset.tbModalOpenSeq=String(++openSequence);
+    orphanMisses.delete(modal);
+  }
   function orderedOpenModals(){
-    return openModals().sort((a,b)=>(Number(a.dataset.tbModalOpenSeq)||0)-(Number(b.dataset.tbModalOpenSeq)||0));
+    const modals=openModals();
+    modals.forEach(modal=>{if(!modal.dataset.tbModalOpenSeq)markOpened(modal);});
+    return modals.sort((a,b)=>(Number(a.dataset.tbModalOpenSeq)||0)-(Number(b.dataset.tbModalOpenSeq)||0));
   }
   function actionInProgress(){
     try{return typeof ACTION_LOCKS!=='undefined'&&ACTION_LOCKS?.size>0;}
     catch(error){return false;}
   }
-  function markOpened(modal){
-    if(!(modal instanceof HTMLElement))return;
-    modal.dataset.tbModalOpenSeq=String(++openSequence);
+  function panelCandidates(modal){
+    if(!(modal instanceof HTMLElement))return[];
+    const explicit=[...modal.querySelectorAll(PANEL_SELECTOR)];
+    if(explicit.length)return explicit;
+    return [...modal.children].filter(child=>child instanceof HTMLElement);
   }
-  function visiblePanel(modal){
-    const panel=modal?.querySelector?.(PANEL_SELECTOR);if(!panel)return false;
-    const style=getComputedStyle(panel);
-    if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
-    const rect=panel.getBoundingClientRect();
-    const viewport=window.visualViewport;
-    const width=Math.max(1,Number(viewport?.width||window.innerWidth||document.documentElement.clientWidth||1));
-    const height=Math.max(1,Number(viewport?.height||window.innerHeight||document.documentElement.clientHeight||1));
-    return rect.width>8&&rect.height>8&&rect.right>0&&rect.bottom>0&&rect.left<width&&rect.top<height;
+  function renderedPanel(modal){
+    return panelCandidates(modal).some(panel=>{
+      const style=getComputedStyle(panel);
+      if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+      const rect=panel.getBoundingClientRect();
+      return rect.width>8&&rect.height>8;
+    });
   }
   function directClose(modal){
     if(!(modal instanceof HTMLElement))return;
@@ -41,17 +51,24 @@
     modal.style.removeProperty('pointer-events');
     delete modal.dataset.tbModalOpenSeq;
     delete modal.dataset.tbNestedConfirm;
+    orphanMisses.delete(modal);
   }
   function recoverOrphanedTop(){
-    const modals=orderedOpenModals();if(!modals.length||actionInProgress())return false;
+    const modals=orderedOpenModals();
+    if(!modals.length||actionInProgress()||document.hidden)return false;
     const top=modals[modals.length-1];
-    if(visiblePanel(top))return false;
-    console.warn('[Team Bulls] Backdrop órfão recuperado:',top.id||'(sem id)');
+    if(renderedPanel(top)){
+      orphanMisses.delete(top);
+      return false;
+    }
+    const misses=(orphanMisses.get(top)||0)+1;
+    orphanMisses.set(top,misses);
+    if(misses<ORPHAN_CONFIRMATIONS)return false;
+    console.warn('[Team Bulls] Backdrop órfão recuperado silenciosamente:',top.id||'(sem id)');
     if(top.dataset.tbNestedConfirm==='1')directClose(top);
     else if(top.id&&typeof window.closeModal==='function'){
       try{window.closeModal(top.id);}catch(error){directClose(top);}
     }else directClose(top);
-    try{if(typeof showToast==='function')showToast('A interface foi recuperada de um bloqueio de tela.',true);}catch(error){}
     return true;
   }
   function scheduleHealthCheck(){
@@ -61,12 +78,11 @@
       healthTimer=0;
       recoverOrphanedTop();
       syncLayers();
-    },1800);
+    },HEALTH_CHECK_MS);
   }
   function syncLayers(){
     const modals=orderedOpenModals();
     modals.forEach((modal,index)=>{
-      if(!modal.dataset.tbModalOpenSeq)markOpened(modal);
       modal.style.zIndex=String(BASE_Z+index*4);
       modal.style.pointerEvents=index===modals.length-1?'auto':'none';
     });
@@ -75,6 +91,7 @@
       modal.style.removeProperty('pointer-events');
       delete modal.dataset.tbModalOpenSeq;
       delete modal.dataset.tbNestedConfirm;
+      orphanMisses.delete(modal);
     });
     scheduleHealthCheck();
   }
@@ -87,16 +104,24 @@
     if(typeof baseOpen==='function'&&!baseOpen.__tbModalStackStability){
       const wrappedOpen=function(id){
         const result=baseOpen.apply(this,arguments);
-        const modal=document.getElementById(String(id||''));if(modal?.classList.contains('open'))markOpened(modal);
-        afterUiChange();return result;
+        const modal=document.getElementById(String(id||''));
+        if(modal?.classList.contains('open'))markOpened(modal);
+        afterUiChange();
+        return result;
       };
-      wrappedOpen.__tbModalStackStability=true;window.openModal=wrappedOpen;
+      wrappedOpen.__tbModalStackStability=true;
+      window.openModal=wrappedOpen;
     }
     if(typeof baseClose==='function'&&!baseClose.__tbModalStackStability){
       const wrappedClose=function(id){
-        const result=baseClose.apply(this,arguments);afterUiChange();return result;
+        const modal=document.getElementById(String(id||''));
+        orphanMisses.delete(modal);
+        const result=baseClose.apply(this,arguments);
+        afterUiChange();
+        return result;
       };
-      wrappedClose.__tbModalStackStability=true;window.closeModal=wrappedClose;
+      wrappedClose.__tbModalStackStability=true;
+      window.closeModal=wrappedClose;
     }
   }
 
@@ -108,7 +133,9 @@
       const underlying=openModals().filter(modal=>modal!==confirmModal);
       if(!confirmModal||!underlying.length||confirmModal.classList.contains('open'))return baseShowConfirm.apply(this,arguments);
 
-      const titleNode=document.getElementById('confirm-title'),textNode=document.getElementById('confirm-text'),button=document.getElementById('confirm-ok-btn');
+      const titleNode=document.getElementById('confirm-title');
+      const textNode=document.getElementById('confirm-text');
+      const button=document.getElementById('confirm-ok-btn');
       if(!titleNode||!textNode||!button)return baseShowConfirm.apply(this,arguments);
       titleNode.textContent=title;
       textNode.textContent=text;
@@ -116,7 +143,8 @@
       button.textContent='CONFIRMAR';
       button.onclick=async function(){
         if(button.disabled)return;
-        button.disabled=true;button.textContent='PROCESSANDO...';
+        button.disabled=true;
+        button.textContent='PROCESSANDO...';
         try{
           const completed=await cb();
           if(completed!==false)directClose(confirmModal);
@@ -124,7 +152,8 @@
           console.error('confirm action',error);
           alert('Não foi possível concluir a ação: '+error.message);
         }finally{
-          button.disabled=false;button.textContent='CONFIRMAR';
+          button.disabled=false;
+          button.textContent='CONFIRMAR';
           afterUiChange();
         }
       };
@@ -134,7 +163,8 @@
       afterUiChange();
       requestAnimationFrame(()=>button.focus?.({preventScroll:true}));
     };
-    wrapped.__tbModalStackStability=true;window.showConfirm=wrapped;
+    wrapped.__tbModalStackStability=true;
+    window.showConfirm=wrapped;
   }
 
   function install(){
@@ -146,7 +176,7 @@
     window.addEventListener('resize',afterUiChange,{passive:true});
     window.visualViewport?.addEventListener('resize',afterUiChange,{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)afterUiChange();},{passive:true});
-    window.TeamBullsModalStackStability=Object.freeze({version:'10.10.9-modal1',refresh:afterUiChange,recover:recoverOrphanedTop});
+    window.TeamBullsModalStackStability=Object.freeze({version:'10.10.9-modal2',refresh:afterUiChange,recover:recoverOrphanedTop});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
