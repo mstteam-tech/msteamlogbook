@@ -12,6 +12,7 @@
   const OFFSCREEN_CONFIRMATIONS=3;
   const orphanMisses=new WeakMap();
   const offscreenMisses=new WeakMap();
+  const panelRecoveryStyles=new WeakMap();
   let openSequence=0;
   let healthTimer=0;
 
@@ -26,13 +27,29 @@
     if(explicit.length)return explicit;
     return [...modal.children].filter(child=>child instanceof HTMLElement);
   }
+  function rememberInlineStyles(panel){
+    if(!(panel instanceof HTMLElement)||panelRecoveryStyles.has(panel))return;
+    const state={};
+    ['animation','transform','opacity'].forEach(property=>{
+      state[property]={value:panel.style.getPropertyValue(property),priority:panel.style.getPropertyPriority(property)};
+    });
+    panelRecoveryStyles.set(panel,state);
+  }
+  function restoreInlineStyles(panel){
+    if(!(panel instanceof HTMLElement))return;
+    const state=panelRecoveryStyles.get(panel);
+    if(!state)return;
+    Object.entries(state).forEach(([property,entry])=>{
+      if(entry.value)panel.style.setProperty(property,entry.value,entry.priority||'');
+      else panel.style.removeProperty(property);
+    });
+    panelRecoveryStyles.delete(panel);
+  }
   function clearPanelRecovery(modal){
     if(!(modal instanceof HTMLElement))return;
     panelCandidates(modal).forEach(panel=>{
       if(panel.dataset.tbModalVisibilityRescued!=='1')return;
-      panel.style.removeProperty('animation');
-      panel.style.removeProperty('transform');
-      panel.style.removeProperty('opacity');
+      restoreInlineStyles(panel);
       delete panel.dataset.tbModalVisibilityRescued;
     });
     delete modal.dataset.tbModalVisibilityRescued;
@@ -103,6 +120,7 @@
     panelCandidates(modal).forEach(panel=>{
       const style=getComputedStyle(panel);
       if(style.display==='none'||style.visibility==='hidden')return;
+      rememberInlineStyles(panel);
       panel.dataset.tbModalVisibilityRescued='1';
       panel.style.setProperty('animation','none','important');
       panel.style.setProperty('transform','none','important');
@@ -112,12 +130,6 @@
     if(changed){
       modal.dataset.tbModalVisibilityRescued='1';
       modal.style.pointerEvents='auto';
-      requestAnimationFrame(()=>{
-        const panel=panelCandidates(modal)[0];
-        if(panel&&typeof panel.scrollIntoView==='function'&&!accessiblePanel(modal)){
-          try{panel.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});}catch(error){}
-        }
-      });
     }
     return changed;
   }
@@ -155,21 +167,18 @@
       offscreenMisses.delete(top);
       if(top.dataset.tbModalVisibilityRescued!=='1'){
         console.warn('[Team Bulls] Painel de modal fora da área útil; tentando recuperar sem fechar:',top.id||'(sem id)');
-        rescuePanelVisibility(top);
-        return true;
+        if(rescuePanelVisibility(top))return true;
       }
       return closeBrokenModal(top,'painel continuou inacessível após recuperação visual');
     }
 
     offscreenMisses.delete(top);
+    if(keyboardEditing(top))return false;
     const misses=(orphanMisses.get(top)||0)+1;
     orphanMisses.set(top,misses);
     if(misses<ORPHAN_CONFIRMATIONS)return false;
     orphanMisses.delete(top);
-    if(top.dataset.tbModalVisibilityRescued!=='1'&&panelCandidates(top).length){
-      rescuePanelVisibility(top);
-      return true;
-    }
+    if(top.dataset.tbModalVisibilityRescued!=='1'&&panelCandidates(top).length&&rescuePanelVisibility(top))return true;
     return closeBrokenModal(top,'backdrop sem painel renderizado');
   }
   function scheduleHealthCheck(){
