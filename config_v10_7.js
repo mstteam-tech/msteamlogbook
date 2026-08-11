@@ -23,6 +23,7 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1',
     './modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
+    './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=()=>{
