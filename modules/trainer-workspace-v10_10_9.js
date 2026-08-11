@@ -1,4 +1,4 @@
-/* Team Bulls v10.10.9 — atalhos de prescrição e rascunho privado do treinador. */
+/* Team Bulls v10.10.9 — atalhos de prescrição, relatórios rápidos e rascunho privado do treinador. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_TRAINER_WORKSPACE_V10109__)return;
@@ -74,20 +74,37 @@
     try{if(typeof v109ReportModeLabel==='function'&&typeof v109ReportMode==='function')return v109ReportModeLabel(v109ReportMode(q));}catch(error){}
     return q?.reportType==='photo-only'?'Somente fotos':q?.reportType==='written-only'?'Relatório escrito':'Relatório solicitado';
   }
-  function openExistingReport(viewer){
-    reportViewerTransition=true;
+  function syncReportViewerCaches(weekly,questionnaires){
+    const safeWeekly=Array.isArray(weekly)?weekly:[],safeQuestionnaires=Array.isArray(questionnaires)?questionnaires:[];
+    try{if(typeof WEEKLY_CHECKINS!=='undefined')WEEKLY_CHECKINS=safeWeekly;}catch(error){console.warn('[Team Bulls] Não foi possível sincronizar relatórios semanais do visualizador.',error);}
+    try{if(typeof TS_QUEST_CACHE!=='undefined')TS_QUEST_CACHE=safeQuestionnaires;}catch(error){console.warn('[Team Bulls] Não foi possível sincronizar relatórios solicitados do visualizador.',error);}
+  }
+  function reportViewerIsOpen(id){return !!document.getElementById(String(id||''))?.classList.contains('open');}
+  function reportViewerError(error){
+    console.error('[Team Bulls] Falha ao abrir relatório rápido',error);
+    if(typeof showToast==='function')showToast('Não foi possível abrir o relatório. Tente novamente.',true);
+  }
+  async function openExistingReport(viewer,targetModalId){
+    if(typeof viewer!=='function'||!targetModalId)return false;
+    reportViewerTransition=true;syncDock();
+    let result;
     try{
-      if(document.getElementById('tb-trainer-reports-modal')?.classList.contains('open'))closeModal('tb-trainer-reports-modal');
-    }catch(error){document.getElementById('tb-trainer-reports-modal')?.classList.remove('open');}
-    syncDock();
-    requestAnimationFrame(()=>{
-      try{viewer();}
-      catch(error){console.error('[Team Bulls] Falha ao abrir relatório rápido',error);if(typeof showToast==='function')showToast('Não foi possível abrir o relatório.',true);}
-      requestAnimationFrame(()=>{reportViewerTransition=false;syncDock();});
-    });
+      result=viewer();
+      await Promise.resolve();
+      if(!reportViewerIsOpen(targetModalId))await Promise.resolve(result);
+      else if(result&&typeof result.then==='function')result.catch(error=>console.error('[Team Bulls] Falha ao carregar conteúdo do relatório',error));
+      if(!reportViewerIsOpen(targetModalId))throw new Error('Visualizador não abriu: '+targetModalId);
+      try{
+        if(document.getElementById('tb-trainer-reports-modal')?.classList.contains('open'))closeModal('tb-trainer-reports-modal');
+      }catch(error){document.getElementById('tb-trainer-reports-modal')?.classList.remove('open');}
+      return true;
+    }catch(error){reportViewerError(error);return false;}
+    finally{requestAnimationFrame(()=>{reportViewerTransition=false;syncDock();});}
   }
   function renderQuickReports(weekly,questionnaires){
     const host=document.getElementById('tb-trainer-reports-content');if(!host)return;
+    weekly=Array.isArray(weekly)?weekly:[];questionnaires=Array.isArray(questionnaires)?questionnaires:[];
+    syncReportViewerCaches(weekly,questionnaires);
     const parts=[];
     parts.push('<div class="tb-workspace-section">RELATÓRIOS SEMANAIS</div>');
     if(weekly.length)parts.push(...weekly.slice(0,12).map(item=>{const photos=Array.isArray(item.photoIds)?item.photoIds.length:6;return`<button type="button" class="tb-workspace-report" data-tb-weekly="${safe(item.id)}"><span><strong>${safe(item.requestKind==='manual'?'Relatório extra':'Relatório semanal')}</strong><small>${safe(dateLabel(item.submittedDate||item.dueDate))} · ${Number(item.weight||0)>0?safe(Number(item.weight).toLocaleString('pt-BR',{maximumFractionDigits:1}))+' kg · ':''}${photos} foto(s)</small></span><span class="tb-workspace-status">ABRIR ›</span></button>`;}));
@@ -96,8 +113,8 @@
     if(questionnaires.length)parts.push(...questionnaires.slice(0,12).map(q=>{const answered=!!q.answered,photos=Array.isArray(q.photoIds)?q.photoIds.length:0;return`<button type="button" class="tb-workspace-report" data-tb-questionnaire="${safe(q.id)}" ${answered?'':'disabled'}><span><strong>${safe(questionnaireLabel(q))}</strong><small>${safe(dateLabel(q.answeredAt||q.createdAt))}${answered?` · ${photos} foto(s)`:' · aguardando aluno'}</small></span><span class="tb-workspace-status">${answered?'ABRIR ›':'PENDENTE'}</span></button>`;}));
     else parts.push('<div class="tb-workspace-empty">Nenhuma solicitação de relatório encontrada.</div>');
     host.innerHTML=parts.join('');
-    host.querySelectorAll('[data-tb-weekly]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbWeekly;if(typeof viewWeeklyCheckin==='function')openExistingReport(()=>viewWeeklyCheckin(id));}));
-    host.querySelectorAll('[data-tb-questionnaire]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbQuestionnaire;if(typeof viewQuestionnaire==='function')openExistingReport(()=>viewQuestionnaire(id,true));}));
+    host.querySelectorAll('[data-tb-weekly]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbWeekly;if(typeof viewWeeklyCheckin==='function')openExistingReport(()=>viewWeeklyCheckin(id),'modal-weekly-checkin-view');}));
+    host.querySelectorAll('[data-tb-questionnaire]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.tbQuestionnaire;if(typeof viewQuestionnaire==='function')openExistingReport(()=>viewQuestionnaire(id,true),'modal-view-quest');}));
   }
   function cachedReports(studentUid){
     const entry=reportCache.get(String(studentUid||''));
@@ -121,8 +138,6 @@
       const weekly=(Array.isArray(weeklyRaw)?weeklyRaw:[]).sort((a,b)=>String(b.submittedDate||b.dueDate||'').localeCompare(String(a.submittedDate||a.dueDate||'')));
       const questionnaires=(Array.isArray(questionnairesRaw)?questionnairesRaw:[]).sort((a,b)=>(b.answeredAt?.seconds||b.createdAt?.seconds||0)-(a.answeredAt?.seconds||a.createdAt?.seconds||0));
       storeReports(student.uid,weekly,questionnaires);
-      if(typeof WEEKLY_CHECKINS!=='undefined')WEEKLY_CHECKINS=weekly;
-      if(typeof TS_QUEST_CACHE!=='undefined')TS_QUEST_CACHE=questionnaires;
       renderQuickReports(weekly,questionnaires);
     }catch(error){if(token!==reportLoadToken)return;host.innerHTML='<div class="tb-workspace-empty">Não foi possível carregar os relatórios agora. Verifique a conexão e tente novamente.</div>';}
   }
@@ -175,6 +190,6 @@
     const additionsObserver=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node instanceof HTMLElement)bindModalObservers(node);}))); 
     additionsObserver.observe(document.body,{subtree:true,childList:true});
   }
-  function install(){ensureStyles();ensureDock();ensureReportsModal();ensureNoteModal();['showScreen','openModal','closeModal'].forEach(wrapUiFunction);watchModalState();syncDock();window.addEventListener('pageshow',scheduleDockSync,{passive:true});window.TeamBullsTrainerWorkspace=Object.freeze({sync:syncDock,openReports:openQuickReports,openNote:openPrivateNote,refreshReports:()=>loadQuickReports(true)});}
+  function install(){ensureStyles();ensureDock();ensureReportsModal();ensureNoteModal();['showScreen','openModal','closeModal'].forEach(wrapUiFunction);watchModalState();syncDock();window.addEventListener('pageshow',scheduleDockSync,{passive:true});window.TeamBullsTrainerWorkspace=Object.freeze({version:'10.10.9-workspace3',sync:syncDock,openReports:openQuickReports,openNote:openPrivateNote,refreshReports:()=>loadQuickReports(true)});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();

@@ -19,4 +19,7 @@ jobs:
         with:
           node-version: '22'
       - name: Run Team Bulls regression checks
-        run: node scripts/quality-check.mjs
+        run: |
+          node scripts/quality-check.mjs
+          node scripts/prescription-propagation-check.mjs
+          node scripts/diet-deletion-check.mjs

@@ -15,13 +15,15 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/app-update-v10_10_9.js?v=10.10.9',
     './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
     './modules/modal-form-guard-v10_10_9.js?v=10.10.9',
-    './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2',
+    './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3',
     './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1',
     './modules/global-performance-v10_10_9.js?v=10.10.9-perf2',
     './modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1',
     './modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1',
     './modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1',
     './modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
+    './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
+    './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=()=>{
