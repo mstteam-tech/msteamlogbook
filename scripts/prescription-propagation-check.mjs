@@ -16,7 +16,7 @@ assert(module.includes("PLAN_EDIT_TARGET==='trainer'||PLAN_EDIT_TARGET==='local'
 assert(module.includes("CURRENT_USER?.role!=='trainer'"),'Propagação cloud não valida a função de treinador.');
 assert(module.includes("exercisesForDay(workout,source.dayName||'Treino geral')"),'Exercícios abaixo não respeitam a ordem do dia atual.');
 assert(module.includes("mode==='below-current'")&&module.includes("mode==='source-future'")&&module.includes("mode==='below-future'")&&module.includes("mode==='full-forward'")&&module.includes("mode==='all-current'")&&module.includes("mode==='all-all'"),'Nem todos os seis modos de propagação estão implementados.');
-assert(module.includes('↘ TUDO ABAIXO E À FRENTE')&&module.includes('↓ SOMENTE EXERCÍCIOS ABAIXO')&&module.includes('→ SOMENTE SEMANAS SEGUINTES')&&module.includes('↘ ABAIXO NAS SEMANAS SEGUINTES'),'Atalhos direcionais de séries/reps/GER estão incompletos.');
+assert(module.includes('↘ TUDO ABAIXO E À FRENTE')&&module.includes('↓ SOMENTE EXERCÍCIOS ABAIXO')&&module.includes('→ REPASSAR ATÉ A SEMANA 8')&&module.includes('↘ ABAIXO NAS SEMANAS SEGUINTES'),'Atalhos direcionais de séries/reps/GER estão incompletos.');
 assert(module.includes("planWithWeeks(source,current,sets)")&&module.includes("planWithWeeks(source,currentForward,sets)"),'A prescrição aberta não é materializada com segurança na origem.');
 assert(module.includes("batch.update(db.collection('exercises').doc(change.exercise.id),{weeklyPlan:change.next})"),'Propagação cloud não usa batch de weeklyPlan.');
 assert(module.includes("await cloudWrite(batch.commit(),'repassar séries, repetições e GER')"),'Commit cloud não passa pela proteção de timeout/erro do app.');
