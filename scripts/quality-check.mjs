@@ -12,7 +12,7 @@ const assert=(condition,message)=>{if(!condition)fail.push(message);};
 [
   'index.html','manifest.json','version.json','sw.js','sw_47.js','config_v10_7.js',
   'app_v10_10_9_core.js','modules/stability_v10_10_9.js',
-  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/workout-ux-fix-v10_10_9.js','modules/desktop-performance-v10_10_9.js','modules/ger-bulk-v10_10_9.js','modules/prescription-actions-layout-v10_10_9.js','modules/photo-guide-v10_10_9.js',
+  'modules/app-update-v10_10_9.js','modules/diet-scroll-fix-v10_10_9.js','modules/modal-form-guard-v10_10_9.js','modules/trainer-workspace-v10_10_9.js','modules/cardio-timer-fix-v10_10_9.js','modules/global-performance-v10_10_9.js','modules/workout-ux-fix-v10_10_9.js','modules/desktop-performance-v10_10_9.js','modules/ger-bulk-v10_10_9.js','modules/prescription-actions-layout-v10_10_9.js','modules/modal-stack-stability-v10_10_9.js','modules/photo-guide-v10_10_9.js',
   'firebase/firestore_26_compacto.rules','firebase/storage_5.rules'
 ].forEach(requireFile);
 
@@ -56,10 +56,12 @@ assert(config.includes('modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'),
 assert(config.includes('modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1'),'Loader não inclui a otimização específica de desktop.');
 assert(config.includes('modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1'),'Loader não inclui os controles de GER em lote.');
 assert(config.includes('modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2'),'Loader não inclui a correção actions2 das ações de prescrição.');
+assert(config.includes('modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2'),'Loader não inclui a recuperação conservadora modal2.');
 assert(config.indexOf('global-performance-v10_10_9.js')<config.indexOf('workout-ux-fix-v10_10_9.js'),'Correção do treino precisa executar depois da camada global.');
 assert(config.indexOf('workout-ux-fix-v10_10_9.js')<config.indexOf('desktop-performance-v10_10_9.js'),'Otimização desktop precisa executar depois da correção do treino.');
 assert(config.indexOf('desktop-performance-v10_10_9.js')<config.indexOf('ger-bulk-v10_10_9.js'),'Controles de GER devem executar depois das camadas de UX/performance.');
 assert(config.indexOf('ger-bulk-v10_10_9.js')<config.indexOf('prescription-actions-layout-v10_10_9.js'),'Organização das ações deve executar depois dos controles de GER em lote.');
+assert(config.indexOf('prescription-actions-layout-v10_10_9.js')<config.indexOf('modal-stack-stability-v10_10_9.js'),'Estabilidade de modais precisa executar depois da central de ações.');
 assert(config.includes("link.rel='preload';link.as='script';link.href=src"),'Hotfixes não recebem preload de rede antes da execução serial.');
 assert(config.includes('for(const src of modules)await loadScript(src)'),'Execução determinística dos hotfixes foi removida.');
 assert(!config.includes("'./modules/photo-guide-v10_10_9.js?v=10.10.9',"),'Guia de fotos voltou a carregar no startup em vez de sob demanda.');
@@ -83,6 +85,15 @@ assert(modalGuard.includes('event.stopImmediatePropagation()'),'Proteção de mo
 assert(modalGuard.includes("if(event.type==='click')event.preventDefault()"),'Proteção de modal não bloqueia o clique de fechamento no fundo.');
 assert(modalGuard.includes("event.key!=='Escape'"),'Proteção de modal não garante fechamento por ESC.');
 assert(modalGuard.includes("document.addEventListener('keydown',closeTopModalWithEscape,{capture:true})"),'ESC não está interceptado antes dos listeners legados.');
+
+const modalStack=read('modules/modal-stack-stability-v10_10_9.js');
+assert(modalStack.includes("version:'10.10.9-modal2'"),'Camada de estabilidade de modal não identifica a revisão modal2.');
+assert(modalStack.includes('const ORPHAN_CONFIRMATIONS=2'),'Recuperação de backdrop voltou a agir após uma única detecção.');
+assert(modalStack.includes('function panelCandidates(modal)')&&modalStack.includes("[role=\"dialog\"]"),'Detecção conservadora não aceita estruturas válidas de diálogo além de modal-sheet/modal-dialog.');
+assert(modalStack.includes('return rect.width>8&&rect.height>8'),'Detecção de modal voltou a depender da posição dentro da viewport.');
+assert(modalStack.includes("document.hidden"),'Recuperação de modal não é suspensa enquanto a página está oculta.');
+assert(!modalStack.includes("showToast('A interface foi recuperada de um bloqueio de tela."),'Aviso de recuperação de bloqueio voltou a aparecer ao usuário.');
+assert(modalStack.includes('actionInProgress()'),'Recuperação de modal deixou de respeitar gravações críticas protegidas.');
 
 const workspace=read('modules/trainer-workspace-v10_10_9.js');
 assert(workspace.includes('RELATÓRIOS / FOTOS')&&workspace.includes('RASCUNHO'),'Atalhos rápidos de prescrição não foram encontrados.');
@@ -172,7 +183,7 @@ assert(core.includes("function refreshPlanViewsAfterWeeklyTechniqueChange(exerci
 
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
-assert(sw.includes("const CACHE_REVISION='actions2'"),'Service Worker não criou uma revisão de cache atômica para o hotfix dos botões de prescrição.');
+assert(sw.includes("const CACHE_REVISION='modal2'"),'Service Worker não criou revisão de cache atômica para a recuperação conservadora de modais.');
 assert(sw.includes('const SHELL_FETCH_CONCURRENCY=4'),'Service Worker não limita concorrência do cache crítico.');
 assert(sw.includes('async function cachePathsWithLimit'),'Service Worker não possui preparação de shell com concorrência controlada.');
 assert(sw.includes("'./modules/app-update-v10_10_9.js?v=10.10.9'"),'App-update não está disponível no shell offline.');
@@ -185,6 +196,7 @@ assert(sw.includes("'./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'"),
 assert(sw.includes("'./modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1'"),'Otimização desktop não está disponível no shell offline.');
 assert(sw.includes("'./modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1'"),'Controles de GER em lote não estão disponíveis no shell offline.');
 assert(sw.includes("'./modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2'"),'Hotfix actions2 da central organizada não está disponível no shell offline.');
+assert(sw.includes("'./modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2'"),'Recuperação conservadora modal2 não está disponível no shell offline.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'Ponte legada sw_47.js divergiu do Service Worker principal.');
 const requiredShellBlock=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
 assert(!requiredShellBlock.includes('photo-guide'),'Guia de fotos deve permanecer fora do shell crítico.');
