@@ -2,7 +2,7 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const CACHE_REVISION='actions1';
+const CACHE_REVISION='actions2';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -36,7 +36,8 @@ const REQUIRED_SHELL=[
   './modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1',
   './modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1',
   './modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1',
-  './modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions1',
+  './modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
+  './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal1',
   './interaction_v10_10_9.js?v=10.10.9',
   './styles_v10_10_9.css?v=10.10.9',
   './recuperar.html',
