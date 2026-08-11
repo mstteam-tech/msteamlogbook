@@ -193,7 +193,6 @@
     [
       ['↘ TUDO ABAIXO E À FRENTE','full-forward',true],
       ['↓ SOMENTE EXERCÍCIOS ABAIXO','below-current',false],
-      ['→ SOMENTE SEMANAS SEGUINTES','source-future',false],
       ['↘ ABAIXO NAS SEMANAS SEGUINTES','below-future',false]
     ].forEach(([label,mode,primary])=>{
       const button=document.createElement('button');button.type='button';button.className=primary?'btn-primary tb-action-primary':'btn-ghost';
@@ -224,7 +223,7 @@
     const replicate=center.querySelector('[data-tb-action-proxy="replicate"]');
     const copyWeek=center.querySelector('[data-tb-action-proxy="copyWeekAll"]');
     const copyAll=center.querySelector('[data-tb-action-proxy="copyAllWeeks"]');
-    if(replicate)replaceButton(replicate,'REPASSAR ATÉ A SEMANA 8',()=>confirmPropagation('source-future'));
+    if(replicate)replaceButton(replicate,'→ REPASSAR ATÉ A SEMANA 8',()=>confirmPropagation('source-future'));
     if(copyWeek)replaceButton(copyWeek,'ESTA SEMANA → TODOS OS EXERCÍCIOS',()=>confirmPropagation('all-current'));
     if(copyAll)replaceButton(copyAll,'8 SEMANAS → PLANILHA TODA',()=>confirmPropagation('all-all'));
     addDirectionalSeriesButtons(seriesGrid);
