@@ -49,7 +49,7 @@ assert(config.includes('modules/stability_v10_10_9.js'),'Loader não inclui a ca
 assert(config.includes('modules/app-update-v10_10_9.js'),'Loader não inclui a atualização de UX/performance.');
 assert(config.includes('modules/diet-scroll-fix-v10_10_9.js'),'Loader não inclui a correção do scroll real da dieta.');
 assert(config.includes('modules/modal-form-guard-v10_10_9.js'),'Loader não inclui a proteção de modais de edição.');
-assert(config.includes('modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'),'Loader não usa cache-bust da versão otimizada do workspace.');
+assert(config.includes('modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3'),'Loader não usa cache-bust workspace3 da correção do visualizador de relatórios.');
 assert(config.includes('modules/cardio-timer-fix-v10_10_9.js'),'Loader não inclui a correção do cronômetro de cardio.');
 assert(config.includes('modules/global-performance-v10_10_9.js?v=10.10.9-perf2'),'Loader não inclui a estabilização perf2 das transições de tela.');
 assert(config.includes('modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'),'Loader não inclui a correção de scroll/touch do treino.');
@@ -108,11 +108,18 @@ assert(!workspace.includes("db.collection('reportSettings')"),'Rascunho privado 
 assert(workspace.includes("db.collection('questionnaires').where('studentId','==',student.uid)"),'Consulta rápida de relatórios solicitados ausente.');
 assert(workspace.includes('fetchWeeklyCheckins(student.uid)'),'Consulta rápida de relatórios semanais ausente.');
 assert(workspace.includes('function anyOpenModal()')&&workspace.includes('!anyOpenModal()'),'Dock privado deve desaparecer enquanto qualquer modal estiver aberto.');
-assert(workspace.includes("closeModal('tb-trainer-reports-modal')"),'Consulta rápida deve fechar antes de abrir o visualizador definitivo.');
-assert(workspace.includes('openExistingReport(()=>viewWeeklyCheckin(id))'),'Relatório semanal ainda pode ser aberto com transição segura de modal.');
-assert(workspace.includes('openExistingReport(()=>viewQuestionnaire(id,true))'),'Relatório solicitado ainda pode ser aberto com transição segura de modal.');
+assert(workspace.includes('function syncReportViewerCaches(weekly,questionnaires)'),'Lista rápida não sincroniza os caches usados pelos visualizadores oficiais.');
+assert(workspace.includes("if(typeof WEEKLY_CHECKINS!=='undefined')WEEKLY_CHECKINS=safeWeekly"),'Cache de relatório semanal não é restaurado quando a lista rápida vem do cache.');
+assert(workspace.includes("if(typeof TS_QUEST_CACHE!=='undefined')TS_QUEST_CACHE=safeQuestionnaires"),'Cache de relatório solicitado não é restaurado quando a lista rápida vem do cache.');
+assert(workspace.includes('syncReportViewerCaches(weekly,questionnaires);'),'Render de relatórios rápidos não sincroniza os visualizadores antes dos cliques.');
+assert(workspace.includes("openExistingReport(()=>viewWeeklyCheckin(id),'modal-weekly-checkin-view')"),'Relatório semanal não confirma a abertura do visualizador definitivo.');
+assert(workspace.includes("openExistingReport(()=>viewQuestionnaire(id,true),'modal-view-quest')"),'Relatório solicitado não confirma a abertura do visualizador definitivo.');
+assert(workspace.includes('if(!reportViewerIsOpen(targetModalId))await Promise.resolve(result)'),'Transição do relatório não aguarda o visualizador quando a abertura não ocorreu de imediato.');
+assert(workspace.includes("if(!reportViewerIsOpen(targetModalId))throw new Error('Visualizador não abriu: '+targetModalId)"),'Consulta rápida pode fechar mesmo sem o visualizador definitivo abrir.');
+assert(workspace.indexOf("if(!reportViewerIsOpen(targetModalId))throw new Error('Visualizador não abriu: '+targetModalId)")<workspace.indexOf("closeModal('tb-trainer-reports-modal')"),'Consulta rápida voltou a fechar antes de confirmar o visualizador definitivo.');
 assert(workspace.includes('const REPORT_CACHE_TTL=45000')&&workspace.includes('function cachedReports(studentUid)'),'Cache curto de relatórios do workspace não foi encontrado.');
 assert(workspace.includes("loadQuickReports(true)"),'Botão Atualizar deixou de forçar consulta fresca dos relatórios.');
+assert(workspace.includes("version:'10.10.9-workspace3'"),'Workspace não identifica a revisão workspace3 do visualizador de relatórios.');
 assert(workspace.includes("['showScreen','openModal','closeModal'].forEach(wrapUiFunction)"),'Workspace não sincroniza dock pelas funções reais de navegação/modal.');
 assert(workspace.includes("observer.observe(modal,{attributes:true,attributeFilter:['class']})"),'Modais individuais não são observados para sincronizar o dock.');
 assert(workspace.includes("additionsObserver.observe(document.body,{subtree:true,childList:true})"),'Workspace não acompanha modais adicionados dinamicamente.');
@@ -190,13 +197,13 @@ assert(core.includes("function refreshPlanViewsAfterWeeklyTechniqueChange(exerci
 
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
-assert(sw.includes("const CACHE_REVISION='freeze1'"),'Service Worker não criou revisão de cache atômica para o hotfix de escurecimento.');
+assert(sw.includes("const CACHE_REVISION='reports1'"),'Service Worker não criou revisão de cache atômica para a correção do visualizador de relatórios.');
 assert(sw.includes('const SHELL_FETCH_CONCURRENCY=4'),'Service Worker não limita concorrência do cache crítico.');
 assert(sw.includes('async function cachePathsWithLimit'),'Service Worker não possui preparação de shell com concorrência controlada.');
 assert(sw.includes("'./modules/app-update-v10_10_9.js?v=10.10.9'"),'App-update não está disponível no shell offline.');
 assert(sw.includes("'./modules/diet-scroll-fix-v10_10_9.js?v=10.10.9'"),'Correção de rolagem não está disponível no shell offline.');
 assert(sw.includes("'./modules/modal-form-guard-v10_10_9.js?v=10.10.9'"),'Proteção de modal não está disponível no shell offline.');
-assert(sw.includes("'./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace2'"),'Workspace otimizado não está disponível no shell offline.');
+assert(sw.includes("'./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3'"),'Workspace3 do visualizador de relatórios não está disponível no shell offline.');
 assert(sw.includes("'./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1'"),'Cronômetro corrigido não está disponível no shell offline.');
 assert(sw.includes("'./modules/global-performance-v10_10_9.js?v=10.10.9-perf2'"),'Estabilização perf2 não está disponível no shell offline.');
 assert(sw.includes("'./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1'"),'Correção de scroll/touch do treino não está disponível no shell offline.');
