@@ -5,6 +5,87 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
   appCheckSiteKey: '6Lc3U28tAAAAAB6qyxP8GauRDCg-4ADiy8oYLKXL'
 });
 
+/* Resiliência de conexão instalada antes do initApp do núcleo.
+   Como este arquivo defer executa antes do core, o listener abaixo é registrado
+   primeiro e corrige os limites de rede/App Check antes da restauração da sessão. */
+(()=>{
+  let installed=false;
+  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  const patch=()=>{
+    if(installed)return;installed=true;
+
+    if(typeof withTimeout==='function'&&!withTimeout.__tbFirebaseResilience){
+      const base=withTimeout;
+      const wrapped=function(task,ms,label='operação'){
+        let limit=Math.max(250,Number(ms)||10000);
+        if(label==='Firebase'||label==='carregar conexão segura')limit=Math.max(limit,12000);
+        else if(label==='App Check')limit=Math.max(limit,6000);
+        else if(label==='login')limit=Math.max(limit,16000);
+        return base(task,limit,label);
+      };
+      wrapped.__tbFirebaseResilience=true;
+      withTimeout=wrapped;
+    }
+
+    if(typeof initOptionalAppCheck==='function'&&!initOptionalAppCheck.__tbEnterpriseProvider){
+      const legacy=initOptionalAppCheck;
+      const wrapped=async function(){
+        const key=String(typeof CFG!=='undefined'&&CFG.appCheckSiteKey||'').trim();
+        if(!key||typeof firebase==='undefined')return false;
+        try{
+          const ok=await loadSdkOnce('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js',()=>typeof firebase.appCheck==='function');
+          if(!ok)return false;
+          const Provider=firebase.appCheck?.ReCaptchaEnterpriseProvider;
+          if(typeof Provider==='function'){
+            firebase.appCheck().activate(new Provider(key),true);
+            return true;
+          }
+          return await legacy();
+        }catch(error){
+          const message=String(error?.message||error||'').toLowerCase();
+          if(message.includes('already')&&message.includes('activ'))return true;
+          console.warn('App Check Enterprise não iniciado',error);
+          return false;
+        }
+      };
+      wrapped.__tbEnterpriseProvider=true;
+      initOptionalAppCheck=wrapped;
+    }
+
+    if(typeof ensureFirebaseReady==='function'&&!ensureFirebaseReady.__tbRetry){
+      const base=ensureFirebaseReady;
+      const wrapped=async function(){
+        if(typeof auth!=='undefined'&&auth&&typeof db!=='undefined'&&db)return true;
+        const first=await base();if(first)return true;
+        if(!navigator.onLine)return false;
+        await delay(450);
+        try{
+          const ready=await withTimeout(ensureFirebaseCore(),12000,'carregar conexão segura');
+          return !!(ready&&initFirebase());
+        }catch(error){console.warn('Firebase indisponível após nova tentativa',error);return false;}
+      };
+      wrapped.__tbRetry=true;
+      ensureFirebaseReady=wrapped;
+    }
+
+    if(typeof cloudGet==='function'&&!cloudGet.__tbRetry){
+      const base=cloudGet;
+      const wrapped=async function(reference,label='consulta'){
+        try{return await base(reference,label);}
+        catch(error){
+          const retryable=navigator.onLine&&(typeof isNetworkLikeError==='function'?isNetworkLikeError(error):false);
+          if(!retryable)throw error;
+          await delay(400);
+          return base(reference,label+' · nova tentativa');
+        }
+      };
+      wrapped.__tbRetry=true;
+      cloudGet=wrapped;
+    }
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',patch,{once:true});else patch();
+})();
+
 /* Extensões carregadas em ordem determinística depois que o núcleo estiver pronto.
    A rede é aquecida em paralelo por preload, mas a execução permanece serial para
    preservar as dependências entre os hotfixes. O guia visual continua sob demanda. */
@@ -24,6 +105,7 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
+    './modules/student-guidance-v10_10_9.js?v=10.10.9-guidance1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=()=>{
