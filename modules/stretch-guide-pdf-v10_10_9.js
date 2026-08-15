@@ -4,9 +4,9 @@
   if(window.__TEAM_BULLS_STRETCH_PDF_V10109__)return;
   window.__TEAM_BULLS_STRETCH_PDF_V10109__=true;
 
-  const VERSION='10.10.9-stretchpdf1';
+  const VERSION='10.10.9-stretchpdf2';
   const PAGE_COUNT=10;
-  const CACHE_NAME='team-bulls-stretch-guide-v10-10-9-stretchpdf1';
+  const CACHE_NAME='team-bulls-stretch-guide-v10-10-9-stretchpdf2';
   const PAGES=Array.from({length:PAGE_COUNT},(_,index)=>`./assets/stretch-guide/page-${String(index+1).padStart(2,'0')}.avif?v=${VERSION}`);
   let activePage=0;
   let priorBodyOverflow='';

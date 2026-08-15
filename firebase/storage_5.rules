@@ -31,6 +31,12 @@ service firebase.storage {
         && request.resource.size <= maxBytes
         && request.resource.contentType == 'image/jpeg';
     }
+    function validOriginalProgressPhoto(maxBytes) {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= maxBytes
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif|heic|heif)');
+    }
 
     match /progressPhotos/{uid}/{photoId}.jpg {
       allow read: if isTrainer() || activeOwner(uid);
@@ -40,6 +46,11 @@ service firebase.storage {
     match /progressPhotoThumbs/{uid}/{photoId}.jpg {
       allow read: if isTrainer() || activeOwner(uid);
       allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(350 * 1024);
+      allow delete: if activeOwner(uid);
+    }
+    match /progressPhotoOriginals/{uid}/{photoId} {
+      allow read: if isTrainer() || activeOwner(uid);
+      allow create, update: if activeOwner(uid) && validOriginalProgressPhoto(25 * 1024 * 1024);
       allow delete: if activeOwner(uid);
     }
     match /reportGuides/{trainerUid}/photo-guide.pdf {

@@ -14,7 +14,7 @@ const source=read(modulePath);
 const config=read('config_v10_7.js');
 const sw=read('sw.js');
 
-has(source,"const VERSION='10.10.9-stretchpdf1'",'Versão do visualizador exato ausente.');
+has(source,"const VERSION='10.10.9-stretchpdf2'",'Versão do visualizador de alta resolução ausente.');
 has(source,'const PAGE_COUNT=10','Visualizador não declara as 10 páginas do PDF.');
 has(source,"./assets/stretch-guide/page-${String(index+1).padStart(2,'0')}.avif",'Visualizador não aponta para as páginas renderizadas do PDF.');
 has(source,'data-src=', 'As páginas deixaram de usar carregamento sob demanda.');
@@ -31,13 +31,21 @@ lacks(source,"db.collection(",'Guia de alongamentos não deve acessar Firestore.
 lacks(source,'firebase.storage','Guia de alongamentos não deve acessar Storage.');
 lacks(source,'signInWithEmailAndPassword','Guia de alongamentos não deve alterar autenticação.');
 
-const loader="./modules/stretch-guide-pdf-v10_10_9.js?v=10.10.9-stretchpdf1";
-has(config,loader,'Loader não inclui o visualizador exato do PDF.');
+const loader="./modules/stretch-guide-pdf-v10_10_9.js?v=10.10.9-stretchpdf2";
+has(config,loader,'Loader não inclui o visualizador de alta resolução do PDF.');
 assert(config.indexOf('student-guidance-v10_10_9-v2.js')<config.indexOf('stretch-guide-pdf-v10_10_9.js'),'PDF exato precisa carregar depois das orientações do aluno.');
 assert(config.indexOf('stretch-guide-pdf-v10_10_9.js')<config.indexOf('modal-stack-stability-v10_10_9.js'),'PDF exato precisa carregar antes da camada final de modais.');
 
 const requiredShell=sw.slice(sw.indexOf('const REQUIRED_SHELL=['),sw.indexOf('const OPTIONAL_SHELL=['));
 lacks(requiredShell,'assets/stretch-guide/','As imagens do PDF não podem entrar no shell crítico/login.');
+
+function avifDimensions(data){
+  const marker=Buffer.from('ispe','ascii');
+  const index=data.indexOf(marker);
+  if(index<0||index+16>data.length)return null;
+  const width=data.readUInt32BE(index+8),height=data.readUInt32BE(index+12);
+  return width>0&&height>0?{width,height}:null;
+}
 
 let totalBytes=0;
 for(let page=1;page<=10;page+=1){
@@ -49,6 +57,9 @@ for(let page=1;page<=10;page+=1){
   totalBytes+=data.length;
   assert(data.length>3000,`Página ${page} parece vazia ou inválida.`);
   assert(data.subarray(4,12).toString('ascii').includes('ftypavif'),`Página ${page} não é AVIF válido.`);
+  const dimensions=avifDimensions(data);
+  assert(!!dimensions,`Página ${page} não expõe dimensões AVIF válidas.`);
+  if(dimensions)assert(dimensions.width>=990&&dimensions.height>=1400,`Página ${page} está em baixa resolução: ${dimensions.width}x${dimensions.height}.`);
 }
 assert(totalBytes<200*1024,`Páginas do guia somam ${totalBytes} bytes; revisar impacto no mobile.`);
 
@@ -56,4 +67,4 @@ if(fail.length){
   console.error('\nFalhas do guia PDF de alongamentos:\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log(`Stretch guide PDF check OK — 10 páginas reais, ${(totalBytes/1024).toFixed(1)} KiB, carregamento sob demanda.`);
+console.log(`Stretch guide PDF check OK — 10 páginas em alta resolução, ${(totalBytes/1024).toFixed(1)} KiB, carregamento sob demanda.`);
