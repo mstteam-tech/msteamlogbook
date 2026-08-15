@@ -88,7 +88,7 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
 
 /* Extensões carregadas em ordem determinística depois que o núcleo estiver pronto.
    A rede é aquecida em paralelo por preload, mas a execução permanece serial para
-   preservar as dependências entre os hotfixes. O guia visual continua sob demanda. */
+   preservar as dependências entre os hotfixes. Os guias visuais continuam sob demanda. */
 (()=>{
   let requested=false;
   const modules=[
@@ -106,6 +106,7 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
+    './modules/stretch-guide-pdf-v10_10_9.js?v=10.10.9-stretchpdf1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=()=>{
