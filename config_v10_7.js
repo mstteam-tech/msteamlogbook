@@ -5,6 +5,12 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
   appCheckSiteKey: '6Lc3U28tAAAAAB6qyxP8GauRDCg-4ADiy8oYLKXL'
 });
 
+/* Remove caches antigos das páginas visuais de alongamentos. O guia permanece
+   somente em texto pelo módulo student-guidance, sem imagens armazenadas no app. */
+if('caches' in window){
+  caches.keys().then(keys=>Promise.all(keys.filter(name=>name.startsWith('team-bulls-stretch-guide-')).map(name=>caches.delete(name)))).catch(()=>{});
+}
+
 /* Resiliência de conexão instalada antes do initApp do núcleo.
    Como este arquivo defer executa antes do core, o listener abaixo é registrado
    primeiro e corrige os limites de rede/App Check antes da restauração da sessão. */
@@ -106,7 +112,6 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
-    './modules/stretch-guide-pdf-v10_10_9.js?v=10.10.9-stretchpdf2',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
