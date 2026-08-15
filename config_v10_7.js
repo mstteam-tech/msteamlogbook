@@ -106,7 +106,8 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
-    './modules/stretch-guide-pdf-v10_10_9.js?v=10.10.9-stretchpdf1',
+    './modules/stretch-guide-pdf-v10_10_9.js?v=10.10.9-stretchpdf2',
+    './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=()=>{
