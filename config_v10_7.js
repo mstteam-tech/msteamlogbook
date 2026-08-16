@@ -5,8 +5,8 @@ window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
   appCheckSiteKey: '6Lc3U28tAAAAAB6qyxP8GauRDCg-4ADiy8oYLKXL'
 });
 
-/* Remove caches antigos das páginas visuais de alongamentos. O guia permanece
-   somente em texto pelo módulo student-guidance, sem imagens armazenadas no app. */
+/* Remove caches antigos das páginas visuais de alongamentos. A planilha visual
+   é desativada pelo módulo remove-stretch-planilha e não deve aparecer no app. */
 if('caches' in window){
   caches.keys().then(keys=>Promise.all(keys.filter(name=>name.startsWith('team-bulls-stretch-guide-')).map(name=>caches.delete(name)))).catch(()=>{});
 }
@@ -112,6 +112,7 @@ if('caches' in window){
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
+    './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
