@@ -122,12 +122,18 @@ def main():
     need(worker,[
         "const APP_VERSION='10.10.9'", "const SHELL_CACHE=`team-bulls-shell-",
         "'./version.json'", "'./update_v10_10_9.js?v=10.10.9'",
-        'navigationNetworkFirst(request,event)', "relativePath==='/version.json'",
+        'navigationCacheFirst(request,event)', 'refreshNavigation(request,event,fallback)',
+        "relativePath==='/version.json'", 'MUTABLE_NETWORK_TIMEOUT_MS=1800',
+        'NAVIGATION_REFRESH_TIMEOUT_MS=1800',
         'await self.skipWaiting()', 'await self.clients.claim()', 'CLEAR_APP_CACHES'
     ],'Service Worker')
     if 'ponte de migração' not in bridge: fail('ponte sw_47.js ausente')
-    if "cache-first" in worker.lower() and 'navigationNetworkFirst' not in worker:
-        fail('navegação pode continuar presa ao HTML antigo')
+    if 'navigationNetworkFirst(request,event)' in worker:
+        fail('navegação voltou a bloquear a abertura esperando a rede')
+    versioned_route=worker.find("if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v'))")
+    mutable_route=worker.find('if(MUTABLE_PATHS.has(relativePath))')
+    if versioned_route < 0 or mutable_route < 0 or versioned_route > mutable_route:
+        fail('recursos versionados não estão priorizando cache antes das rotas mutáveis')
 
     interaction=(ROOT/'interaction_v10_10_9.js').read_text(encoding='utf-8')
     need(interaction,[
@@ -176,7 +182,7 @@ def main():
         'assets':len(set(parser.assets)),'javascript_files':len(JS_FILES),
         'service_worker':'sw.js','legacy_bridge':'sw_47.js','manifest':'manifest.json',
         'version_endpoint':'version.json','in_app_updates':True,
-        'reinstall_required':False,'navigation_strategy':'network-first',
+        'reinstall_required':False,'navigation_strategy':'cache-first-background-refresh',
         'local_data_preserved':True,'audio_cache_preserved':True,
         'firestore_rules':'firestore_26_compacto.rules','storage_rules':'storage_5.rules',
         'exercise_day_context_locked':True,'session_delete_fixed':True,'trainer_operations_hidden_from_students':True,'themed_student_navigation':True,'free_meals_merged_into_supplements':True,'exercise_pdf_links':65,'automatic_exercise_videos':True,'cardio_module':True,'cardio_substitutions_individual':True,'cardio_timer_prescribed':True
