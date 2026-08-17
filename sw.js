@@ -2,13 +2,15 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const CACHE_REVISION='guidance2';
+const CACHE_REVISION='startup1';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
 const AUDIO_CACHE_NAME='team-bulls-v9-5-security-audio';
 const CACHE_PREFIX='team-bulls-';
-const NETWORK_TIMEOUT_MS=4500;
+const NETWORK_TIMEOUT_MS=2500;
+const MUTABLE_NETWORK_TIMEOUT_MS=1800;
+const NAVIGATION_REFRESH_TIMEOUT_MS=1800;
 const AUDIO_NETWORK_TIMEOUT_MS=2500;
 const SHELL_FETCH_CONCURRENCY=4;
 const OPTIONAL_FETCH_CONCURRENCY=2;
@@ -40,6 +42,10 @@ const REQUIRED_SHELL=[
   './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
   './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
   './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
+  './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
+  './modules/security-hardening-v10_10_9.js?v=10.10.9-security1',
+  './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
+  './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
   './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1',
   './interaction_v10_10_9.js?v=10.10.9',
   './styles_v10_10_9.css?v=10.10.9',
@@ -210,17 +216,28 @@ async function cacheHtml(response,cacheKey){
   await cache.put(cacheKey,response.clone());
   return response;
 }
-async function navigationNetworkFirst(request,event){
+async function refreshNavigation(request,event,fallback){
+  try{
+    const preload=await event.preloadResponse.catch(()=>null);
+    const response=preload?.ok?preload:await fetchWithTimeout(request,NAVIGATION_REFRESH_TIMEOUT_MS,{cache:'no-store'});
+    if(response?.ok)await cacheHtml(response,fallback);
+  }catch(error){}
+}
+async function navigationCacheFirst(request,event){
   const url=new URL(request.url);
   const recovery=/\/recuperar\.html$/.test(url.pathname);
   const fallback=scopedUrl(recovery?'./recuperar.html':'./index.html');
+  const cache=await caches.open(SHELL_CACHE);
+  const cached=await cache.match(fallback);
+  if(cached){
+    event.waitUntil(refreshNavigation(request,event,fallback));
+    return secureResponse(cached.clone(),{html:true});
+  }
   try{
     const preload=await event.preloadResponse.catch(()=>null);
     const response=preload?.ok?preload:await fetchWithTimeout(request,NETWORK_TIMEOUT_MS,{cache:'no-store'});
     if(response?.ok)return secureResponse(await cacheHtml(response,fallback),{html:true});
   }catch(error){}
-  const cached=await (await caches.open(SHELL_CACHE)).match(fallback);
-  if(cached)return secureResponse(cached,{html:true});
   return secureResponse(new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Team Bulls</title><body style="background:#0c0c0c;color:#eee;font-family:system-ui;padding:24px"><h1>Team Bulls</h1><p>Sem conexão e sem uma cópia offline disponível. Conecte-se e tente novamente.</p><button onclick="location.reload()">Tentar novamente</button></body>',{status:503,headers:{'Content-Type':'text/html; charset=utf-8'}}),{html:true});
 }
 async function networkFirst(request,{cacheName=RUNTIME_CACHE,timeout=NETWORK_TIMEOUT_MS}={}){
@@ -268,19 +285,22 @@ self.addEventListener('fetch',event=>{
     return;
   }
   if(request.mode==='navigate'){
-    event.respondWith(navigationNetworkFirst(request,event));
+    event.respondWith(navigationCacheFirst(request,event));
     return;
   }
   if(relativePath==='/version.json'){
-    event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:3000}));
+    event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));
+    return;
+  }
+  /* URLs versionadas são imutáveis para aquela versão e devem sair do cache
+     imediatamente. Antes, config/v107 passavam por network-first só por estarem
+     em MUTABLE_PATHS, podendo acrescentar até vários segundos ao boot. */
+  if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v')){
+    event.respondWith(cacheFirst(request,{cacheName:SHELL_CACHE}));
     return;
   }
   if(MUTABLE_PATHS.has(relativePath)){
-    event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE}));
-    return;
-  }
-  if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v')){
-    event.respondWith(cacheFirst(request,{cacheName:SHELL_CACHE}));
+    event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));
     return;
   }
   event.respondWith(networkFirst(request,{cacheName:RUNTIME_CACHE}));
