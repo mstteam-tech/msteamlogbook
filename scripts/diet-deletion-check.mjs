@@ -41,7 +41,7 @@ assert(core.includes('function currentDietVariant()'),'Núcleo não possui divis
 assert(core.includes('async function persistDietDocument()'),'Persistência oficial da dieta ausente.');
 assert(core.includes('let MEAL_PLAN_CACHE={meals:[]}'),'Cache de refeições esperado pelo editor ausente.');
 assert(core.includes("{key:'importantSupplements',title:'Suplementos importantes'}")&&core.includes("{key:'optionalSupplements',title:'Suplementos opcionais'}")&&core.includes("{key:'hormonalProtocol',title:'Protocolo Hormonal'}"),'Seções prescritas esperadas da dieta mudaram.');
-assert(firestore.includes('match /mealPlans/{uid}')&&firestore.includes('allow create, update: if isTrainer() && isStudent(uid)'),'Regra de mealPlans não permite ao treinador persistir a dieta do aluno.');
+assert(firestore.includes('match /mealPlans/{uid}')&&firestore.includes('allow create, update: if trainerOwns(uid)'),'Regra de mealPlans não permite ao treinador vinculado persistir a dieta do aluno.');
 
 if(fail.length){
   console.error('\nFalhas da exclusão da dieta:\n- '+fail.join('\n- '));
