@@ -114,6 +114,7 @@ if('caches' in window){
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
     './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
     './modules/security-hardening-v10_10_9.js?v=10.10.9-security1',
+    './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
