@@ -27,7 +27,9 @@ has(config,"./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1
 has(rules,'match /progressPhotoOriginals/{uid}/{photoId}','Regras do Storage não cobrem originais.');
 has(rules,"request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif|heic|heif)')",'Tipos de imagem originais permitidos estão incorretos.');
 has(rules,'validOriginalProgressPhoto(25 * 1024 * 1024)','Limite do Storage para original não é 25 MiB.');
-has(rules,'allow read: if isTrainer() || activeOwner(uid);','Treinador/aluno não têm leitura compatível com fotos existentes.');
+has(rules,'function trainerOwns(uid)','Regras do Storage não validam o vínculo treinador → aluno.');
+has(rules,'allow read: if trainerOwns(uid) || activeOwner(uid);','Treinador vinculado/aluno não têm leitura compatível com fotos existentes.');
+assert(!rules.includes('allow read: if isTrainer() || activeOwner(uid);'),'Qualquer treinador voltou a ter acesso às fotos de qualquer aluno.');
 
 if(fail.length){console.error('\nFalhas de qualidade/download de fotos:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Photo quality/download check OK — original preservado, fallback compatível e download do treinador protegido.');
+console.log('Photo quality/download check OK — original preservado, fallback compatível e download restrito ao treinador vinculado.');

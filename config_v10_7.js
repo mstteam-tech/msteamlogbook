@@ -18,9 +18,11 @@ if('caches' in window){
   let installed=false;
   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const patch=()=>{
-    if(installed)return;installed=true;
+    if(installed)return true;
+    if(typeof withTimeout!=='function'||typeof ensureFirebaseReady!=='function'||typeof cloudGet!=='function')return false;
+    installed=true;
 
-    if(typeof withTimeout==='function'&&!withTimeout.__tbFirebaseResilience){
+    if(!withTimeout.__tbFirebaseResilience){
       const base=withTimeout;
       const wrapped=function(task,ms,label='operação'){
         let limit=Math.max(250,Number(ms)||10000);
@@ -88,15 +90,30 @@ if('caches' in window){
       wrapped.__tbRetry=true;
       cloudGet=wrapped;
     }
+    return true;
   };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',patch,{once:true});else patch();
+
+  /* Não espera obrigatoriamente DOMContentLoaded: assim que o núcleo expõe as
+     funções de rede, a camada de resiliência é instalada. O polling é curto e
+     não bloqueia o parser nem a primeira pintura. */
+  let attempts=0;
+  const tryPatch=()=>{
+    if(patch()||attempts++>=80)return;
+    setTimeout(tryPatch,0);
+  };
+  tryPatch();
+  document.addEventListener('DOMContentLoaded',patch,{once:true});
 })();
 
-/* Extensões carregadas em ordem determinística depois que o núcleo estiver pronto.
-   A rede é aquecida em paralelo por preload, mas a execução permanece serial para
-   preservar as dependências entre os hotfixes. Os guias visuais continuam sob demanda. */
+/* Extensões carregadas sem competir com a abertura do aplicativo.
+   Apenas o hardening de segurança entra imediatamente. Os demais hotfixes são
+   carregados em ordem determinística no primeiro período ocioso após a pintura
+   inicial, evitando dezenas de preloads simultâneos disputando rede com Firebase. */
 (()=>{
-  let requested=false;
+  let requested=false,deferredStarted=false;
+  const criticalModules=[
+    './modules/security-hardening-v10_10_9.js?v=10.10.9-security1'
+  ];
   const modules=[
     './modules/stability_v10_10_9.js?v=10.10.9',
     './modules/app-update-v10_10_9.js?v=10.10.9',
@@ -112,12 +129,13 @@ if('caches' in window){
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
-    './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove1',
+    './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
+    './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
-  const preloadModules=()=>{
-    modules.forEach(src=>{
+  const preloadModules=items=>{
+    items.forEach(src=>{
       if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;
       const link=document.createElement('link');
       link.rel='preload';link.as='script';link.href=src;
@@ -132,11 +150,26 @@ if('caches' in window){
     script.onerror=()=>{console.warn('[Team Bulls] Extensão opcional indisponível:',src);resolve(false);};
     document.head.appendChild(script);
   });
+  const loadDeferred=async()=>{
+    if(deferredStarted)return;
+    deferredStarted=true;
+    for(const src of modules)await loadScript(src);
+  };
+  const scheduleDeferred=()=>{
+    const queue=()=>{
+      if('requestIdleCallback' in window)requestIdleCallback(()=>loadDeferred(),{timeout:900});
+      else setTimeout(()=>loadDeferred(),160);
+    };
+    const afterPaint=()=>requestAnimationFrame(()=>requestAnimationFrame(queue));
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});
+    else afterPaint();
+  };
   const load=async()=>{
     if(requested)return;
     requested=true;
-    preloadModules();
-    for(const src of modules)await loadScript(src);
+    preloadModules(criticalModules);
+    for(const src of criticalModules)await loadScript(src);
+    scheduleDeferred();
   };
   if(window.TeamBulls107)load();
   else window.addEventListener('team-bulls-v107-ready',load,{once:true});

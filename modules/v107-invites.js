@@ -53,8 +53,31 @@
   };
   TB.inviteHash=sha256;
 
+  async function registrationState(uid,inviteId,trainerId){
+    if(!uid||!db)return'unknown';
+    try{
+      const snap=await withTimeout(db.collection('users').doc(uid).get(),6000,'confirmar resultado do cadastro');
+      if(!snap.exists)return'missing';
+      const data=snap.data()||{};
+      return data.role==='student'&&String(data.inviteId||'')===String(inviteId||'')&&String(data.trainerId||'')===String(trainerId||'')?'committed':'conflict';
+    }catch(error){return'unknown';}
+  }
+  function uncertainCommit(error){
+    const code=String(error?.code||'').toLowerCase();
+    const message=String(error?.message||'').toLowerCase();
+    return code==='unavailable'||code==='deadline-exceeded'||code==='auth/network-request-failed'||code==='team-bulls/timeout'||message.includes('network')||message.includes('offline');
+  }
+  async function finishRegisteredAccount(email,pass,cred,userData){
+    cacheUserProfile({...userData,uid:cred.user.uid});
+    await rememberOfflineCredential(email,pass,cred.user.uid,userData);
+    window.TeamBullsAuthFields?.clearSecrets?.();
+  }
+
   /* Cadastro seguro: o código fixo foi substituído por um documento aleatório,
-     expirável e consumido na mesma transação que cria o perfil do aluno. */
+     expirável e consumido na mesma transação que cria o perfil do aluno.
+     A transação NÃO recebe timeout artificial: abortá-la localmente enquanto o
+     servidor ainda confirma o commit poderia consumir o convite e depois apagar
+     a conta Auth, deixando um cadastro órfão. */
   doRegister=async function(){
     clearAuthError('reg-error');
     const name=document.getElementById('reg-name').value.trim();
@@ -67,26 +90,36 @@
     if(!navigator.onLine){showAuthError('reg-error','O cadastro inicial exige conexão com a internet.');return;}
     const btn=document.getElementById('btn-register');if(btn.disabled)return;
     btn.disabled=true;btn.textContent='VALIDANDO CONVITE...';
-    let cred=null;
+    let cred=null,inviteId='',userData=null;
     try{
       if(!await ensureFirebaseReady())throw new Error('Não foi possível carregar a conexão segura.');
-      const inviteId=await sha256(code),inviteRef=db.collection('studentInvites').doc(inviteId);
+      inviteId=await sha256(code);const inviteRef=db.collection('studentInvites').doc(inviteId);
       const precheck=await cloudGet(inviteRef,'validar convite');
       if(!precheck.exists||!inviteValid(precheck.data())){const error=new Error('Convite inválido, expirado ou já utilizado.');error.code='team-bulls/invalid-invite';throw error;}
       btn.textContent='CRIANDO CONTA...';AUTH_HANDLED=false;startBootWatchdog();
       cred=await withTimeout(auth.createUserWithEmailAndPassword(email,pass),12000,'criação da conta');
-      const userData={name:name.slice(0,100),email,role:'student',status:'active',trainerId:String(precheck.data().trainerId||''),inviteId,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-      await withTimeout(db.runTransaction(async transaction=>{
+      userData={name:name.slice(0,100),email,role:'student',status:'active',trainerId:String(precheck.data().trainerId||''),inviteId,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+      await db.runTransaction(async transaction=>{
         const fresh=await transaction.get(inviteRef);if(!fresh.exists||!inviteValid(fresh.data())){const error=new Error('Este convite acabou de expirar ou já foi usado.');error.code='team-bulls/invalid-invite';throw error;}
         if(String(fresh.data().trainerId||'')!==userData.trainerId)throw new Error('Convite inconsistente.');
         transaction.set(db.collection('users').doc(cred.user.uid),userData);
         transaction.update(inviteRef,{active:false,usedBy:cred.user.uid,usedAt:firebase.firestore.FieldValue.serverTimestamp()});
-      }),CLOUD_WRITE_TIMEOUT_MS,'consumir convite');
-      cacheUserProfile({...userData,uid:cred.user.uid});
-      await rememberOfflineCredential(email,pass,cred.user.uid,userData);
-      window.TeamBullsAuthFields?.clearSecrets?.();
+      });
+      await finishRegisteredAccount(email,pass,cred,userData);
     }catch(error){
       AUTH_HANDLED=false;
+      if(cred?.user&&userData&&uncertainCommit(error)){
+        const state=await registrationState(cred.user.uid,inviteId,userData.trainerId);
+        if(state==='committed'){
+          await finishRegisteredAccount(email,pass,cred,userData);
+          return;
+        }
+        if(state==='unknown'){
+          try{await auth.signOut();}catch(signOutError){}
+          showAuthError('reg-error','Não foi possível confirmar o resultado do cadastro. Para evitar apagar uma conta que pode ter sido criada, tente entrar com este mesmo e-mail antes de usar outro convite.');
+          return;
+        }
+      }
       if(cred?.user){try{await cred.user.delete();}catch(cleanupError){try{await auth.signOut();}catch(signOutError){}}}
       const messages={
         'auth/email-already-in-use':'E-mail já cadastrado.','auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.',
