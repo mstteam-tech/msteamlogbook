@@ -38,11 +38,11 @@
       const loadSeq=++TRAINER_LIST_LOAD_SEQ;
       const chip=document.getElementById('trainer-chip-name');if(chip)chip.textContent=CURRENT_USER?.name||'treinador';
       try{
-        /* A consulta já nasce limitada ao trainerId. As regras do Firestore
-           repetem a mesma autorização no servidor; este filtro não é a barreira
-           de segurança, mas impede consultas incompatíveis com as regras. */
+        /* Regras do Firestore não funcionam como filtro. Por isso a consulta
+           replica os dois predicados exigidos para um treinador: role=student
+           e trainerId igual ao usuário autenticado. */
         const snap=await withTimeout(
-          db.collection('users').where('trainerId','==',trainerUid).get(),
+          db.collection('users').where('role','==','student').where('trainerId','==',trainerUid).get(),
           CLOUD_READ_TIMEOUT_MS,'lista de alunos'
         );
         const students=snap.docs.map(d=>({...d.data(),uid:d.id})).filter(student=>student.role==='student'&&String(student.trainerId||'')===trainerUid);
