@@ -6,7 +6,7 @@ service firebase.storage {
       return /databases/(default)/documents/users/$(uid);
     }
     function profileExists(uid) {
-      return firestore.exists(profilePath(uid));
+      return uid is string && firestore.exists(profilePath(uid));
     }
     function profile(uid) {
       return firestore.get(profilePath(uid)).data;
@@ -14,6 +14,11 @@ service firebase.storage {
     function isTrainer() {
       return signedIn() && profileExists(request.auth.uid)
         && profile(request.auth.uid).role == 'trainer';
+    }
+    function trainerOwns(uid) {
+      return isTrainer() && profileExists(uid)
+        && profile(uid).role == 'student'
+        && profile(uid).trainerId == request.auth.uid;
     }
     function activeOwner(uid) {
       return signedIn() && request.auth.uid == uid && profileExists(uid)
@@ -39,17 +44,17 @@ service firebase.storage {
     }
 
     match /progressPhotos/{uid}/{photoId}.jpg {
-      allow read: if isTrainer() || activeOwner(uid);
+      allow read: if trainerOwns(uid) || activeOwner(uid);
       allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(2 * 1024 * 1024);
       allow delete: if activeOwner(uid);
     }
     match /progressPhotoThumbs/{uid}/{photoId}.jpg {
-      allow read: if isTrainer() || activeOwner(uid);
+      allow read: if trainerOwns(uid) || activeOwner(uid);
       allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(350 * 1024);
       allow delete: if activeOwner(uid);
     }
     match /progressPhotoOriginals/{uid}/{photoId} {
-      allow read: if isTrainer() || activeOwner(uid);
+      allow read: if trainerOwns(uid) || activeOwner(uid);
       allow create, update: if activeOwner(uid) && validOriginalProgressPhoto(25 * 1024 * 1024);
       allow delete: if activeOwner(uid);
     }
@@ -63,7 +68,7 @@ service firebase.storage {
       allow delete: if isTrainer() && request.auth.uid == trainerUid;
     }
     match /freeMealLogs/{uid}/{photoId}.jpg {
-      allow read: if isTrainer() || activeOwner(uid);
+      allow read: if trainerOwns(uid) || activeOwner(uid);
       allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(2 * 1024 * 1024);
       allow delete: if activeOwner(uid);
     }
