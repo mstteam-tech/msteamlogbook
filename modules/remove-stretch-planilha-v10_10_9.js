@@ -12,8 +12,7 @@
 
   function removeStretchPlanilha(){
     SELECTORS.forEach(selector=>document.querySelectorAll(selector).forEach(node=>node.remove()));
-    const staleStyle=document.getElementById('tb-remove-stretch-planilha-style');
-    if(!staleStyle){
+    if(!document.getElementById('tb-remove-stretch-planilha-style')){
       const style=document.createElement('style');
       style.id='tb-remove-stretch-planilha-style';
       style.textContent='[data-tb-stretch-nav],[data-tb-stretch-home],#tb-stretch-viewer{display:none!important}';
@@ -39,12 +38,11 @@
     });
   }
 
-  const observer=new MutationObserver(()=>removeStretchPlanilha());
-  const start=()=>{
-    removeStretchPlanilha();
-    if(document.body)observer.observe(document.body,{childList:true,subtree:true});
-  };
-
+  /* O módulo de orientações já foi carregado antes deste hotfix. Portanto uma
+     remoção inicial + o hook de refresh acima cobrem os únicos caminhos que
+     recriam a planilha. Evitamos observar document.body permanentemente, pois
+     isso fazia uma varredura global a cada mutação de DOM do aplicativo. */
+  const start=()=>removeStretchPlanilha();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
