@@ -99,7 +99,12 @@ service cloud.firestore {
     }
 
     match /exercises/{id} {
-      allow read: if trainerOwnsWorkout(resource.data.workoutId) || activeOwner(resource.data.userId);
+      /* O app usa duas consultas legítimas: userId para carregar a estrutura e
+         workoutId para exclusão de um protocolo. Cada caminho precisa ser
+         demonstravelmente limitado ao aluno vinculado ao treinador. */
+      allow read: if trainerOwns(resource.data.userId)
+        || trainerOwnsWorkout(resource.data.workoutId)
+        || activeOwner(resource.data.userId);
       allow create: if trainerOwns(request.resource.data.userId)
         && request.resource.data.workoutId is string
         && workoutExists(request.resource.data.workoutId)
@@ -113,7 +118,7 @@ service cloud.firestore {
         && request.resource.data.get('weeklyPlan', {}) is map
         && request.resource.data.get('weeklyTechniquePlan', {}) is map
         && request.resource.data.createdAt is timestamp;
-      allow update: if trainerOwnsWorkout(resource.data.workoutId)
+      allow update: if trainerOwns(resource.data.userId)
         && immutable('userId') && immutable('workoutId')
         && immutable('createdAt')
         && requiredText(request.resource.data.name, 180)
@@ -124,7 +129,7 @@ service cloud.firestore {
         && request.resource.data.get('optionalTechniqueIds', []).size() <= 100
         && request.resource.data.get('weeklyPlan', {}) is map
         && request.resource.data.get('weeklyTechniquePlan', {}) is map;
-      allow delete: if trainerOwnsWorkout(resource.data.workoutId);
+      allow delete: if trainerOwns(resource.data.userId);
     }
 
     match /sessions/{id} {
