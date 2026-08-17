@@ -112,7 +112,8 @@ if('caches' in window){
     './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
     './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
     './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
-    './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove1',
+    './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
+    './modules/security-hardening-v10_10_9.js?v=10.10.9-security1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
