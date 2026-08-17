@@ -2,30 +2,26 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() { return request.auth != null; }
-    function profilePath(uid) {
-      return /databases/(default)/documents/users/$(uid);
-    }
-    function profileExists(uid) {
-      return uid is string && firestore.exists(profilePath(uid));
-    }
     function profile(uid) {
-      return firestore.get(profilePath(uid)).data;
+      return firestore.get(/databases/(default)/documents/users/$(uid)).data;
     }
     function isTrainer() {
-      return signedIn() && profileExists(request.auth.uid)
-        && profile(request.auth.uid).role == 'trainer';
+      return signedIn() && profile(request.auth.uid).role == 'trainer';
     }
     function trainerOwns(uid) {
-      return isTrainer() && profileExists(uid)
+      /* Duas leituras únicas no máximo: perfil do treinador + perfil do aluno.
+         Isso respeita o limite de documentos Firestore acessíveis por avaliação
+         das regras do Storage. Documento ausente faz a condição falhar/nega. */
+      return isTrainer()
         && profile(uid).role == 'student'
         && profile(uid).trainerId == request.auth.uid;
     }
     function activeOwner(uid) {
-      return signedIn() && request.auth.uid == uid && profileExists(uid)
+      return signedIn() && request.auth.uid == uid
         && profile(uid).role == 'student' && profile(uid).status == 'active';
     }
     function activeStudentOf(trainerUid) {
-      return signedIn() && profileExists(request.auth.uid)
+      return signedIn()
         && profile(request.auth.uid).role == 'student'
         && profile(request.auth.uid).status == 'active'
         && profile(request.auth.uid).trainerId == trainerUid;
