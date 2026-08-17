@@ -27,11 +27,16 @@ assert(updater.includes("TB?.flushDrafts?.()"),'rascunhos não são salvos antes
 assert(updater.includes("manualCheck:()=>checkForUpdates"),'verificação manual não está exposta');
 assert(worker.includes("const APP_VERSION='10.10.9'"),'versão do Service Worker incorreta');
 assert(worker.includes("request.mode==='navigate'"),'navegação não é interceptada');
-assert(worker.includes('navigationNetworkFirst(request,event)'),'navegação não prioriza rede');
+assert(worker.includes('navigationCacheFirst(request,event)'),'navegação não abre imediatamente pelo cache');
+assert(worker.includes('event.waitUntil(refreshNavigation(request,event,fallback))'),'HTML não é atualizado em segundo plano após abrir pelo cache');
+assert(!worker.includes('navigationNetworkFirst(request,event)'),'navegação voltou a esperar a rede antes de abrir');
 assert(worker.includes("relativePath==='/version.json'"),'version.json não recebe estratégia fresca');
+const versionedRoute=worker.indexOf("if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v'))");
+const mutableRoute=worker.indexOf('if(MUTABLE_PATHS.has(relativePath))');
+assert(versionedRoute>=0&&mutableRoute>=0&&versionedRoute<mutableRoute,'recursos versionados não priorizam o cache');
 assert(worker.includes("await self.clients.claim()"),'novo worker não assume clientes');
 assert(worker.includes("await self.skipWaiting()"),'novo worker não ativa imediatamente');
 assert(worker.includes("key!==AUDIO_CACHE_NAME"),'limpeza de cache pode apagar áudio desnecessariamente');
 assert(bridge.includes('ponte de migração'),'ponte para instalações v10.10.4 ausente');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===worker,'ponte e worker principal divergiram');
-console.log('APROVADO: atualização interna, manifesto estável, navegação network-first e ponte legada validados.');
+console.log('APROVADO: atualização interna, manifesto estável, abertura cache-first com atualização em segundo plano e ponte legada validados.');
