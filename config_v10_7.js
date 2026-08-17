@@ -60,7 +60,7 @@ if('caches' in window){
       initOptionalAppCheck=wrapped;
     }
 
-    if(!ensureFirebaseReady.__tbRetry){
+    if(typeof ensureFirebaseReady==='function'&&!ensureFirebaseReady.__tbRetry){
       const base=ensureFirebaseReady;
       const wrapped=async function(){
         if(typeof auth!=='undefined'&&auth&&typeof db!=='undefined'&&db)return true;
@@ -76,7 +76,7 @@ if('caches' in window){
       ensureFirebaseReady=wrapped;
     }
 
-    if(!cloudGet.__tbRetry){
+    if(typeof cloudGet==='function'&&!cloudGet.__tbRetry){
       const base=cloudGet;
       const wrapped=async function(reference,label='consulta'){
         try{return await base(reference,label);}
