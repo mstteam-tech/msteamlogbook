@@ -110,6 +110,7 @@ if('caches' in window){
   ];
   const modules=[
     './modules/session-save-performance-v10_10_9.js?v=10.10.9-sessionperf1',
+    './modules/week-selection-fix-v10_10_9.js?v=10.10.9-weekselection1',
     './modules/stability_v10_10_9.js?v=10.10.9',
     './modules/app-update-v10_10_9.js?v=10.10.9',
     './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
