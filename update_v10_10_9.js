@@ -2,14 +2,35 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CHECK_INTERVAL_MS=10*60*1000;
+  const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
+  const UPDATE_FLUSH_BUDGET_MS=700;
+  const UPDATE_WORKER_WAIT_MS=900;
+  const UPDATE_CONTROLLER_WAIT_MS=2200;
+  const BACKGROUND_CHECK_DELAY_MS=3200;
+  const CRITICAL_REFRESH_CONCURRENCY=4;
+  const CRITICAL_ASSETS=[
+    './index.html',
+    './manifest.json?v=10.10.9',
+    './version.json',
+    './viewport_v10_10_9.js?v=10.10.9',
+    './boot_v10.js?v=10.10.9',
+    './config_v10_7.js?v=10.10.9',
+    './update_v10_10_9.js?v=10.10.9',
+    './app_v10_10_9_core.js?v=10.10.9',
+    './modules/v107-core.js?v=10.10.9',
+    './modules/v107-invites.js?v=10.10.9',
+    './modules/v107-operations.js?v=10.10.9',
+    './interaction_v10_10_9.js?v=10.10.9',
+    './styles_v10_10_9.css?v=10.10.9'
+  ];
   let registration=null;
   let latestInfo=null;
   let checking=null;
   let applying=false;
   let banner=null;
+  let scheduledCheckTimer=null;
 
   function numericParts(value){
     return String(value||'').split('.').map(part=>Number.parseInt(part,10)||0);
@@ -24,7 +45,7 @@
   }
   function isOnline(){return navigator.onLine!==false;}
   function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
-  function waitForState(worker,desired,timeout=12000){
+  function waitForState(worker,desired,timeout=7000){
     if(!worker)return Promise.resolve(false);
     if(worker.state===desired)return Promise.resolve(true);
     return new Promise(resolve=>{
@@ -44,7 +65,7 @@
       worker.addEventListener('statechange',onState);
     });
   }
-  function waitForControllerChange(timeout=8000){
+  function waitForControllerChange(timeout=UPDATE_CONTROLLER_WAIT_MS){
     return new Promise(resolve=>{
       let done=false;
       const finish=value=>{
@@ -128,10 +149,42 @@
       const onMessage=event=>{
         if(event.data?.type==='TEAM_BULLS_REFRESHED')finish(event.data.ok!==false);
       };
-      const timer=setTimeout(()=>finish(false),15000);
+      const timer=setTimeout(()=>finish(false),8000);
       navigator.serviceWorker.addEventListener('message',onMessage);
       worker.postMessage({type:'REFRESH_APP_SHELL'});
     });
+  }
+  async function mapWithLimit(items,limit,worker){
+    const results=new Array(items.length);let next=0;
+    const run=async()=>{
+      while(true){
+        const index=next++;if(index>=items.length)return;
+        results[index]=await worker(items[index],index);
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(limit,items.length)},run));
+    return results;
+  }
+  async function refreshCriticalShell(){
+    if(!('caches' in window)||!isOnline())return false;
+    const cacheNames=(await caches.keys()).filter(name=>name.startsWith('team-bulls-shell-'));
+    if(!cacheNames.length)return false;
+    const stamp=String(Date.now());
+    const fetched=await mapWithLimit(CRITICAL_ASSETS,CRITICAL_REFRESH_CONCURRENCY,async asset=>{
+      const original=new URL(asset,location.href);
+      const fresh=new URL(original.href);fresh.searchParams.set('tb-refresh',stamp);
+      const response=await fetch(fresh.href,{cache:'reload'});
+      if(!response.ok)throw new Error(`Falha ao renovar ${original.pathname} (${response.status}).`);
+      return{original:original.href,fresh:fresh.href,response};
+    });
+    for(const cacheName of cacheNames){
+      const cache=await caches.open(cacheName);
+      for(const item of fetched){
+        await cache.put(item.original,item.response.clone());
+        await cache.delete(item.fresh).catch(()=>false);
+      }
+    }
+    return true;
   }
   async function prepareLatest({forceCheck=true}={}){
     if(!('serviceWorker' in navigator))return {version:CURRENT_VERSION,reloadNeeded:false};
@@ -139,45 +192,49 @@
     if(info)latestInfo=info;
     const target=latestInfo?.version||CURRENT_VERSION;
     const reg=await registerWorker();
-    await reg.update().catch(()=>{});
-    if(reg.installing)await waitForState(reg.installing,'installed');
-    const waiting=reg.waiting;
+    const workerUpdate=reg.update().catch(()=>null);
+    let warmed=false;
+    try{warmed=await refreshCriticalShell();}catch(error){console.warn('[Team Bulls] Renovação crítica incompleta:',error);}
+    await Promise.race([workerUpdate,sleep(UPDATE_WORKER_WAIT_MS)]);
     let controllerChanged=false;
-    if(waiting){
+    if(reg.waiting){
       const change=waitForControllerChange();
-      waiting.postMessage({type:'SKIP_WAITING'});
+      reg.waiting.postMessage({type:'SKIP_WAITING'});
       controllerChanged=await change;
+    }else if(reg.installing){
+      // O worker termina a instalação em segundo plano; a atualização da tela não
+      // precisa aguardar todo o shell, pois os arquivos críticos já foram renovados.
+      waitForState(reg.installing,'installed').catch(()=>false);
     }
-    const active=reg.active||navigator.serviceWorker.controller;
-    await requestShellRefresh(active).catch(()=>false);
-    // Garante que a navegação seguinte consulte o GitHub Pages, sem apagar
-    // Firebase Auth, IndexedDB, localStorage, fotos ou registros offline.
-    await fetch(`./index.html?tb-update=${encodeURIComponent(target)}&t=${Date.now()}`,{cache:'reload'}).catch(()=>null);
-    return {version:target,reloadNeeded:compareVersions(target,CURRENT_VERSION)>0||controllerChanged};
+    if(!warmed){
+      const active=reg.active||navigator.serviceWorker.controller;
+      warmed=await requestShellRefresh(active).catch(()=>false);
+    }
+    if(!warmed)throw new Error('Não foi possível preparar os arquivos principais da atualização.');
+    return {version:target,reloadNeeded:compareVersions(target,CURRENT_VERSION)>0||controllerChanged||warmed};
   }
   async function flushBeforeReload(){
     try{window.dispatchEvent(new CustomEvent('team-bulls:before-refresh'));}catch(error){}
     const TB=window.TeamBulls107;
-    await Promise.allSettled([
+    const pending=Promise.allSettled([
       Promise.resolve(TB?.flushDrafts?.()),
-      Promise.race([
-        Promise.resolve(TB?.flushPendingMutationSync?.()),
-        sleep(2500)
-      ])
+      Promise.resolve(TB?.flushPendingMutationSync?.()),
+      Promise.resolve(window.TeamBullsSessionPerformance?.flush?.())
     ]);
+    await Promise.race([pending,sleep(UPDATE_FLUSH_BUDGET_MS)]);
   }
   async function applyLatestUpdate(){
     if(applying)return;
     applying=true;
-    setBannerState({title:'PREPARANDO ATUALIZAÇÃO',text:'Salvando rascunhos e renovando os arquivos do aplicativo...',busy:true});
+    setBannerState({title:'PREPARANDO ATUALIZAÇÃO',text:'Salvando o que está pendente e renovando os arquivos principais...',busy:true});
     try{
       if(!isOnline())throw new Error('Conecte o celular à internet para atualizar.');
       await flushBeforeReload();
       const prepared=await prepareLatest({forceCheck:true});
       const target=prepared.version||latestInfo?.version||CURRENT_VERSION;
       sessionStorage.setItem(UPDATE_RELOAD_KEY,target);
-      setBannerState({title:'ATUALIZAÇÃO PRONTA',text:'Reabrindo o Team Bulls com os arquivos novos...',busy:true});
-      await sleep(250);
+      setBannerState({title:'ATUALIZAÇÃO PRONTA',text:'Reabrindo o Team Bulls...',busy:true});
+      await sleep(60);
       location.replace(`./index.html?updated=${encodeURIComponent(target)}&t=${Date.now()}`);
     }catch(error){
       console.error('[Team Bulls] Falha ao atualizar:',error);
@@ -213,6 +270,13 @@
     })();
     return checking;
   }
+  function scheduleBackgroundCheck(delay=BACKGROUND_CHECK_DELAY_MS){
+    clearTimeout(scheduledCheckTimer);
+    scheduledCheckTimer=setTimeout(()=>{
+      const run=()=>checkForUpdates().catch(()=>null);
+      if('requestIdleCallback' in window)requestIdleCallback(run,{timeout:1800});else run();
+    },Math.max(250,delay));
+  }
   function announceCompletedUpdate(){
     const params=new URLSearchParams(location.search);
     const updated=params.get('updated');
@@ -230,16 +294,14 @@
       sessionStorage.removeItem(UPDATE_RELOAD_KEY);
     }
   }
-  async function init(){
+  function init(){
     ensureBanner();
     announceCompletedUpdate();
     if(!('serviceWorker' in navigator))return;
-    try{
-      await registerWorker();
-      await registration.update().catch(()=>{});
-    }catch(error){console.warn('[Team Bulls] Service Worker indisponível:',error);}
-    setTimeout(()=>checkForUpdates(),1800);
-    setInterval(()=>{if(document.visibilityState==='visible')checkForUpdates();},CHECK_INTERVAL_MS);
+    // Registro/verificação do worker não disputa rede com Firebase durante o boot.
+    if(document.readyState==='complete')scheduleBackgroundCheck();
+    else window.addEventListener('load',()=>scheduleBackgroundCheck(1800),{once:true});
+    setInterval(()=>{if(document.visibilityState==='visible')scheduleBackgroundCheck(500);},CHECK_INTERVAL_MS);
   }
 
   window.TeamBullsUpdater=Object.freeze({
@@ -249,8 +311,8 @@
     prepareLatest,
     applyLatest:applyLatestUpdate
   });
-  window.addEventListener('online',()=>checkForUpdates());
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdates();});
+  window.addEventListener('online',()=>scheduleBackgroundCheck(700));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scheduleBackgroundCheck(1000);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
 })();
