@@ -25,3 +25,4 @@ jobs:
           node scripts/diet-deletion-check.mjs
           node scripts/student-guidance-check.mjs
           node scripts/session-performance-check.mjs
+          node scripts/week-selection-check.mjs
