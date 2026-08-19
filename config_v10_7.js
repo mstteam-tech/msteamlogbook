@@ -12,8 +12,9 @@ if('caches' in window){
 }
 
 /* Resiliência de conexão instalada antes do initApp do núcleo.
-   Como este arquivo defer executa antes do core, o listener abaixo é registrado
-   primeiro e corrige os limites de rede/App Check antes da restauração da sessão. */
+   Este script defer é executado antes do core; o listener de DOMContentLoaded
+   fica registrado primeiro e instala os wrappers imediatamente antes do initApp.
+   Não existe mais polling com setTimeout(0), que gerava trabalho inútil no boot. */
 (()=>{
   let installed=false;
   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -93,28 +94,22 @@ if('caches' in window){
     return true;
   };
 
-  /* Não espera obrigatoriamente DOMContentLoaded: assim que o núcleo expõe as
-     funções de rede, a camada de resiliência é instalada. O polling é curto e
-     não bloqueia o parser nem a primeira pintura. */
-  let attempts=0;
-  const tryPatch=()=>{
-    if(patch()||attempts++>=80)return;
-    setTimeout(tryPatch,0);
-  };
-  tryPatch();
+  patch();
   document.addEventListener('DOMContentLoaded',patch,{once:true});
+  window.addEventListener('load',()=>{if(!installed)patch();},{once:true});
 })();
 
 /* Extensões carregadas sem competir com a abertura do aplicativo.
-   Apenas o hardening de segurança entra imediatamente. Os demais hotfixes são
-   carregados em ordem determinística no primeiro período ocioso após a pintura
-   inicial, evitando dezenas de preloads simultâneos disputando rede com Firebase. */
+   Apenas o hardening de segurança entra imediatamente. O registro rápido de
+   séries é o primeiro hotfix carregado após a primeira pintura; as demais
+   camadas seguem em ordem determinística durante o período ocioso. */
 (()=>{
   let requested=false,deferredStarted=false;
   const criticalModules=[
     './modules/security-hardening-v10_10_9.js?v=10.10.9-security1'
   ];
   const modules=[
+    './modules/session-save-performance-v10_10_9.js?v=10.10.9-sessionperf1',
     './modules/stability_v10_10_9.js?v=10.10.9',
     './modules/app-update-v10_10_9.js?v=10.10.9',
     './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
@@ -157,8 +152,8 @@ if('caches' in window){
   };
   const scheduleDeferred=()=>{
     const queue=()=>{
-      if('requestIdleCallback' in window)requestIdleCallback(()=>loadDeferred(),{timeout:900});
-      else setTimeout(()=>loadDeferred(),160);
+      if('requestIdleCallback' in window)requestIdleCallback(()=>loadDeferred(),{timeout:1200});
+      else setTimeout(()=>loadDeferred(),220);
     };
     const afterPaint=()=>requestAnimationFrame(()=>requestAnimationFrame(queue));
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});
