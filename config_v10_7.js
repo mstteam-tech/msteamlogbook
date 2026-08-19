@@ -104,7 +104,7 @@ if('caches' in window){
    séries é o primeiro hotfix carregado após a primeira pintura; as demais
    camadas seguem em ordem determinística durante o período ocioso. */
 (()=>{
-  let requested=false,deferredStarted=false;
+  let requested=false,deferredStarted=false,deferredBatchCount=0;
   const criticalModules=[
     './modules/security-hardening-v10_10_9.js?v=10.10.9-security1'
   ];
@@ -149,7 +149,8 @@ if('caches' in window){
       script.onload=null;script.onerror=null;
       if(!ok&&script.isConnected)script.remove();
       if(reason)console.warn('[Team Bulls] Extensão opcional indisponível:',src,reason);
-      resolve(ok);
+      const settle=()=>resolve(ok);
+      if(deferredStarted&&++deferredBatchCount%4===0)requestAnimationFrame(settle);else settle();
     };
     script.src=src;
     script.async=false;
@@ -158,16 +159,10 @@ if('caches' in window){
     const timer=setTimeout(()=>finish(false,'tempo limite'),Math.max(1200,Number(timeoutMs)||3200));
     document.head.appendChild(script);
   });
-  const yieldToUi=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
   const loadDeferred=async()=>{
     if(deferredStarted)return;
     deferredStarted=true;
-    let loaded=0;
-    for(const src of modules){
-      await loadScript(src,3200);
-      loaded++;
-      if(loaded%4===0)await yieldToUi();
-    }
+    for(const src of modules)await loadScript(src);
   };
   const scheduleDeferred=()=>{
     const queue=()=>{
