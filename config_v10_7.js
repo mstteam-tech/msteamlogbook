@@ -128,6 +128,7 @@ if('caches' in window){
     './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
     './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
+    './modules/usability-checkup-v10_10_9.js?v=10.10.9-usability1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=items=>{
@@ -138,18 +139,35 @@ if('caches' in window){
       document.head.appendChild(link);
     });
   };
-  const loadScript=src=>new Promise(resolve=>{
+  const loadScript=(src,timeoutMs=3200)=>new Promise(resolve=>{
     const script=document.createElement('script');
+    let settled=false;
+    const finish=(ok,reason='')=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      script.onload=null;script.onerror=null;
+      if(!ok&&script.isConnected)script.remove();
+      if(reason)console.warn('[Team Bulls] Extensão opcional indisponível:',src,reason);
+      resolve(ok);
+    };
     script.src=src;
     script.async=false;
-    script.onload=()=>resolve(true);
-    script.onerror=()=>{console.warn('[Team Bulls] Extensão opcional indisponível:',src);resolve(false);};
+    script.onload=()=>finish(true);
+    script.onerror=()=>finish(false,'erro de carregamento');
+    const timer=setTimeout(()=>finish(false,'tempo limite'),Math.max(1200,Number(timeoutMs)||3200));
     document.head.appendChild(script);
   });
+  const yieldToUi=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
   const loadDeferred=async()=>{
     if(deferredStarted)return;
     deferredStarted=true;
-    for(const src of modules)await loadScript(src);
+    let loaded=0;
+    for(const src of modules){
+      await loadScript(src,3200);
+      loaded++;
+      if(loaded%4===0)await yieldToUi();
+    }
   };
   const scheduleDeferred=()=>{
     const queue=()=>{
@@ -164,7 +182,7 @@ if('caches' in window){
     if(requested)return;
     requested=true;
     preloadModules(criticalModules);
-    for(const src of criticalModules)await loadScript(src);
+    for(const src of criticalModules)await loadScript(src,6500);
     scheduleDeferred();
   };
   if(window.TeamBulls107)load();
