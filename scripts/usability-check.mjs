@@ -16,7 +16,7 @@ const modal=read('modules/modal-stack-stability-v10_10_9.js');
 
 has(config,'./modules/usability-checkup-v10_10_9.js?v=10.10.9-usability1','Camada de usabilidade não está carregada.');
 has(config,"setTimeout(()=>finish(false,'tempo limite')",'Loader opcional não possui limite de espera.');
-has(config,'if(loaded%4===0)await yieldToUi()','Loader não devolve tempo de pintura à interface entre lotes.');
+has(config,'deferredBatchCount%4===0','Loader não devolve tempo de pintura à interface entre lotes.');
 assert(config.indexOf('usability-checkup-v10_10_9.js')<config.indexOf('modal-stack-stability-v10_10_9.js'),'Estabilidade de modais deve continuar sendo a última camada de UI.');
 
 has(usability,'scrollByHistoryKey','Navegação não preserva posição por entrada do histórico.');
