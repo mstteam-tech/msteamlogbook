@@ -1,10 +1,10 @@
-/* Team Bulls v10.10.10 — isolamento de treinador, lista completa e saneamento defensivo da UI. */
+/* Team Bulls v10.10.10 — lista completa no modelo de treinador único e saneamento defensivo da UI. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_SECURITY_HARDENING_V101010__)return;
   window.__TEAM_BULLS_SECURITY_HARDENING_V101010__=true;
 
-  const VERSION='10.10.10-security4';
+  const VERSION='10.10.10-security5';
   const SAFE_COLORS=new Set(['#e11d48','#3b82f6','#22c55e','#a855f7','#ec4899','#14b8a6','#f59e0b','#ef4444','#64748b']);
   const DEFAULT_COLOR='#e11d48';
   const authorizedStudents=new Set();
@@ -14,10 +14,10 @@
     return SAFE_COLORS.has(color)?color:DEFAULT_COLOR;
   }
 
-  if(typeof normalizeWorkoutCollection==='function'&&!normalizeWorkoutCollection.__tbSecurity4){
+  if(typeof normalizeWorkoutCollection==='function'&&!normalizeWorkoutCollection.__tbSecurity5){
     const base=normalizeWorkoutCollection;
     const wrapped=function(items){return base(items).map(workout=>({...workout,color:safeColor(workout?.color)}));};
-    wrapped.__tbSecurity4=true;normalizeWorkoutCollection=wrapped;
+    wrapped.__tbSecurity5=true;normalizeWorkoutCollection=wrapped;
   }
 
   function trainerSessionValid(){
@@ -59,25 +59,27 @@
   }
 
   async function auditInviteLinks(trainerUid,visibleCount,students=[],rulesFallback=false){
+    if(rulesFallback){
+      renderLinkHealth(`${visibleCount} aluno(s) carregados. O Firebase ainda está usando regras antigas; por segurança a tela mostra somente os perfis já vinculados. Publique firestore_26_compacto.rules desta atualização para liberar a lista completa.`,true);
+      return;
+    }
     try{
       const snap=await cloudGet(db.collection('studentInvites').where('trainerId','==',trainerUid).limit(300),'verificar vínculos dos alunos');
       const usedIds=new Set();
       snap.docs.forEach(doc=>{const usedBy=String(doc.data()?.usedBy||'');if(usedBy)usedIds.add(usedBy);});
-      const missing=Math.max(0,[...usedIds].filter(uid=>!authorizedStudents.has(uid)).length);
       const withoutTrainerId=students.filter(student=>!String(student.trainerId||'')).length;
-      if(rulesFallback){
-        renderLinkHealth(`${visibleCount} aluno(s) carregados. As regras atuais do Firebase ainda limitam a consulta aos vínculos antigos; publique as regras novas para liberar a lista completa.`,true);
-      }else if(missing>0||withoutTrainerId>0){
-        renderLinkHealth(`${visibleCount} aluno(s) encontrados. ${missing||withoutTrainerId} vínculo(s) antigo(s) ainda precisam de reconciliação.`,true);
+      const missing=Math.max(0,[...usedIds].filter(uid=>!authorizedStudents.has(uid)).length);
+      if(missing>0||withoutTrainerId>0){
+        renderLinkHealth(`${visibleCount} aluno(s) encontrados. ${Math.max(missing,withoutTrainerId)} perfil(is) antigo(s) ainda não possuem vínculo normalizado; eles permanecem visíveis no modelo de treinador único.`,false);
       }else{
-        renderLinkHealth(`${visibleCount} aluno(s) encontrados no cadastro do treinador.`);
+        renderLinkHealth(`${visibleCount} aluno(s) encontrados no cadastro.`);
       }
     }catch(error){
-      renderLinkHealth(`${visibleCount} aluno(s) encontrados no cadastro do treinador.`,!!rulesFallback);
+      renderLinkHealth(`${visibleCount} aluno(s) encontrados no cadastro.`);
     }
   }
 
-  if(typeof renderTrainer==='function'&&!renderTrainer.__tbSecurity4){
+  if(typeof renderTrainer==='function'&&!renderTrainer.__tbSecurity5){
     const securedRenderTrainer=async function(){
       if(!trainerSessionValid())return;
       ensureMobileStyles();
@@ -88,12 +90,12 @@
       try{
         let snap;
         try{
-          /* Modo definitivo: como existe um único treinador, a fonte de verdade da
-             lista é a coleção de usuários com role=student. */
+          /* Fonte definitiva no modelo atual do Team Bulls: existe um único
+             treinador operacional e todo perfil role=student pertence ao cadastro. */
           snap=await withTimeout(db.collection('users').where('role','==','student').get(),CLOUD_READ_TIMEOUT_MS,'lista completa de alunos');
         }catch(allStudentsError){
-          /* Compatibilidade: enquanto as regras antigas ainda estiverem publicadas,
-             não quebraremos a tela. Usamos temporariamente o vínculo por trainerId. */
+          /* Durante a transição das regras, não expomos nem inventamos dados:
+             voltamos à consulta vinculada que as regras antigas autorizam. */
           console.warn('[Team Bulls] regras antigas de alunos; usando fallback seguro',allStudentsError);
           rulesFallback=true;
           snap=await withTimeout(db.collection('users').where('role','==','student').where('trainerId','==',trainerUid).get(),CLOUD_READ_TIMEOUT_MS,'lista de alunos vinculados');
@@ -134,32 +136,32 @@
           const list=document.getElementById('student-list'),empty=document.getElementById('student-empty');
           if(list)list.innerHTML='<div class="session-block" style="border-color:var(--warn)"><div style="color:var(--warn);font-size:13px;margin-bottom:8px">Não foi possível carregar os alunos.</div><button class="btn-add-set" onclick="renderTrainer()">TENTAR NOVAMENTE</button></div>';
           if(empty)empty.style.display='none';
-          renderLinkHealth('Falha ao consultar os alunos. Verifique as regras do Firebase.',true);
+          renderLinkHealth('Falha ao consultar os alunos. Verifique a conexão e as regras do Firebase.',true);
         }
       }
     };
-    securedRenderTrainer.__tbSecurity4=true;
+    securedRenderTrainer.__tbSecurity5=true;
     renderTrainer=securedRenderTrainer;
   }
 
-  if(typeof viewStudent==='function'&&!viewStudent.__tbSecurity4){
+  if(typeof viewStudent==='function'&&!viewStudent.__tbSecurity5){
     const base=viewStudent;
     const wrapped=async function(uidValue,...args){
       const target=String(uidValue||'');
       if(CURRENT_USER?.role==='trainer'&&!authorizedStudents.has(target)){showToast?.('Este aluno não foi encontrado na lista atual.',true);return false;}
       return base.call(this,uidValue,...args);
     };
-    wrapped.__tbSecurity4=true;viewStudent=wrapped;
+    wrapped.__tbSecurity5=true;viewStudent=wrapped;
   }
 
-  if(typeof toggleStudent==='function'&&!toggleStudent.__tbSecurity4){
+  if(typeof toggleStudent==='function'&&!toggleStudent.__tbSecurity5){
     const base=toggleStudent;
     const wrapped=function(uidValue,...args){
       const target=String(uidValue||'');
       if(CURRENT_USER?.role==='trainer'&&!authorizedStudents.has(target)){showToast?.('Aluno não encontrado na lista atual.',true);return false;}
       return base.call(this,uidValue,...args);
     };
-    wrapped.__tbSecurity4=true;toggleStudent=wrapped;
+    wrapped.__tbSecurity5=true;toggleStudent=wrapped;
   }
 
   window.TeamBullsSecurityAudit=Object.freeze({version:VERSION,safeColor});
