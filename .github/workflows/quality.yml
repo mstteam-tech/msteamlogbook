@@ -27,3 +27,4 @@ jobs:
           node scripts/session-performance-check.mjs
           node scripts/week-selection-check.mjs
           node scripts/usability-check.mjs
+          node scripts/legacy-student-link-check.mjs
