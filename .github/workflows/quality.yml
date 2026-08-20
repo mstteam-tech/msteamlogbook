@@ -28,3 +28,4 @@ jobs:
           node scripts/week-selection-check.mjs
           node scripts/usability-check.mjs
           node scripts/legacy-student-link-check.mjs
+          node scripts/trainer-student-list-check.mjs
