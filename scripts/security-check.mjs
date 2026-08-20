@@ -25,13 +25,22 @@ if(failures.length){console.error(failures.join('\n'));process.exit(1);}
 const firestore=read('firebase/firestore_26_compacto.rules');
 has(firestore,'function trainerOwns(uid)','Firestore não possui isolamento trainer → aluno.');
 has(firestore,'function trainerOwnsWorkout(workoutId)','Firestore não protege consultas por workoutId.');
-has(firestore,"resource.data.trainerId == request.auth.uid",'Leitura de usuários não está vinculada ao trainerId.');
+has(firestore,"resource.data.trainerId == request.auth.uid",'Leitura normal de usuários não está vinculada ao trainerId.');
+has(firestore,'function legacyMigrationAuthorized()','Migração legada não possui autorização administrativa explícita.');
+has(firestore,"userData(request.auth.uid).get('legacyMigrationEnabled', false) == true",'Autorização de migração não está vinculada ao treinador autenticado.');
+has(firestore,"legacyMigrationAuthorized() && resource.data.role == 'student'",'Leitura temporária de alunos não está protegida pela autorização de migração.');
+has(firestore,'function preV107LegacyStudent(uid)','Firestore não diferencia alunos pré-v10.7 sem vínculo.');
+has(firestore,"userData(uid).get('trainerId', '') == ''",'Migração pode sobrescrever trainerId existente.');
+has(firestore,"userData(uid).get('inviteId', '') == ''",'Migração pré-v10.7 pode capturar perfil com convite moderno.');
+has(firestore,"affectedKeys().hasOnly(['legacyMigrationEnabled'])",'Treinador não está limitado a desligar somente a autorização temporária.');
+has(firestore,'request.resource.data.legacyMigrationEnabled == false','Cliente pode manter/ativar autorização de migração indevidamente.');
 has(firestore,'trainerOwns(request.resource.data.studentId)','Criações do treinador não exigem aluno vinculado.');
 has(firestore,'trainerOwns(resource.data.userId) || activeOwner(resource.data.userId)','Dados pessoais ainda não estão isolados por treinador.');
 has(firestore,'safeColor(request.resource.data.color)','Cor de protocolo não é validada por whitelist.');
 has(firestore,"(request.resource.data.get('dataUrl', '') != '' || request.resource.data.get('photoPath', '') != '')",'Regra ainda permite registro de foto vazio.');
 lacks(firestore,'allow read: if isTrainer() || activeOwner(resource.data.userId);','Regra ampla de leitura de fotos/sessões por qualquer treinador reapareceu.');
 lacks(firestore,'allow read: if isTrainer() || activeOwner(resource.data.studentId);','Regra ampla de leitura de relatórios por qualquer treinador reapareceu.');
+lacks(firestore,"|| (isTrainer() && resource.data.role == 'student')",'Leitura global permanente de alunos por qualquer treinador reapareceu.');
 has(firestore,'match /{document=**} { allow read, write: if false; }','Firestore perdeu o deny-all final.');
 
 const storage=read('firebase/storage_5.rules');
@@ -59,7 +68,7 @@ lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar
 
 const config=read('config_v10_7.js');
 has(config,'security-hardening-v10_10_9.js?v=10.10.10-security6','Loader não inclui o hardening security6 com URL nova.');
-has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links3','Loader não inclui o reconciliador legacy-links3 com URL nova.');
+has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links4','Loader não inclui o reconciliador legacy-links4 com URL nova.');
 has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader não inclui a correção cache-safe do cadastro.');
 has(config,'remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','Loader pode reutilizar a versão antiga do removedor de alongamento.');
 

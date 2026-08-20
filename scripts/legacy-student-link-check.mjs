@@ -7,18 +7,24 @@ const config=read('config_v10_7.js');
 const repair=read('modules/legacy-student-link-repair-v10_10_10.js');
 const rules=read('firebase/firestore_26_compacto.rules');
 
-assert(config.includes('legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links3'),'Reconciliador não está carregado com cache-bust legacy-links3.');
+assert(config.includes('legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links4'),'Reconciliador não está carregado com cache-bust legacy-links4.');
+assert(repair.includes("VERSION='10.10.10-legacy-links4'"),'Reconciliador não identifica a versão legacy-links4.');
 assert(repair.includes("studentInvites').where('trainerId','==',trainerUid)"),'Reconciliador não consulta somente convites do treinador atual.');
 assert(repair.includes("where('role','==','student').where('trainerId','==',trainerUid)"),'Reconciliador não identifica os alunos já vinculados antes de migrar.');
 assert(repair.includes("doc(uid).update({trainerId:trainerUid})"),'Reconciliador não limita a correção ao trainerId.');
-assert(repair.includes('linkedIds.has(uid)'),'Reconciliador não ignora alunos que já estão corretamente vinculados.');
 assert(repair.includes('lastFingerprint')&&repair.includes('fingerprint===lastFingerprint'),'Proteção contra loop de reconciliação não está presente.');
-assert(repair.includes('usedBy')&&repair.includes('inviteId'),'Reconciliador não usa a prova de vínculo do convite.');
-assert(repair.includes('hookTrainerRender'),'Reconciliador não reexecuta quando a área do treinador fica pronta.');
+assert(repair.includes('PRE_V107_CUTOFF_MS')&&repair.includes('isPreV107LegacyStudent'),'Migração de cadastros anteriores à v10.7 não possui corte de schema.');
+assert(repair.includes('trainerMigrationAuthorized')&&repair.includes('legacyMigrationEnabled===true'),'Cliente não exige autorização administrativa para a migração pré-v10.7.');
+assert(repair.includes("where('role','==','student').limit(PRE_V107_SCAN_LIMIT)"),'Varredura pré-v10.7 não está limitada.');
+assert(repair.includes("doc(trainerUid).update({legacyMigrationEnabled:false})"),'Autorização temporária não é encerrada após a migração.');
 assert(!repair.includes('set({role:')&&!repair.includes("update({role:"),'Reconciliador não pode alterar role do aluno.');
-assert(!repair.includes('trainerId:currentUser')&&!repair.includes('trainerId:CURRENT_USER'),'Reconciliador não usa UID arbitrário fora do vínculo autenticado.');
-assert(rules.includes("request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])"),'Regra Firestore não autoriza a migração segura de trainerId legado.');
-assert(rules.includes("resource.data.inviteId")&&rules.includes("usedBy == uid"),'Regra não valida o convite consumido para a migração.');
+assert(rules.includes('function legacyMigrationAuthorized()'),'Firestore não possui guarda administrativa da migração pré-v10.7.');
+assert(rules.includes("userData(request.auth.uid).get('legacyMigrationEnabled', false) == true"),'Autorização pré-v10.7 não está vinculada ao próprio treinador autenticado.');
+assert(rules.includes("userData(uid).get('trainerId', '') == ''")&&rules.includes("userData(uid).get('inviteId', '') == ''"),'Migração pré-v10.7 não está restrita a perfis realmente sem vínculo.');
+assert(rules.includes("legacyMigrationAuthorized() && resource.data.role == 'student'"),'Leitura temporária não está explicitamente protegida pela autorização de migração.');
+assert(rules.includes("affectedKeys().hasOnly(['legacyMigrationEnabled'])")&&rules.includes('request.resource.data.legacyMigrationEnabled == false'),'Treinador não possui somente a capacidade de desligar a autorização temporária.');
+assert(rules.includes("request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])"),'Regra Firestore não limita a migração ao trainerId.');
+assert(rules.includes("resource.data.inviteId")&&rules.includes("usedBy == uid"),'Regra não preserva a validação de convite consumido para perfis pós-v10.7.');
 
 if(fail.length){console.error('FALHA — legacy student link check\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — reconciliação legada idempotente, cache-bust atual e autorização restrita estão presentes.');
+console.log('APROVADO — convites e alunos pré-v10.7 possuem migração restrita, idempotente e temporária.');
