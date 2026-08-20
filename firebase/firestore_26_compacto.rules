@@ -19,6 +19,15 @@ service cloud.firestore {
       return isTrainer() && isStudent(uid)
         && userData(uid).trainerId == request.auth.uid;
     }
+    function legacyStudentLinkOwned(uid) {
+      return isTrainer() && isStudent(uid)
+        && userData(uid).get('trainerId', '') == ''
+        && userData(uid).get('inviteId', '') is string
+        && userData(uid).get('inviteId', '') != ''
+        && exists(/databases/$(database)/documents/studentInvites/$(userData(uid).inviteId))
+        && get(/databases/$(database)/documents/studentInvites/$(userData(uid).inviteId)).data.trainerId == request.auth.uid
+        && get(/databases/$(database)/documents/studentInvites/$(userData(uid).inviteId)).data.usedBy == uid;
+    }
     function activeOwner(uid) {
       return signedIn() && request.auth.uid == uid && isStudent(uid)
         && userData(uid).status == 'active';
@@ -77,6 +86,9 @@ service cloud.firestore {
         || (trainerOwns(uid) && resource.data.role == 'student'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
           && request.resource.data.status in ['active', 'inactive'])
+        || (legacyStudentLinkOwned(uid) && resource.data.role == 'student'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])
+          && request.resource.data.trainerId == request.auth.uid)
       );
       allow delete: if false;
     }
@@ -99,9 +111,6 @@ service cloud.firestore {
     }
 
     match /exercises/{id} {
-      /* O app usa duas consultas legítimas: userId para carregar a estrutura e
-         workoutId para exclusão de um protocolo. Cada caminho precisa ser
-         demonstravelmente limitado ao aluno vinculado ao treinador. */
       allow read: if trainerOwns(resource.data.userId)
         || trainerOwnsWorkout(resource.data.workoutId)
         || activeOwner(resource.data.userId);
@@ -357,8 +366,6 @@ service cloud.firestore {
       allow delete: if activeOwner(resource.data.userId);
     }
 
-    /* Catálogos editoriais compartilhados nesta versão. Eles não contêm dados
-       pessoais de alunos. A migração para catálogos por treinador é separada. */
     match /freeMealCatalog/{id} {
       allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid));
       allow create, update: if isTrainer() && id == 'main';
@@ -385,8 +392,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // v10.7 — convites aleatórios: o ID do documento é SHA-256 do código bruto.
-    // A leitura anônima exige conhecer o ID exato; listagem anônima permanece proibida.
     match /studentInvites/{id} {
       allow get: if true;
       allow list: if isTrainer() && resource.data.trainerId == request.auth.uid;
@@ -448,6 +453,7 @@ service cloud.firestore {
         && requiredText(request.resource.data.name, 120)
         && text(request.resource.data.get('description', ''), 500)
         && request.resource.data.snapshot is map
+        && request.resource.data.createdAt is timestamp
         && request.resource.data.updatedAt is timestamp;
       allow delete: if isTrainer() && resource.data.trainerId == request.auth.uid;
     }
