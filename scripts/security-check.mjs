@@ -68,7 +68,7 @@ lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar
 
 const config=read('config_v10_7.js');
 has(config,'security-hardening-v10_10_9.js?v=10.10.10-security6','Loader não inclui o hardening security6 com URL nova.');
-has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links4','Loader não inclui o reconciliador legacy-links4 com URL nova.');
+has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links5','Loader não inclui o reconciliador legacy-links5 com URL nova.');
 has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader não inclui a correção cache-safe do cadastro.');
 has(config,'remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','Loader pode reutilizar a versão antiga do removedor de alongamento.');
 
