@@ -2,7 +2,7 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const CACHE_REVISION='guidance2';
+const CACHE_REVISION='studentlist1';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -43,7 +43,8 @@ const REQUIRED_SHELL=[
   './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
   './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
   './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
-  './modules/security-hardening-v10_10_9.js?v=10.10.9-security1',
+  './modules/security-hardening-v10_10_9.js?v=10.10.10-security6',
+  './modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links3',
   './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
   './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
   './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1',
