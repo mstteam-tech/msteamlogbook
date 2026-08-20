@@ -2,8 +2,9 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const CACHE_REVISION='studentlist1';
-const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}`;
+const CACHE_REVISION='guidance2';
+const CACHE_HOTFIX='studentlist1';
+const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
 const AUDIO_CACHE_NAME='team-bulls-v9-5-security-audio';
