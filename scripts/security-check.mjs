@@ -58,7 +58,7 @@ const stretch=read('modules/remove-stretch-planilha-v10_10_9.js');
 lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar toda a árvore DOM permanentemente.');
 
 const config=read('config_v10_7.js');
-has(config,'security-hardening-v10_10_9.js?v=10.10.9-security1','Loader não inclui o hardening de segurança com URL nova.');
+has(config,'security-hardening-v10_10_9.js?v=10.10.10-security2','Loader não inclui o hardening de segurança com URL nova.');
 has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader não inclui a correção cache-safe do cadastro.');
 has(config,'remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','Loader pode reutilizar a versão antiga do removedor de alongamento.');
 

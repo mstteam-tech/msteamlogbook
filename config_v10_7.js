@@ -80,10 +80,14 @@ if('caches' in window){
 })();
 
 /* Extensões carregadas sem competir com a abertura do aplicativo.
-   O hardening entra imediatamente; as demais camadas entram após a primeira pintura. */
+   Apenas o hardening de segurança entra imediatamente. O registro rápido de
+   séries é o primeiro hotfix carregado após a primeira pintura; as demais
+   camadas seguem em ordem determinística durante o período ocioso. */
 (()=>{
-  let requested=false,deferredStarted=false;
-  const criticalModules=['./modules/security-hardening-v10_10_9.js?v=10.10.10-security2'];
+  let requested=false,deferredStarted=false,deferredBatchCount=0;
+  const criticalModules=[
+    './modules/security-hardening-v10_10_9.js?v=10.10.10-security2'
+  ];
   const modules=[
     './modules/session-save-performance-v10_10_9.js?v=10.10.9-sessionperf1',
     './modules/week-selection-fix-v10_10_9.js?v=10.10.9-weekselection1',
@@ -104,12 +108,29 @@ if('caches' in window){
     './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
     './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
+    './modules/usability-checkup-v10_10_9.js?v=10.10.9-usability1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=items=>items.forEach(src=>{if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;document.head.appendChild(link);});
-  const loadScript=src=>new Promise(resolve=>{const script=document.createElement('script');script.src=src;script.async=false;script.onload=()=>resolve(true);script.onerror=()=>{console.warn('[Team Bulls] Extensão opcional indisponível:',src);resolve(false);};document.head.appendChild(script);});
+  const loadScript=(src,timeoutMs=3200)=>new Promise(resolve=>{
+    const script=document.createElement('script');
+    let settled=false;
+    const finish=(ok,reason='')=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      script.onload=null;script.onerror=null;
+      if(!ok&&script.isConnected)script.remove();
+      if(reason)console.warn('[Team Bulls] Extensão opcional indisponível:',src,reason);
+      const settle=()=>resolve(ok);
+      if(deferredStarted&&++deferredBatchCount%4===0)requestAnimationFrame(settle);else settle();
+    };
+    script.src=src;script.async=false;script.onload=()=>finish(true);script.onerror=()=>finish(false,'erro de carregamento');
+    const timer=setTimeout(()=>finish(false,'tempo limite'),Math.max(1200,Number(timeoutMs)||3200));
+    document.head.appendChild(script);
+  });
   const loadDeferred=async()=>{if(deferredStarted)return;deferredStarted=true;for(const src of modules)await loadScript(src);};
   const scheduleDeferred=()=>{const queue=()=>{'requestIdleCallback'in window?requestIdleCallback(()=>loadDeferred(),{timeout:1200}):setTimeout(()=>loadDeferred(),220);};const afterPaint=()=>requestAnimationFrame(()=>requestAnimationFrame(queue));if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});else afterPaint();};
-  const load=async()=>{if(requested)return;requested=true;preloadModules(criticalModules);for(const src of criticalModules)await loadScript(src);scheduleDeferred();};
+  const load=async()=>{if(requested)return;requested=true;preloadModules(criticalModules);for(const src of criticalModules)await loadScript(src,6500);scheduleDeferred();};
   if(window.TeamBulls107)load();else window.addEventListener('team-bulls-v107-ready',load,{once:true});
 })();
