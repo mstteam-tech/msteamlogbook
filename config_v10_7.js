@@ -1,4 +1,4 @@
-/* Configuração pública Team Bulls v10.10.7.
+/* Configuração pública Team Bulls v10.10.10.
    A chave do App Check/reCAPTCHA Enterprise é pública por definição.
    Não coloque senhas, chaves privadas ou credenciais administrativas aqui. */
 window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
@@ -22,7 +22,6 @@ if('caches' in window){
     if(installed)return true;
     if(typeof withTimeout!=='function'||typeof ensureFirebaseReady!=='function'||typeof cloudGet!=='function')return false;
     installed=true;
-
     if(!withTimeout.__tbFirebaseResilience){
       const base=withTimeout;
       const wrapped=function(task,ms,label='operação'){
@@ -32,10 +31,8 @@ if('caches' in window){
         else if(label==='login')limit=Math.max(limit,16000);
         return base(task,limit,label);
       };
-      wrapped.__tbFirebaseResilience=true;
-      withTimeout=wrapped;
+      wrapped.__tbFirebaseResilience=true;withTimeout=wrapped;
     }
-
     if(typeof initOptionalAppCheck==='function'&&!initOptionalAppCheck.__tbEnterpriseProvider){
       const legacy=initOptionalAppCheck;
       const wrapped=async function(){
@@ -45,22 +42,16 @@ if('caches' in window){
           const ok=await loadSdkOnce('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js',()=>typeof firebase.appCheck==='function');
           if(!ok)return false;
           const Provider=firebase.appCheck?.ReCaptchaEnterpriseProvider;
-          if(typeof Provider==='function'){
-            firebase.appCheck().activate(new Provider(key),true);
-            return true;
-          }
+          if(typeof Provider==='function'){firebase.appCheck().activate(new Provider(key),true);return true;}
           return await legacy();
         }catch(error){
           const message=String(error?.message||error||'').toLowerCase();
           if(message.includes('already')&&message.includes('activ'))return true;
-          console.warn('App Check Enterprise não iniciado',error);
-          return false;
+          console.warn('App Check Enterprise não iniciado',error);return false;
         }
       };
-      wrapped.__tbEnterpriseProvider=true;
-      initOptionalAppCheck=wrapped;
+      wrapped.__tbEnterpriseProvider=true;initOptionalAppCheck=wrapped;
     }
-
     if(typeof ensureFirebaseReady==='function'&&!ensureFirebaseReady.__tbRetry){
       const base=ensureFirebaseReady;
       const wrapped=async function(){
@@ -68,46 +59,31 @@ if('caches' in window){
         const first=await base();if(first)return true;
         if(!navigator.onLine)return false;
         await delay(450);
-        try{
-          const ready=await withTimeout(ensureFirebaseCore(),12000,'carregar conexão segura');
-          return !!(ready&&initFirebase());
-        }catch(error){console.warn('Firebase indisponível após nova tentativa',error);return false;}
+        try{const ready=await withTimeout(ensureFirebaseCore(),12000,'carregar conexão segura');return !!(ready&&initFirebase());}
+        catch(error){console.warn('Firebase indisponível após nova tentativa',error);return false;}
       };
-      wrapped.__tbRetry=true;
-      ensureFirebaseReady=wrapped;
+      wrapped.__tbRetry=true;ensureFirebaseReady=wrapped;
     }
-
     if(typeof cloudGet==='function'&&!cloudGet.__tbRetry){
       const base=cloudGet;
       const wrapped=async function(reference,label='consulta'){
-        try{return await base(reference,label);}
-        catch(error){
+        try{return await base(reference,label);}catch(error){
           const retryable=navigator.onLine&&(typeof isNetworkLikeError==='function'?isNetworkLikeError(error):false);
-          if(!retryable)throw error;
-          await delay(400);
-          return base(reference,label+' · nova tentativa');
+          if(!retryable)throw error;await delay(400);return base(reference,label+' · nova tentativa');
         }
       };
-      wrapped.__tbRetry=true;
-      cloudGet=wrapped;
+      wrapped.__tbRetry=true;cloudGet=wrapped;
     }
     return true;
   };
-
-  patch();
-  document.addEventListener('DOMContentLoaded',patch,{once:true});
-  window.addEventListener('load',()=>{if(!installed)patch();},{once:true});
+  patch();document.addEventListener('DOMContentLoaded',patch,{once:true});window.addEventListener('load',()=>{if(!installed)patch();},{once:true});
 })();
 
 /* Extensões carregadas sem competir com a abertura do aplicativo.
-   Apenas o hardening de segurança entra imediatamente. O registro rápido de
-   séries é o primeiro hotfix carregado após a primeira pintura; as demais
-   camadas seguem em ordem determinística durante o período ocioso. */
+   O hardening entra imediatamente; as demais camadas entram após a primeira pintura. */
 (()=>{
   let requested=false,deferredStarted=false;
-  const criticalModules=[
-    './modules/security-hardening-v10_10_9.js?v=10.10.9-security1'
-  ];
+  const criticalModules=['./modules/security-hardening-v10_10_9.js?v=10.10.10-security2'];
   const modules=[
     './modules/session-save-performance-v10_10_9.js?v=10.10.9-sessionperf1',
     './modules/week-selection-fix-v10_10_9.js?v=10.10.9-weekselection1',
@@ -130,43 +106,10 @@ if('caches' in window){
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
-  const preloadModules=items=>{
-    items.forEach(src=>{
-      if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;
-      const link=document.createElement('link');
-      link.rel='preload';link.as='script';link.href=src;
-      document.head.appendChild(link);
-    });
-  };
-  const loadScript=src=>new Promise(resolve=>{
-    const script=document.createElement('script');
-    script.src=src;
-    script.async=false;
-    script.onload=()=>resolve(true);
-    script.onerror=()=>{console.warn('[Team Bulls] Extensão opcional indisponível:',src);resolve(false);};
-    document.head.appendChild(script);
-  });
-  const loadDeferred=async()=>{
-    if(deferredStarted)return;
-    deferredStarted=true;
-    for(const src of modules)await loadScript(src);
-  };
-  const scheduleDeferred=()=>{
-    const queue=()=>{
-      if('requestIdleCallback' in window)requestIdleCallback(()=>loadDeferred(),{timeout:1200});
-      else setTimeout(()=>loadDeferred(),220);
-    };
-    const afterPaint=()=>requestAnimationFrame(()=>requestAnimationFrame(queue));
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});
-    else afterPaint();
-  };
-  const load=async()=>{
-    if(requested)return;
-    requested=true;
-    preloadModules(criticalModules);
-    for(const src of criticalModules)await loadScript(src);
-    scheduleDeferred();
-  };
-  if(window.TeamBulls107)load();
-  else window.addEventListener('team-bulls-v107-ready',load,{once:true});
+  const preloadModules=items=>items.forEach(src=>{if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;document.head.appendChild(link);});
+  const loadScript=src=>new Promise(resolve=>{const script=document.createElement('script');script.src=src;script.async=false;script.onload=()=>resolve(true);script.onerror=()=>{console.warn('[Team Bulls] Extensão opcional indisponível:',src);resolve(false);};document.head.appendChild(script);});
+  const loadDeferred=async()=>{if(deferredStarted)return;deferredStarted=true;for(const src of modules)await loadScript(src);};
+  const scheduleDeferred=()=>{const queue=()=>{'requestIdleCallback'in window?requestIdleCallback(()=>loadDeferred(),{timeout:1200}):setTimeout(()=>loadDeferred(),220);};const afterPaint=()=>requestAnimationFrame(()=>requestAnimationFrame(queue));if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});else afterPaint();};
+  const load=async()=>{if(requested)return;requested=true;preloadModules(criticalModules);for(const src of criticalModules)await loadScript(src);scheduleDeferred();};
+  if(window.TeamBulls107)load();else window.addEventListener('team-bulls-v107-ready',load,{once:true});
 })();
