@@ -109,6 +109,7 @@ if('caches' in window){
     './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
     './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
     './modules/usability-checkup-v10_10_9.js?v=10.10.9-usability1',
+    './modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links1',
     './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1'
   ];
   const preloadModules=items=>items.forEach(src=>{if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;document.head.appendChild(link);});
