@@ -4,8 +4,9 @@
   if(window.__TEAM_BULLS_LEGACY_STUDENT_LINK_REPAIR_V101010__)return;
   window.__TEAM_BULLS_LEGACY_STUDENT_LINK_REPAIR_V101010__=true;
 
-  const VERSION='10.10.10-legacy-links1';
+  const VERSION='10.10.10-legacy-links2';
   let running=false;
+  let refreshTimer=null;
 
   function trainerReady(){
     return typeof CURRENT_USER!=='undefined'&&CURRENT_USER?.role==='trainer'&&CURRENT_USER?.uid&&typeof db!=='undefined'&&db;
@@ -19,13 +20,13 @@
   }
 
   async function repairLegacyLinks(){
-    if(running||!trainerReady())return{repaired:0,skipped:0,failed:0};
+    if(running||!trainerReady())return{repaired:0,skipped:0,failed:0,ready:false};
     running=true;
     const trainerUid=String(CURRENT_USER.uid);
     let repaired=0,skipped=0,failed=0;
     try{
       const snap=await cloudGet(
-        db.collection('studentInvites').where('trainerId','==',trainerUid).limit(120),
+        db.collection('studentInvites').where('trainerId','==',trainerUid).limit(300),
         'reconciliar vínculos antigos'
       );
       const candidates=new Map();
@@ -35,12 +36,8 @@
         const inviteId=String(doc.id);
         if(!candidates.has(usedBy))candidates.set(usedBy,{uid:usedBy,inviteId});
       });
-      if(!candidates.size)return{repaired:0,skipped:0,failed:0};
+      if(!candidates.size)return{repaired:0,skipped:0,failed:0,ready:true};
 
-      /* Uma gravação por aluno. As regras do Firestore só aceitam esta operação
-         quando o convite pertence a este treinador, usedBy aponta para o mesmo
-         UID e o perfil ainda não possui trainerId. Assim o cliente nunca escolhe
-         arbitrariamente a qual treinador um aluno antigo será atribuído. */
       for(const candidate of candidates.values()){
         if(!trainerReady()||String(CURRENT_USER.uid)!==trainerUid)break;
         try{
@@ -51,20 +48,53 @@
           if(code.includes('permission')||code.includes('not-found'))skipped++;else failed++;
         }
       }
-      return{repaired,skipped,failed};
+      return{repaired,skipped,failed,ready:true};
     }finally{running=false;}
   }
 
   async function runAndRefresh(){
-    if(!trainerReady())return;
+    if(!trainerReady())return{repaired:0,skipped:0,failed:0,ready:false};
     const result=await repairLegacyLinks();
     if(result.repaired){
-      message(`✓ ${result.repaired} aluno(s) antigo(s) foram reconciliados com segurança. Atualizando a lista...`);
-      if(typeof renderTrainer==='function')setTimeout(()=>renderTrainer(),120);
+      message(`✓ ${result.repaired} aluno(s) antigo(s) reconciliado(s). Atualizando a lista...`);
+      clearTimeout(refreshTimer);
+      refreshTimer=setTimeout(()=>{
+        if(typeof renderTrainer==='function')renderTrainer();
+      },180);
+    }else if(result.skipped){
+      message(`⚠ ${result.skipped} vínculo(s) antigo(s) aguardando publicação das regras do Firebase.`,true);
     }else if(result.failed){
       message('Há vínculos antigos que não puderam ser reconciliados automaticamente. Nenhum aluno não confirmado foi exibido.',true);
     }
     return result;
+  }
+
+  function hookTrainerRender(){
+    if(typeof renderTrainer!=='function')return false;
+    if(renderTrainer.__tbLegacyLinkHook)return true;
+    const base=renderTrainer;
+    const wrapped=async function(...args){
+      const result=await base.apply(this,args);
+      if(trainerReady())setTimeout(()=>runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação:',error)),0);
+      return result;
+    };
+    wrapped.__tbLegacyLinkHook=true;
+    renderTrainer=wrapped;
+    return true;
+  }
+
+  function install(){
+    if(hookTrainerRender())runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação:',error));
+    let attempts=0;
+    const timer=setInterval(()=>{
+      attempts++;
+      if(hookTrainerRender()&&trainerReady()){
+        clearInterval(timer);
+        runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação:',error));
+      }else if(attempts>=40){
+        clearInterval(timer);
+      }
+    },250);
   }
 
   window.TeamBullsLegacyStudentLinkRepair=Object.freeze({
@@ -72,11 +102,6 @@
     repair:repairLegacyLinks,
     runAndRefresh
   });
-
-  function install(){
-    if(!trainerReady())return;
-    setTimeout(()=>runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação de alunos antigos:',error)),80);
-  }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
