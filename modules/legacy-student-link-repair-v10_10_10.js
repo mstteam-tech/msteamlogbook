@@ -4,13 +4,16 @@
   if(window.__TEAM_BULLS_LEGACY_STUDENT_LINK_REPAIR_V101010__)return;
   window.__TEAM_BULLS_LEGACY_STUDENT_LINK_REPAIR_V101010__=true;
 
-  const VERSION='10.10.10-legacy-links4';
+  const VERSION='10.10.10-legacy-links5';
   const PRE_V107_CUTOFF_MS=Date.UTC(2026,7,1);
   const PRE_V107_SCAN_LIMIT=1000;
+  const AUTO_READY_ATTEMPTS=40;
+  const AUTO_READY_INTERVAL_MS=250;
   let running=false;
   let refreshTimer=null;
   let lastFingerprint='';
   let preV107CheckedTrainer='';
+  const autoAttemptedTrainers=new Set();
 
   function trainerReady(){
     return typeof CURRENT_USER!=='undefined'&&CURRENT_USER?.role==='trainer'&&CURRENT_USER?.uid&&typeof db!=='undefined'&&db;
@@ -187,39 +190,37 @@
       const tail=result.unresolved?` ${result.unresolved} vínculo(s) por convite ainda não puderam ser confirmados.`:'';
       message(`✓ Recuperados ${parts.join(' e ')}. Atualizando a lista...${tail}`,!!result.unresolved);
       clearTimeout(refreshTimer);
-      refreshTimer=setTimeout(()=>{if(typeof renderTrainer==='function')renderTrainer();},180);
+      /* Uma única atualização visual depois de uma migração real. A reconciliação
+         não é mais acoplada a renderTrainer(), portanto este refresh não inicia
+         outro ciclo de consultas/gravações. */
+      refreshTimer=setTimeout(()=>{if(typeof renderTrainer==='function')renderTrainer();},220);
     }else if(result.unresolved){
       message(`⚠ ${result.unresolved} vínculo(s) antigo(s) por convite não puderam ser confirmados automaticamente.`,true);
     }else if(result.failed){
-      message('Há vínculos antigos que não puderam ser reconciliados. A autorização de migração não foi removida enquanto houver falha.',true);
+      message('Há vínculos antigos que não puderam ser reconciliados. A tentativa automática foi encerrada para evitar consumo repetido do Firestore.',true);
     }
     return result;
   }
 
-  function hookTrainerRender(){
-    if(typeof renderTrainer!=='function')return false;
-    if(renderTrainer.__tbLegacyLinkHook)return true;
-    const base=renderTrainer;
-    const wrapped=async function(...args){
-      const result=await base.apply(this,args);
-      if(trainerReady())setTimeout(()=>runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação:',error)),0);
-      return result;
-    };
-    wrapped.__tbLegacyLinkHook=true;
-    renderTrainer=wrapped;
+  function runAutomaticOnce(){
+    if(!trainerReady())return false;
+    const trainerUid=String(CURRENT_USER.uid);
+    if(autoAttemptedTrainers.has(trainerUid))return true;
+    /* Marca ANTES da rede. Mesmo permission-denied, quota-exceeded ou timeout não
+       cria retry automático em loop. Uma nova tentativa exige nova sessão/reload
+       ou chamada manual explícita da API de reparo. */
+    autoAttemptedTrainers.add(trainerUid);
+    runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação automática encerrada:',error));
     return true;
   }
 
   function install(){
-    if(hookTrainerRender())runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação:',error));
+    if(runAutomaticOnce())return;
     let attempts=0;
     const timer=setInterval(()=>{
       attempts++;
-      if(hookTrainerRender()&&trainerReady()){
-        clearInterval(timer);
-        runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação:',error));
-      }else if(attempts>=40)clearInterval(timer);
-    },250);
+      if(runAutomaticOnce()||attempts>=AUTO_READY_ATTEMPTS)clearInterval(timer);
+    },AUTO_READY_INTERVAL_MS);
   }
 
   window.TeamBullsLegacyStudentLinkRepair=Object.freeze({
