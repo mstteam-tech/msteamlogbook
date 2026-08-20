@@ -1,0 +1,5 @@
+{
+  "firestore": {
+    "rules": "firebase/firestore_26_compacto.rules"
+  }
+}

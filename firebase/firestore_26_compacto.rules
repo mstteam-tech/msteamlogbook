@@ -19,6 +19,15 @@ service cloud.firestore {
       return isTrainer() && isStudent(uid)
         && userData(uid).trainerId == request.auth.uid;
     }
+    function legacyMigrationAuthorized() {
+      return isTrainer()
+        && userData(request.auth.uid).get('legacyMigrationEnabled', false) == true;
+    }
+    function preV107LegacyStudent(uid) {
+      return legacyMigrationAuthorized() && isStudent(uid)
+        && userData(uid).get('trainerId', '') == ''
+        && userData(uid).get('inviteId', '') == '';
+    }
     function legacyStudentLinkOwned(uid) {
       return isTrainer() && isStudent(uid)
         && userData(uid).get('trainerId', '') == ''
@@ -67,6 +76,7 @@ service cloud.firestore {
         request.auth.uid == uid
         || (isTrainer() && resource.data.role == 'student'
           && resource.data.trainerId == request.auth.uid)
+        || (legacyMigrationAuthorized() && resource.data.role == 'student')
       );
       allow create: if signedIn() && request.auth.uid == uid
         && request.resource.data.role == 'student'
@@ -83,10 +93,18 @@ service cloud.firestore {
         (request.auth.uid == uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
           && requiredText(request.resource.data.name, 100))
+        || (request.auth.uid == uid
+          && resource.data.role == 'trainer'
+          && resource.data.get('legacyMigrationEnabled', false) == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['legacyMigrationEnabled'])
+          && request.resource.data.legacyMigrationEnabled == false)
         || (trainerOwns(uid) && resource.data.role == 'student'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
           && request.resource.data.status in ['active', 'inactive'])
         || (legacyStudentLinkOwned(uid) && resource.data.role == 'student'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])
+          && request.resource.data.trainerId == request.auth.uid)
+        || (preV107LegacyStudent(uid) && resource.data.role == 'student'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])
           && request.resource.data.trainerId == request.auth.uid)
       );
