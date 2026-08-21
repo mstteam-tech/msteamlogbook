@@ -4,7 +4,7 @@
   if(window.__TEAM_BULLS_SECURITY_HARDENING_V101010__)return;
   window.__TEAM_BULLS_SECURITY_HARDENING_V101010__=true;
 
-  const VERSION='10.10.10-security6';
+  const VERSION='10.10.10-security7';
   const SAFE_COLORS=new Set(['#e11d48','#3b82f6','#22c55e','#a855f7','#ec4899','#14b8a6','#f59e0b','#ef4444','#64748b']);
   const DEFAULT_COLOR='#e11d48';
   const authorizedStudents=new Set();
@@ -14,10 +14,10 @@
     return SAFE_COLORS.has(color)?color:DEFAULT_COLOR;
   }
 
-  if(typeof normalizeWorkoutCollection==='function'&&!normalizeWorkoutCollection.__tbSecurity6){
+  if(typeof normalizeWorkoutCollection==='function'&&!normalizeWorkoutCollection.__tbSecurity7){
     const base=normalizeWorkoutCollection;
     const wrapped=function(items){return base(items).map(workout=>({...workout,color:safeColor(workout?.color)}));};
-    wrapped.__tbSecurity6=true;normalizeWorkoutCollection=wrapped;
+    wrapped.__tbSecurity7=true;normalizeWorkoutCollection=wrapped;
   }
 
   function trainerSessionValid(){
@@ -30,6 +30,11 @@
       #screen-trainer #student-list{width:100%;min-width:0;overflow:visible;}
       #screen-trainer .student-card{width:100%;min-width:0;}
       #screen-trainer .student-info{min-width:0;overflow:hidden;}
+      #screen-trainer .student-name-row{display:flex;align-items:center;gap:7px;min-width:0;}
+      #screen-trainer .student-name-row .student-name{min-width:0;flex:1;}
+      #screen-trainer .tb-student-status-dot{display:inline-block;width:9px;height:9px;flex:0 0 9px;border-radius:50%;}
+      #screen-trainer .tb-student-status-dot.active{background:#22c55e;border:1px solid #86efac;box-shadow:0 0 6px 2px rgba(34,197,94,.7),0 0 13px rgba(34,197,94,.5);}
+      #screen-trainer .tb-student-status-dot.inactive{background:#ef4444;border:1px solid #fca5a5;box-shadow:0 0 6px 2px rgba(239,68,68,.7),0 0 13px rgba(239,68,68,.5);}
       #screen-trainer .student-meta{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
       #screen-trainer .student-actions{flex:0 0 auto;min-width:max-content;}
       .tb-student-link-health{margin:10px 18px 0;padding:9px 11px;border:1px solid var(--border);background:rgba(255,255,255,.025);color:var(--text-muted);font:500 9px/1.45 'DM Mono',monospace;letter-spacing:.25px;}
@@ -74,7 +79,7 @@
     }
   }
 
-  if(typeof renderTrainer==='function'&&!renderTrainer.__tbSecurity6){
+  if(typeof renderTrainer==='function'&&!renderTrainer.__tbSecurity7){
     const securedRenderTrainer=async function(){
       if(!trainerSessionValid())return;
       ensureMobileStyles();
@@ -105,12 +110,13 @@
         list.innerHTML=students.map(s=>{
           const initials=(s.name||'?').split(/\s+/).filter(Boolean).map(n=>n[0]).slice(0,2).join('').toUpperCase();
           const isActive=s.status==='active',toggleLabel=isActive?'PAUSAR':'ATIVAR',toggleClass=isActive?'deactivate':'activate';
-          return`<div class="student-card" data-student-uid="${esc(s.uid)}">
+          const statusLabel=isActive?'Aluno ativo':'Aluno pausado';
+          return`<div class="student-card" data-student-uid="${esc(s.uid)}" data-student-status="${isActive?'active':'inactive'}">
             <div class="student-avatar">${esc(initials)}</div>
             <div class="student-info">
               <div class="archive-file-kicker">ARQUIVO ${studentArchiveCode(s.uid)}</div>
-              <div class="student-name">${esc(s.name||'Sem nome')}</div>
-              <div class="student-meta" title="${esc(s.email||'')}">${esc(s.email||'')} <span class="badge ${isActive?'badge-active':'badge-inactive'}">${isActive?'● ativo':'○ inativo'}</span></div>
+              <div class="student-name-row"><span class="tb-student-status-dot ${isActive?'active':'inactive'}" role="img" aria-label="${statusLabel}" title="${statusLabel}"></span><div class="student-name">${esc(s.name||'Sem nome')}</div></div>
+              <div class="student-meta" title="${esc(s.email||'')}">${esc(s.email||'')}</div>
             </div>
             <div class="student-actions">
               <button class="btn-view-student" onclick="viewStudent(${jsArg(s.uid)},${jsArg(s.name||'Aluno')},${jsArg(s.email||'')},${jsArg(s.status||'active')})">ABRIR</button>
@@ -129,28 +135,28 @@
         }
       }
     };
-    securedRenderTrainer.__tbSecurity6=true;
+    securedRenderTrainer.__tbSecurity7=true;
     renderTrainer=securedRenderTrainer;
   }
 
-  if(typeof viewStudent==='function'&&!viewStudent.__tbSecurity6){
+  if(typeof viewStudent==='function'&&!viewStudent.__tbSecurity7){
     const base=viewStudent;
     const wrapped=async function(uidValue,...args){
       const target=String(uidValue||'');
       if(CURRENT_USER?.role==='trainer'&&!authorizedStudents.has(target)){showToast?.('Este aluno não foi encontrado na lista atual.',true);return false;}
       return base.call(this,uidValue,...args);
     };
-    wrapped.__tbSecurity6=true;viewStudent=wrapped;
+    wrapped.__tbSecurity7=true;viewStudent=wrapped;
   }
 
-  if(typeof toggleStudent==='function'&&!toggleStudent.__tbSecurity6){
+  if(typeof toggleStudent==='function'&&!toggleStudent.__tbSecurity7){
     const base=toggleStudent;
     const wrapped=function(uidValue,...args){
       const target=String(uidValue||'');
       if(CURRENT_USER?.role==='trainer'&&!authorizedStudents.has(target)){showToast?.('Aluno não encontrado na lista atual.',true);return false;}
       return base.call(this,uidValue,...args);
     };
-    wrapped.__tbSecurity6=true;toggleStudent=wrapped;
+    wrapped.__tbSecurity7=true;toggleStudent=wrapped;
   }
 
   window.TeamBullsSecurityAudit=Object.freeze({version:VERSION,safeColor});
