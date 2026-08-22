@@ -1,5 +1,5 @@
 {
   "firestore": {
-    "rules": "firebase/firestore_26_compacto.rules"
+    "rules": "firebase/firestore_27_compacto.rules"
   }
 }
