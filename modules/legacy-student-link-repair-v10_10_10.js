@@ -4,7 +4,7 @@
   if(window.__TEAM_BULLS_LEGACY_STUDENT_LINK_REPAIR_V101010__)return;
   window.__TEAM_BULLS_LEGACY_STUDENT_LINK_REPAIR_V101010__=true;
 
-  const VERSION='10.10.10-legacy-links5';
+  const VERSION='10.10.10-legacy-links6';
   const PRE_V107_CUTOFF_MS=Date.UTC(2026,7,1);
   const PRE_V107_SCAN_LIMIT=1000;
   const AUTO_READY_ATTEMPTS=40;
@@ -22,7 +22,8 @@
   function message(text,warn=false){
     const el=document.getElementById('tb-student-link-health');
     if(!el)return;
-    el.textContent=text;
+    const label=el.querySelector('span')||el;
+    label.textContent=text;
     el.classList.toggle('warn',!!warn);
   }
 
@@ -63,8 +64,6 @@
   async function repairInviteLinkedStudent(uid,trainerUid){
     if(!trainerReady()||String(CURRENT_USER.uid)!==trainerUid)return{ok:false,aborted:true};
     try{
-      /* A regra Firestore valida o inviteId que já existe no perfil e o usedBy
-         do convite. O cliente não escolhe nem altera inviteId durante a correção. */
       await db.collection('users').doc(uid).update({trainerId:trainerUid});
       return{ok:true};
     }catch(error){
@@ -96,23 +95,20 @@
     return{repaired,alreadyLinked:linkedIds.size,unresolved,failed};
   }
 
-  async function trainerMigrationAuthorized(trainerUid){
-    const snap=await cloudGet(db.collection('users').doc(trainerUid),'verificar autorização da migração legada');
-    return !!(snap.exists&&snap.data()?.role==='trainer'&&snap.data()?.legacyMigrationEnabled===true);
+  function trainerMigrationAuthorized(trainerUid){
+    return !!(trainerReady()&&String(CURRENT_USER.uid)===String(trainerUid)&&CURRENT_USER?.legacyMigrationEnabled===true);
   }
 
   async function migratePreV107Students(trainerUid){
     if(preV107CheckedTrainer===trainerUid)return{authorized:false,checked:true,migrated:0,failed:0};
-    let authorized=false;
-    try{authorized=await trainerMigrationAuthorized(trainerUid);}
-    catch(error){return{authorized:false,checked:false,migrated:0,failed:1,error};}
+    const authorized=trainerMigrationAuthorized(trainerUid);
     if(!authorized){preV107CheckedTrainer=trainerUid;return{authorized:false,checked:true,migrated:0,failed:0};}
 
     let snap;
     try{
-      /* Esta leitura ampla só é aceita quando o próprio documento do treinador
-         possui legacyMigrationEnabled=true. O treinador não consegue ativar esse
-         campo pelas regras; ele serve como autorização administrativa temporária. */
+      /* A varredura ampla só ocorre com autorização administrativa já presente
+         no perfil carregado do treinador. Não existe leitura extra do próprio
+         documento apenas para redescobrir um estado que a sessão já conhece. */
       snap=await cloudGet(
         db.collection('users').where('role','==','student').limit(PRE_V107_SCAN_LIMIT),
         'localizar alunos anteriores à v10.7'
@@ -136,15 +132,13 @@
       }
     }
 
-    /* O privilégio temporário é removido pelo próprio treinador somente depois
-       de uma varredura completa e sem falhas. As regras permitem desligar o
-       campo, mas nunca ligá-lo pelo cliente. */
     let authorizationClosed=false;
     if(!failed&&!truncated){
       try{
         await db.collection('users').doc(trainerUid).update({legacyMigrationEnabled:false});
         authorizationClosed=true;
         preV107CheckedTrainer=trainerUid;
+        try{CURRENT_USER.legacyMigrationEnabled=false;}catch(error){}
       }catch(error){
         failed++;
         console.warn('[Team Bulls] Não foi possível encerrar autorização de migração',error);
@@ -190,36 +184,35 @@
       const tail=result.unresolved?` ${result.unresolved} vínculo(s) por convite ainda não puderam ser confirmados.`:'';
       message(`✓ Recuperados ${parts.join(' e ')}. Atualizando a lista...${tail}`,!!result.unresolved);
       clearTimeout(refreshTimer);
-      /* Uma única atualização visual depois de uma migração real. A reconciliação
-         não é mais acoplada a renderTrainer(), portanto este refresh não inicia
-         outro ciclo de consultas/gravações. */
       refreshTimer=setTimeout(()=>{if(typeof renderTrainer==='function')renderTrainer();},220);
     }else if(result.unresolved){
       message(`⚠ ${result.unresolved} vínculo(s) antigo(s) por convite não puderam ser confirmados automaticamente.`,true);
     }else if(result.failed){
-      message('Há vínculos antigos que não puderam ser reconciliados. A tentativa automática foi encerrada para evitar consumo repetido do Firestore.',true);
+      message('Há vínculos antigos que não puderam ser reconciliados. A tentativa foi encerrada para evitar consumo repetido do Firestore.',true);
+    }else{
+      message('✓ Vínculos conferidos. Nenhuma correção necessária.');
     }
     return result;
   }
 
-  function runAutomaticOnce(){
+  function runAutomaticMigrationIfAuthorized(){
     if(!trainerReady())return false;
     const trainerUid=String(CURRENT_USER.uid);
+    /* Fluxo normal: sem autorização administrativa, encerra sem UMA única leitura.
+       Reconciliação de convites antigos continua disponível pelo botão manual. */
+    if(!trainerMigrationAuthorized(trainerUid))return true;
     if(autoAttemptedTrainers.has(trainerUid))return true;
-    /* Marca ANTES da rede. Mesmo permission-denied, quota-exceeded ou timeout não
-       cria retry automático em loop. Uma nova tentativa exige nova sessão/reload
-       ou chamada manual explícita da API de reparo. */
     autoAttemptedTrainers.add(trainerUid);
-    runAndRefresh().catch(error=>console.warn('[Team Bulls] Reconciliação automática encerrada:',error));
+    runAndRefresh().catch(error=>console.warn('[Team Bulls] Migração automática autorizada encerrada:',error));
     return true;
   }
 
   function install(){
-    if(runAutomaticOnce())return;
+    if(runAutomaticMigrationIfAuthorized())return;
     let attempts=0;
     const timer=setInterval(()=>{
       attempts++;
-      if(runAutomaticOnce()||attempts>=AUTO_READY_ATTEMPTS)clearInterval(timer);
+      if(runAutomaticMigrationIfAuthorized()||attempts>=AUTO_READY_ATTEMPTS)clearInterval(timer);
     },AUTO_READY_INTERVAL_MS);
   }
 
