@@ -1,0 +1,589 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function userExists(uid) {
+      return uid is string && exists(/databases/$(database)/documents/users/$(uid));
+    }
+    function userData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+    function isTrainer() {
+      return signedIn() && userExists(request.auth.uid)
+        && userData(request.auth.uid).role == 'trainer';
+    }
+    function isStudent(uid) {
+      return uid is string && userExists(uid) && userData(uid).role == 'student';
+    }
+    function trainerOwns(uid) {
+      return isTrainer() && isStudent(uid)
+        && userData(uid).trainerId == request.auth.uid;
+    }
+    function legacyMigrationAuthorized() {
+      return isTrainer()
+        && userData(request.auth.uid).get('legacyMigrationEnabled', false) == true;
+    }
+    function preV107LegacyStudent(uid) {
+      return legacyMigrationAuthorized() && isStudent(uid)
+        && userData(uid).get('trainerId', '') == ''
+        && userData(uid).get('inviteId', '') == '';
+    }
+    function legacyStudentLinkOwned(uid) {
+      return isTrainer() && isStudent(uid)
+        && userData(uid).get('trainerId', '') == ''
+        && userData(uid).get('inviteId', '') is string
+        && userData(uid).get('inviteId', '') != ''
+        && exists(/databases/$(database)/documents/studentInvites/$(userData(uid).inviteId))
+        && get(/databases/$(database)/documents/studentInvites/$(userData(uid).inviteId)).data.trainerId == request.auth.uid
+        && get(/databases/$(database)/documents/studentInvites/$(userData(uid).inviteId)).data.usedBy == uid;
+    }
+    function activeOwner(uid) {
+      return signedIn() && request.auth.uid == uid && isStudent(uid)
+        && userData(uid).status == 'active';
+    }
+    function workoutExists(workoutId) {
+      return workoutId is string
+        && exists(/databases/$(database)/documents/workouts/$(workoutId));
+    }
+    function workoutData(workoutId) {
+      return get(/databases/$(database)/documents/workouts/$(workoutId)).data;
+    }
+    function trainerOwnsWorkout(workoutId) {
+      return isTrainer() && workoutExists(workoutId)
+        && trainerOwns(workoutData(workoutId).userId);
+    }
+    function text(value, max) { return value is string && value.size() <= max; }
+    function requiredText(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+    function isoDate(value) {
+      return value is string && value.size() == 10
+        && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    function immutable(field) {
+      return request.resource.data.get(field, null) == resource.data.get(field, null);
+    }
+    function safeColor(value) {
+      return value in ['#e11d48', '#3b82f6', '#22c55e', '#a855f7', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444', '#64748b'];
+    }
+    function photoPath(value, kind, uid) {
+      return value is string && (value == ''
+        || value.matches('^' + kind + '/' + uid + '/[A-Za-z0-9_-]{1,190}\\.jpg$'));
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (
+        request.auth.uid == uid
+        || (isTrainer() && resource.data.role == 'student'
+          && resource.data.trainerId == request.auth.uid)
+        || (legacyMigrationAuthorized() && resource.data.role == 'student')
+      );
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == 'student'
+        && request.resource.data.status == 'active'
+        && requiredText(request.resource.data.name, 100)
+        && requiredText(request.resource.data.email, 320)
+        && request.resource.data.email == request.auth.token.email
+        && requiredText(request.resource.data.trainerId, 128)
+        && requiredText(request.resource.data.inviteId, 128)
+        && request.resource.data.createdAt is timestamp
+        && getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid
+        && getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.trainerId == request.resource.data.trainerId;
+      allow update: if signedIn() && (
+        (request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+          && requiredText(request.resource.data.name, 100))
+        || (request.auth.uid == uid
+          && resource.data.role == 'trainer'
+          && resource.data.get('legacyMigrationEnabled', false) == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['legacyMigrationEnabled'])
+          && request.resource.data.legacyMigrationEnabled == false)
+        || (trainerOwns(uid) && resource.data.role == 'student'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['active', 'inactive'])
+        || (legacyStudentLinkOwned(uid) && resource.data.role == 'student'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])
+          && request.resource.data.trainerId == request.auth.uid)
+        || (preV107LegacyStudent(uid) && resource.data.role == 'student'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trainerId'])
+          && request.resource.data.trainerId == request.auth.uid)
+      );
+      allow delete: if false;
+    }
+
+    match /workouts/{id} {
+      allow read: if trainerOwns(resource.data.userId) || activeOwner(resource.data.userId);
+      allow create: if trainerOwns(request.resource.data.userId)
+        && requiredText(request.resource.data.name, 120)
+        && safeColor(request.resource.data.color)
+        && request.resource.data.get('days', []) is list
+        && request.resource.data.get('days', []).size() <= 50
+        && request.resource.data.createdAt is timestamp;
+      allow update: if trainerOwns(resource.data.userId)
+        && immutable('userId') && immutable('createdAt')
+        && requiredText(request.resource.data.name, 120)
+        && safeColor(request.resource.data.color)
+        && request.resource.data.get('days', []) is list
+        && request.resource.data.get('days', []).size() <= 50;
+      allow delete: if trainerOwns(resource.data.userId);
+    }
+
+    match /exercises/{id} {
+      allow read: if trainerOwns(resource.data.userId)
+        || trainerOwnsWorkout(resource.data.workoutId)
+        || activeOwner(resource.data.userId);
+      allow create: if trainerOwns(request.resource.data.userId)
+        && request.resource.data.workoutId is string
+        && workoutExists(request.resource.data.workoutId)
+        && workoutData(request.resource.data.workoutId).userId == request.resource.data.userId
+        && requiredText(request.resource.data.name, 180)
+        && text(request.resource.data.get('instructions', ''), 5000)
+        && request.resource.data.get('techniqueIds', []) is list
+        && request.resource.data.get('techniqueIds', []).size() <= 100
+        && request.resource.data.get('optionalTechniqueIds', []) is list
+        && request.resource.data.get('optionalTechniqueIds', []).size() <= 100
+        && request.resource.data.get('weeklyPlan', {}) is map
+        && request.resource.data.get('weeklyTechniquePlan', {}) is map
+        && request.resource.data.createdAt is timestamp;
+      allow update: if trainerOwns(resource.data.userId)
+        && immutable('userId') && immutable('workoutId')
+        && immutable('createdAt')
+        && requiredText(request.resource.data.name, 180)
+        && text(request.resource.data.get('instructions', ''), 5000)
+        && request.resource.data.get('techniqueIds', []) is list
+        && request.resource.data.get('techniqueIds', []).size() <= 100
+        && request.resource.data.get('optionalTechniqueIds', []) is list
+        && request.resource.data.get('optionalTechniqueIds', []).size() <= 100
+        && request.resource.data.get('weeklyPlan', {}) is map
+        && request.resource.data.get('weeklyTechniquePlan', {}) is map;
+      allow delete: if trainerOwns(resource.data.userId);
+    }
+
+    match /sessions/{id} {
+      allow read: if trainerOwns(resource.data.userId) || activeOwner(resource.data.userId);
+      allow create: if activeOwner(request.resource.data.userId)
+        && request.resource.data.workoutId is string
+        && request.resource.data.exerciseId is string
+        && request.resource.data.sets is list
+        && request.resource.data.sets.size() > 0
+        && request.resource.data.sets.size() <= 60
+        && request.resource.data.createdAt is timestamp;
+      allow update: if activeOwner(resource.data.userId)
+        && immutable('userId') && immutable('workoutId')
+        && immutable('exerciseId') && immutable('createdAt')
+        && request.resource.data.sets is list
+        && request.resource.data.sets.size() > 0
+        && request.resource.data.sets.size() <= 60;
+      allow delete: if activeOwner(resource.data.userId);
+    }
+
+    match /feedback/{id} {
+      allow read: if trainerOwns(resource.data.studentId) || activeOwner(resource.data.studentId);
+      allow create: if trainerOwns(request.resource.data.studentId)
+        && request.resource.data.trainerId == request.auth.uid
+        && requiredText(request.resource.data.message, 30000)
+        && text(request.resource.data.get('title', ''), 160)
+        && request.resource.data.get('feedbackType', 'general') in ['general', 'weekly_report', 'protocol_update']
+        && text(request.resource.data.get('protocolStartDate', ''), 10)
+        && request.resource.data.get('protocolCycle', 0) is int
+        && request.resource.data.get('protocolCycle', 0) >= 0
+        && request.resource.data.createdAt is timestamp;
+      allow update: if activeOwner(resource.data.studentId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
+      allow delete: if false;
+    }
+
+    match /questionnaires/{id} {
+      allow read: if trainerOwns(resource.data.studentId) || activeOwner(resource.data.studentId);
+      allow create: if trainerOwns(request.resource.data.studentId)
+        && request.resource.data.trainerId == request.auth.uid
+        && request.resource.data.get('requestMode', 'full') in ['full', 'written', 'photos']
+        && request.resource.data.questions is list
+        && request.resource.data.questions.size() <= 60
+        && (
+          (request.resource.data.get('requestMode', 'full') == 'photos'
+            && request.resource.data.questions.size() == 0
+            && request.resource.data.get('requiresPhotos', true) == true
+            && request.resource.data.get('requiredPhotoCount', 6) == 6
+            && request.resource.data.get('allQuestionsRequired', false) == false)
+          || (request.resource.data.get('requestMode', 'full') == 'written'
+            && request.resource.data.questions.size() > 0
+            && request.resource.data.get('requiresPhotos', false) == false
+            && request.resource.data.get('requiredPhotoCount', 0) == 0
+            && request.resource.data.get('allQuestionsRequired', true) == true)
+          || (request.resource.data.get('requestMode', 'full') == 'full'
+            && request.resource.data.questions.size() > 0
+            && request.resource.data.get('requiresPhotos', true) == true
+            && request.resource.data.get('requiredPhotoCount', 6) == 6
+            && request.resource.data.get('allQuestionsRequired', true) == true)
+        )
+        && request.resource.data.createdAt is timestamp;
+      allow update: if activeOwner(resource.data.studentId)
+        && immutable('studentId') && immutable('trainerId')
+        && immutable('questions') && immutable('createdAt')
+        && immutable('requiresPhotos') && immutable('requiredPhotoCount')
+        && immutable('allQuestionsRequired') && immutable('reportType')
+        && immutable('requestMode')
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['answers', 'answered', 'answeredAt', 'photoIds'])
+        && request.resource.data.answers is list
+        && request.resource.data.photoIds is list
+        && request.resource.data.answered == true
+        && request.resource.data.answeredAt is timestamp
+        && (
+          (resource.data.get('requestMode', 'full') == 'photos'
+            && request.resource.data.answers.size() == 0
+            && request.resource.data.photoIds.size() == 6)
+          || (resource.data.get('requestMode', 'full') == 'written'
+            && request.resource.data.answers.size() == resource.data.questions.size()
+            && request.resource.data.answers.size() > 0
+            && !request.resource.data.answers.hasAny([''])
+            && request.resource.data.photoIds.size() == 0)
+          || (resource.data.get('requestMode', 'full') == 'full'
+            && request.resource.data.answers.size() == resource.data.questions.size()
+            && request.resource.data.answers.size() > 0
+            && !request.resource.data.answers.hasAny([''])
+            && request.resource.data.photoIds.size() == 6)
+        );
+      allow delete: if false;
+    }
+
+    match /trainerSupplementCatalog/{trainerUid} {
+      allow read: if isTrainer() && request.auth.uid == trainerUid;
+      allow create, update: if isTrainer() && request.auth.uid == trainerUid
+        && request.resource.data.trainerId == trainerUid
+        && request.resource.data.get('items', []) is list
+        && request.resource.data.get('items', []).size() <= 300
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /mealPlans/{uid} {
+      allow read: if trainerOwns(uid) || activeOwner(uid);
+      allow create, update: if trainerOwns(uid)
+        && request.resource.data.get('plans', []) is list
+        && request.resource.data.get('plans', []).size() <= 40
+        && request.resource.data.get('meals', []) is list
+        && request.resource.data.get('meals', []).size() <= 160
+        && request.resource.data.get('updatedAt', request.time) is timestamp;
+      allow delete: if false;
+    }
+
+    match /mealCompletions/{id} {
+      allow read: if trainerOwns(resource.data.studentUid) || activeOwner(resource.data.studentUid);
+      allow create: if activeOwner(request.resource.data.studentUid)
+        && requiredText(request.resource.data.mealId, 200)
+        && isoDate(request.resource.data.date);
+      allow update: if activeOwner(resource.data.studentUid)
+        && immutable('studentUid') && immutable('mealId') && immutable('date');
+      allow delete: if activeOwner(resource.data.studentUid);
+    }
+
+    match /reportSettings/{trainerUid} {
+      allow read: if (isTrainer() && request.auth.uid == trainerUid)
+        || (signedIn() && activeOwner(request.auth.uid)
+          && userData(request.auth.uid).trainerId == trainerUid);
+      allow create, update: if isTrainer() && request.auth.uid == trainerUid
+        && request.resource.data.trainerId == trainerUid
+        && text(request.resource.data.get('photoInstruction', ''), 1200)
+        && text(request.resource.data.get('photoGuidePath', ''), 300)
+        && text(request.resource.data.get('photoGuideName', ''), 180)
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /protocolReviewSchedules/{uid} {
+      allow read: if trainerOwns(uid) || activeOwner(uid);
+      allow create, update: if trainerOwns(uid)
+        && request.resource.data.studentId == uid
+        && request.resource.data.trainerId == request.auth.uid
+        && isoDate(request.resource.data.startDate)
+        && request.resource.data.intervalWeeks is int
+        && request.resource.data.intervalWeeks >= 1
+        && request.resource.data.intervalWeeks <= 52
+        && request.resource.data.get('lastCompletedCycle', 0) is int
+        && request.resource.data.get('lastCompletedCycle', 0) >= 0
+        && (request.resource.data.get('lastCompletedDate', '') == '' || isoDate(request.resource.data.get('lastCompletedDate', '')))
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /checkinSchedules/{uid} {
+      allow read: if trainerOwns(uid) || activeOwner(uid);
+      allow create, update: if trainerOwns(uid)
+        && request.resource.data.studentId == uid
+        && isoDate(request.resource.data.nextDueDate)
+        && request.resource.data.intervalDays is int
+        && request.resource.data.intervalDays >= 1
+        && request.resource.data.intervalDays <= 90
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /weeklyCheckins/{id} {
+      allow read: if trainerOwns(resource.data.studentId) || activeOwner(resource.data.studentId);
+      allow create: if activeOwner(request.resource.data.studentId)
+        && request.resource.data.questions is list
+        && request.resource.data.answers is list
+        && request.resource.data.answers.size() == request.resource.data.questions.size()
+        && request.resource.data.answers.size() > 0
+        && !request.resource.data.answers.hasAny([''])
+        && request.resource.data.questions.size() <= 60
+        && request.resource.data.photoIds is list
+        && request.resource.data.photoIds.size() == 6
+        && request.resource.data.weight is number
+        && request.resource.data.weight >= 20
+        && request.resource.data.weight <= 500
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
+    }
+
+    match /progressPhotos/{id} {
+      allow read: if trainerOwns(resource.data.userId) || activeOwner(resource.data.userId);
+      allow create: if activeOwner(request.resource.data.userId)
+        && isoDate(request.resource.data.date)
+        && request.resource.data.get('dataUrl', '') is string
+        && request.resource.data.get('dataUrl', '').size() <= 950000
+        && photoPath(request.resource.data.get('photoPath', ''), 'progressPhotos', request.resource.data.userId)
+        && photoPath(request.resource.data.get('thumbPath', ''), 'progressPhotoThumbs', request.resource.data.userId)
+        && (request.resource.data.get('dataUrl', '') != '' || request.resource.data.get('photoPath', '') != '')
+        && request.resource.data.createdAt is timestamp;
+      allow update: if false;
+      allow delete: if activeOwner(resource.data.userId)
+        && resource.data.get('checkinId', '') == ''
+        && resource.data.get('reportId', '') == ''
+        && resource.data.get('questionnaireId', '') == '';
+    }
+
+    match /freeMealLogs/{id} {
+      allow read: if trainerOwns(resource.data.userId) || activeOwner(resource.data.userId);
+      allow create: if activeOwner(request.resource.data.userId)
+        && requiredText(request.resource.data.mealName, 180)
+        && isoDate(request.resource.data.date)
+        && request.resource.data.estimatedCalories is int
+        && request.resource.data.estimatedCalories >= 0
+        && request.resource.data.estimatedCalories <= 20000
+        && text(request.resource.data.get('notes', ''), 5000)
+        && request.resource.data.get('dataUrl', '') is string
+        && request.resource.data.get('dataUrl', '').size() <= 700000
+        && photoPath(request.resource.data.get('photoPath', ''), 'freeMealLogs', request.resource.data.userId)
+        && (request.resource.data.get('dataUrl', '') != '' || request.resource.data.get('photoPath', '') != '')
+        && request.resource.data.createdAt is timestamp;
+      allow update: if activeOwner(resource.data.userId)
+        && immutable('userId') && immutable('createdAt')
+        && requiredText(request.resource.data.mealName, 180)
+        && isoDate(request.resource.data.date)
+        && request.resource.data.estimatedCalories is int
+        && request.resource.data.estimatedCalories >= 0
+        && request.resource.data.estimatedCalories <= 20000
+        && text(request.resource.data.get('notes', ''), 5000)
+        && photoPath(request.resource.data.get('photoPath', ''), 'freeMealLogs', resource.data.userId)
+        && (request.resource.data.get('dataUrl', '') != '' || request.resource.data.get('photoPath', '') != '');
+      allow delete: if activeOwner(resource.data.userId);
+    }
+
+    match /freeMealCatalog/{id} {
+      allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid));
+      allow create, update: if isTrainer() && id == 'main';
+      allow delete: if false;
+    }
+    match /trainingInstructions/{id} {
+      allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid));
+      allow create, update: if isTrainer() && id == 'main';
+      allow delete: if false;
+    }
+    match /trainingTechniques/{id} {
+      allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid));
+      allow create, update: if isTrainer() && id == 'main';
+      allow delete: if false;
+    }
+    match /foodOptions/{id} {
+      allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid));
+      allow create, update: if isTrainer() && id == 'main';
+      allow delete: if false;
+    }
+    match /exerciseOptions/{id} {
+      allow read: if isTrainer() || (signedIn() && activeOwner(request.auth.uid));
+      allow create, update: if isTrainer() && id == 'main';
+      allow delete: if false;
+    }
+
+    match /studentInvites/{id} {
+      allow get: if true;
+      allow list: if isTrainer() && resource.data.trainerId == request.auth.uid;
+      allow create: if isTrainer()
+        && request.resource.data.trainerId == request.auth.uid
+        && request.resource.data.active == true
+        && request.resource.data.usedBy == ''
+        && request.resource.data.usedAt == null
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.expiresAt is timestamp;
+      allow update: if (
+        isTrainer()
+        && resource.data.trainerId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'revokedAt'])
+        && request.resource.data.active == false
+        && request.resource.data.revokedAt is timestamp
+      ) || (
+        signedIn()
+        && resource.data.active == true
+        && resource.data.usedBy == ''
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'usedBy', 'usedAt'])
+        && request.resource.data.active == false
+        && request.resource.data.usedBy == request.auth.uid
+        && request.resource.data.usedAt is timestamp
+        && request.time < resource.data.expiresAt
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.trainerId == resource.data.trainerId
+      );
+      allow delete: if false;
+    }
+
+    match /planVersions/{id} {
+      allow read: if isTrainer() && resource.data.trainerId == request.auth.uid;
+      allow create: if isTrainer()
+        && request.resource.data.trainerId == request.auth.uid
+        && trainerOwns(request.resource.data.studentId)
+        && requiredText(request.resource.data.label, 160)
+        && requiredText(request.resource.data.source, 40)
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.snapshot is map
+        && request.resource.data.createdAt is timestamp;
+      allow update: if false;
+      allow delete: if isTrainer() && resource.data.trainerId == request.auth.uid;
+    }
+
+    match /planTemplates/{id} {
+      allow read: if isTrainer() && resource.data.trainerId == request.auth.uid;
+      allow create: if isTrainer()
+        && request.resource.data.trainerId == request.auth.uid
+        && requiredText(request.resource.data.name, 120)
+        && text(request.resource.data.get('description', ''), 500)
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.snapshot is map
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if isTrainer()
+        && resource.data.trainerId == request.auth.uid
+        && immutable('trainerId') && immutable('createdAt')
+        && requiredText(request.resource.data.name, 120)
+        && text(request.resource.data.get('description', ''), 500)
+        && request.resource.data.snapshot is map
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isTrainer() && resource.data.trainerId == request.auth.uid;
+    }
+
+    match /auditLogs/{id} {
+      allow read: if isTrainer() && resource.data.trainerId == request.auth.uid;
+      allow create: if isTrainer()
+        && request.resource.data.trainerId == request.auth.uid
+        && trainerOwns(request.resource.data.studentId)
+        && requiredText(request.resource.data.action, 160)
+        && requiredText(request.resource.data.entity, 80)
+        && text(request.resource.data.get('summary', ''), 500)
+        && request.resource.data.get('metadata', {}) is map
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
+    }
+
+    match /notifications/{id} {
+      allow read: if trainerOwns(resource.data.studentId) || activeOwner(resource.data.studentId);
+      allow create: if trainerOwns(request.resource.data.studentId)
+        && request.resource.data.trainerId == request.auth.uid
+        && requiredText(request.resource.data.title, 120)
+        && requiredText(request.resource.data.body, 1200)
+        && requiredText(request.resource.data.type, 40)
+        && request.resource.data.readAt == null
+        && request.resource.data.createdAt is timestamp;
+      allow update: if activeOwner(resource.data.studentId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+        && request.resource.data.readAt is timestamp;
+      allow delete: if false;
+    }
+
+    // Cálculos internos da dieta: somente o treinador vinculado pode ler ou alterar.
+    // Nenhum valor desta coleção é exposto ao aluno; a dieta prescrita continua em mealPlans.
+    match /dietCalculations/{uid} {
+      allow read: if trainerOwns(uid)
+        && resource.data.studentId == uid
+        && resource.data.trainerId == request.auth.uid;
+      allow create: if trainerOwns(uid)
+        && request.resource.data.keys().hasOnly([
+          'schemaVersion','studentId','trainerId','sex','actualWeightKg','heightCm','ageYears',
+          'activityFactor','referenceMode','manualReferenceWeightKg','manualAdjustmentKcal','macros',
+          'createdAt','updatedAt'
+        ])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.studentId == uid
+        && request.resource.data.trainerId == request.auth.uid
+        && request.resource.data.sex in ['male','female']
+        && request.resource.data.actualWeightKg is number
+        && request.resource.data.actualWeightKg >= 20 && request.resource.data.actualWeightKg <= 500
+        && request.resource.data.heightCm is number
+        && request.resource.data.heightCm >= 100 && request.resource.data.heightCm <= 250
+        && request.resource.data.ageYears is number
+        && request.resource.data.ageYears >= 10 && request.resource.data.ageYears <= 100
+        && request.resource.data.activityFactor is number
+        && request.resource.data.activityFactor >= 1 && request.resource.data.activityFactor <= 2.5
+        && request.resource.data.referenceMode in ['real','ideal','manual']
+        && request.resource.data.manualReferenceWeightKg is number
+        && request.resource.data.manualReferenceWeightKg >= 0 && request.resource.data.manualReferenceWeightKg <= 500
+        && request.resource.data.manualAdjustmentKcal is number
+        && request.resource.data.manualAdjustmentKcal >= -5000 && request.resource.data.manualAdjustmentKcal <= 5000
+        && request.resource.data.macros is map
+        && request.resource.data.macros.keys().hasOnly(['animalProtein','plantProtein','carbs','fat'])
+        && request.resource.data.macros.animalProtein is number
+        && request.resource.data.macros.animalProtein >= 0 && request.resource.data.macros.animalProtein <= 2000
+        && request.resource.data.macros.plantProtein is number
+        && request.resource.data.macros.plantProtein >= 0 && request.resource.data.macros.plantProtein <= 2000
+        && request.resource.data.macros.carbs is number
+        && request.resource.data.macros.carbs >= 0 && request.resource.data.macros.carbs <= 3000
+        && request.resource.data.macros.fat is number
+        && request.resource.data.macros.fat >= 0 && request.resource.data.macros.fat <= 1000
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if trainerOwns(uid)
+        && resource.data.studentId == uid
+        && resource.data.trainerId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'schemaVersion','studentId','trainerId','sex','actualWeightKg','heightCm','ageYears',
+          'activityFactor','referenceMode','manualReferenceWeightKg','manualAdjustmentKcal','macros',
+          'createdAt','updatedAt'
+        ])
+        && immutable('schemaVersion') && immutable('studentId') && immutable('trainerId') && immutable('createdAt')
+        && request.resource.data.sex in ['male','female']
+        && request.resource.data.actualWeightKg is number
+        && request.resource.data.actualWeightKg >= 20 && request.resource.data.actualWeightKg <= 500
+        && request.resource.data.heightCm is number
+        && request.resource.data.heightCm >= 100 && request.resource.data.heightCm <= 250
+        && request.resource.data.ageYears is number
+        && request.resource.data.ageYears >= 10 && request.resource.data.ageYears <= 100
+        && request.resource.data.activityFactor is number
+        && request.resource.data.activityFactor >= 1 && request.resource.data.activityFactor <= 2.5
+        && request.resource.data.referenceMode in ['real','ideal','manual']
+        && request.resource.data.manualReferenceWeightKg is number
+        && request.resource.data.manualReferenceWeightKg >= 0 && request.resource.data.manualReferenceWeightKg <= 500
+        && request.resource.data.manualAdjustmentKcal is number
+        && request.resource.data.manualAdjustmentKcal >= -5000 && request.resource.data.manualAdjustmentKcal <= 5000
+        && request.resource.data.macros is map
+        && request.resource.data.macros.keys().hasOnly(['animalProtein','plantProtein','carbs','fat'])
+        && request.resource.data.macros.animalProtein is number
+        && request.resource.data.macros.animalProtein >= 0 && request.resource.data.macros.animalProtein <= 2000
+        && request.resource.data.macros.plantProtein is number
+        && request.resource.data.macros.plantProtein >= 0 && request.resource.data.macros.plantProtein <= 2000
+        && request.resource.data.macros.carbs is number
+        && request.resource.data.macros.carbs >= 0 && request.resource.data.macros.carbs <= 3000
+        && request.resource.data.macros.fat is number
+        && request.resource.data.macros.fat >= 0 && request.resource.data.macros.fat <= 1000
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if trainerOwns(uid)
+        && resource.data.studentId == uid
+        && resource.data.trainerId == request.auth.uid;
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}

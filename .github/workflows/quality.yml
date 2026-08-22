@@ -32,3 +32,4 @@ jobs:
           node scripts/workflow-controls-check.mjs
           node scripts/report-usability-audit-check.mjs
           node scripts/firestore-read-baseline-check.mjs
+          node scripts/diet-calculation-evolution-check.mjs
