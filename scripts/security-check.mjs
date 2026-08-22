@@ -55,6 +55,8 @@ has(security,'authorizedStudents.has(target)','UI não possui defesa adicional c
 has(security,'SAFE_COLORS','Cache/local não saneia cores de protocolo.');
 has(security,'tb-student-status-dot','Painel perdeu o indicador visual de status do aluno.');
 has(security,"isActive?'active':'inactive'",'Indicador de status não deriva do status real do aluno.');
+lacks(security,"db.collection('studentInvites')",'Painel normal voltou a auditar convites automaticamente e elevar leituras.');
+has(security,"button.textContent='VERIFICAR VÍNCULOS'",'Auditoria de vínculo não está disponível como ação manual.');
 
 const invites=read('modules/v107-invites.js');
 lacks(invites,'withTimeout(db.runTransaction','Transação de cadastro voltou a ter timeout artificial.');
@@ -69,8 +71,8 @@ const stretch=read('modules/remove-stretch-planilha-v10_10_9.js');
 lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar toda a árvore DOM permanentemente.');
 
 const config=read('config_v10_7.js');
-has(config,'security-hardening-v10_10_9.js?v=10.10.10-security7','Loader não inclui o hardening security7 com URL nova.');
-has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links5','Loader não inclui o reconciliador legacy-links5 com URL nova.');
+has(config,'security-hardening-v10_10_9.js?v=10.10.10-security8','Loader não inclui o hardening security8 com URL nova.');
+has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','Loader não inclui o reconciliador legacy-links6 com URL nova.');
 has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader não inclui a correção cache-safe do cadastro.');
 has(config,'remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','Loader pode reutilizar a versão antiga do removedor de alongamento.');
 

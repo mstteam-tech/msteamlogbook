@@ -31,3 +31,4 @@ jobs:
           node scripts/trainer-student-list-check.mjs
           node scripts/workflow-controls-check.mjs
           node scripts/report-usability-audit-check.mjs
+          node scripts/firestore-read-baseline-check.mjs

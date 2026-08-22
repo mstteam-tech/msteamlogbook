@@ -22,7 +22,6 @@ if(failures.length){console.error('\nFalhas da auditoria de relatórios/usabilid
 
 const report=read(reportPath),audit=read(auditPath),lockBridge=read(lockBridgePath),gerBridge=read(gerBridgePath),config=read('config_v10_7.js'),sw=read('sw.js'),sw47=read('sw_47.js');
 
-// Fotos do relatório: grade leve, clicável e sem seis originais simultâneos.
 has(report,"const MAX_RECORD_CACHE=180",'Cache curto de registros fotográficos não está limitado.');
 has(report,"where('userId','==',uid)",'Consulta agrupada de fotos não está vinculada ao aluno atual.');
 has(report,"FieldPath.documentId(),'in',ids",'Consulta agrupada de até seis fotos não está presente.');
@@ -35,7 +34,6 @@ has(report,"resolvePhotoSource(p,{full:false})",'Visualizador não antecipa a mi
 has(report,"openModal('modal-photo-view')",'Visualizador de foto não abre imediatamente.');
 assert(!report.includes("Promise.all((checkin.photoIds||[]).slice(0,6).map")&&!report.includes("resolvePhotoSource(record,{full:CURRENT_USER?.role==='trainer'})"),'Relatório voltou a carregar seis fotos originais simultaneamente.');
 
-// Regressões encontradas na combinação workflow-controls + modal-stack + guard.
 has(audit,'#modal-feedback.tb-feedback-float{pointer-events:none!important','Feedback flutuante pode voltar a bloquear a tela atrás.');
 has(audit,'#modal-feedback.tb-feedback-float .feedback-editor-sheet{pointer-events:auto!important','Editor de feedback perdeu interação própria.');
 has(audit,"button.id='tb-feedback-open-reports'",'Feedback flutuante não oferece acesso direto aos relatórios.');
@@ -51,7 +49,6 @@ has(audit,"tbModalOpenSeq",'ESC não considera a ordem real de abertura dos moda
 has(audit,"startsWith('blob:')",'Retorno por BFCache não limpa URLs blob revogadas.');
 has(audit,'hydrateSecureImages(document)','Retorno por BFCache não reidrata imagens seguras.');
 
-// Ações direcionais tinham listeners privados e conseguiam passar por fora de weeklyEditLocks.
 has(lockBridge,"const CENTER_ID='tb-prescription-actions-center'",'Ponte de trancas não protege o centro novo de ações.');
 has(lockBridge,"if(locked(exercise,week)){counter.protected++;continue;}",'Propagação de séries não pula semanas trancadas.');
 has(lockBridge,"Repassar preservando trancas",'Usuário não é avisado de que destinos protegidos serão preservados.');
@@ -59,14 +56,12 @@ has(lockBridge,"kind==='technique'",'Propagação direcional de técnicas não �
 has(lockBridge,"técnicas e vínculos de Super set não podem ser aplicados parcialmente",'Técnicas podem atravessar trancas e quebrar vínculo de Super set.');
 has(lockBridge,"event.stopImmediatePropagation()",'Listener privado antigo ainda pode executar depois da proteção.');
 
-// GER em lote também existia antes das trancas e precisava de ponte própria.
 has(gerBridge,'window.TeamBullsGerBulk=Object.freeze','GER em lote não é redirecionado para versão compatível com trancas.');
 has(gerBridge,'if(locked(item,week)){protectedCount++;continue;}','GER da semana pode editar exercício trancado.');
 has(gerBridge,'if(locked(exercise,current)){protectedWeeks++;continue;}','GER das 8 semanas pode editar semana trancada.');
 has(gerBridge,"resolveWeekPrescription(snapshot,current)",'GER das semanas destrancadas não materializa corretamente prescrições herdadas ao redor de uma semana protegida.');
 has(gerBridge,"closest('#tb-save-series-only')",'Salvar somente séries pode sugerir gravação em semana trancada.');
 
-// Ordem é intencional: workflow -> pontes de tranca -> fotos -> auditoria -> monitor final de modais.
 const workflowIndex=config.indexOf('workflow-controls-v10_10_10.js?v=10.10.10-workflow1');
 const lockIndex=config.indexOf('prescription-lock-bridge-v10_10_10.js?v=10.10.10-lockbridge1');
 const gerLockIndex=config.indexOf('ger-lock-bridge-v10_10_10.js?v=10.10.10-gerlock1');
@@ -76,7 +71,7 @@ const modalIndex=config.indexOf('modal-stack-stability-v10_10_9.js?v=10.10.9-mod
 assert(workflowIndex>=0&&lockIndex>workflowIndex&&gerLockIndex>lockIndex&&reportIndex>gerLockIndex&&auditIndex>reportIndex&&modalIndex>auditIndex,'Ordem dos hotfixes de tranca/relatório/auditoria está incorreta.');
 
 for(const [name,source] of [['sw.js',sw],['sw_47.js',sw47]]){
-  has(source,"const CACHE_HOTFIX='audit1'",`${name} não força a nova shell da auditoria.`);
+  assert(/const CACHE_HOTFIX='(?:audit1|reads1)'/.test(source),`${name} não força shell compatível com auditoria ou evolução posterior.`);
   has(source,"./modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1",`${name} não prepara fotos rápidas de relatório.`);
   has(source,"./modules/usability-audit-v10_10_10.js?v=10.10.10-audit1",`${name} não prepara auditoria de usabilidade.`);
 }
