@@ -4,7 +4,7 @@
   window.__TEAM_BULLS_RELEASE_COHERENCE_10_10_10__=true;
 
   const RELEASE_VERSION='10.10.9';
-  const PATCH_VERSION='10.10.10-release1';
+  const PATCH_VERSION='10.10.11-release1';
   const ACTIVE_FIRESTORE_RULES='firestore_27_compacto.rules';
 
   function applyVersionLabels(){
@@ -36,28 +36,19 @@
     const required=[
       ['TeamBullsDietMath',()=>!!window.TeamBullsDietMath],
       ['TeamBullsDietCalculator',()=>!!window.TeamBullsDietCalculator],
-      ['TeamBullsDietPortions',()=>!!window.TeamBullsDietPortions]
+      ['TeamBullsDietPortions',()=>!!window.TeamBullsDietPortions],
+      ['TeamBullsDietPersonalization',()=>!!window.TeamBullsDietPersonalization],
+      ['TeamBullsTrainingIntegrity',()=>!!window.TeamBullsTrainingIntegrity],
+      ['TeamBullsReportSchedule',()=>!!window.TeamBullsReportSchedule],
+      ['TeamBullsCardioAlert',()=>!!window.TeamBullsCardioAlert]
     ];
     const missing=required.filter(([,check])=>{try{return !check();}catch(error){return true;}}).map(([name])=>name);
     if(missing.length)console.warn('[Team Bulls] Extensões opcionais indisponíveis nesta sessão:',missing.join(', '));
     return missing;
   }
 
-  function install(){
-    applyVersionLabels();
-    patchFirebaseRuleMessage();
-    setTimeout(verifyRuntime,0);
-  }
-
-  window.TeamBullsRelease=Object.freeze({
-    version:RELEASE_VERSION,
-    patchVersion:PATCH_VERSION,
-    activeFirestoreRules:ACTIVE_FIRESTORE_RULES,
-    verify:verifyRuntime,
-    refreshLabels:applyVersionLabels
-  });
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
-  else install();
+  function install(){applyVersionLabels();patchFirebaseRuleMessage();setTimeout(verifyRuntime,0);}
+  window.TeamBullsRelease=Object.freeze({version:RELEASE_VERSION,patchVersion:PATCH_VERSION,activeFirestoreRules:ACTIVE_FIRESTORE_RULES,verify:verifyRuntime,refreshLabels:applyVersionLabels});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
   window.addEventListener('pageshow',applyVersionLabels,{passive:true});
 })();
