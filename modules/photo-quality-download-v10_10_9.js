@@ -4,16 +4,18 @@
   if(window.__TEAM_BULLS_PHOTO_QUALITY_V10109__)return;
   window.__TEAM_BULLS_PHOTO_QUALITY_V10109__=true;
 
-  const VERSION='10.10.9-photoquality1';
+  const VERSION='10.10.9-photoquality2';
   const ORIGINAL_KIND='progressPhotoOriginals';
   const MAX_ORIGINAL_BYTES=25*1024*1024;
   const WEB_IMAGE_TYPES=new Set(['image/jpeg','image/png','image/webp','image/gif','image/avif']);
   const pendingOriginals=new Map();
   const originalUrlCache=new Map();
   const originalMissCache=new Set();
+  const previewTokens={weekly:Array(6).fill(0),questionnaire:Array(6).fill(0)};
 
   const normalizeType=file=>{
     const raw=String(file?.type||'').toLowerCase().trim();
+    if(raw==='image/jpg'||raw==='image/pjpeg')return'image/jpeg';
     if(/^image\/(jpeg|png|webp|gif|avif|heic|heif)$/.test(raw))return raw;
     const name=String(file?.name||'').toLowerCase();
     if(/\.jpe?g$/.test(name))return'image/jpeg';
@@ -32,6 +34,117 @@
     const cleaned=raw.replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').slice(0,160);
     return cleaned||`team-bulls-${safeToken(id)||'foto'}`;
   };
+  const nextPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
+  function decodeFailure(file,type){
+    const name=String(file?.name||'esta foto');
+    if(type==='image/heic'||type==='image/heif')return new Error(`O arquivo ${name} está em HEIC/HEIF e este navegador não conseguiu convertê-lo. Use a opção JPG/JPEG da câmera ou escolha uma versão JPG da foto.`);
+    return new Error(`Não foi possível preparar ${name}. Se a foto for muito grande, feche outros aplicativos e tente novamente; JPG, PNG, WebP e AVIF são aceitos.`);
+  }
+
+  function decodeViaImage(file){
+    return new Promise((resolve,reject)=>{
+      const url=URL.createObjectURL(file),img=new Image();let settled=false;
+      const finish=(value,error)=>{
+        if(settled)return;settled=true;
+        img.onload=null;img.onerror=null;
+        if(error){URL.revokeObjectURL(url);reject(error);return;}
+        resolve({source:img,width:img.naturalWidth||img.width,height:img.naturalHeight||img.height,close:()=>URL.revokeObjectURL(url)});
+      };
+      img.decoding='async';
+      img.onload=()=>finish(null,null);
+      img.onerror=()=>finish(null,new Error('image-element-decode-failed'));
+      img.src=url;
+    });
+  }
+
+  // O fluxo antigo mantinha seis object URLs de fotos em resolução cheia abertos
+  // enquanto tentava decodificar uma sétima superfície para compressão. Em celulares,
+  // isso pode exceder o orçamento de memória mesmo para JPEGs perfeitamente válidos.
+  function releaseLegacyReportPreviewSurfaces(){
+    const groups=[
+      {urls:typeof WEEKLY_CHECKIN_PREVIEW_URLS!=='undefined'?WEEKLY_CHECKIN_PREVIEW_URLS:null,prefix:'weekly-photo-preview-'},
+      {urls:typeof QUESTIONNAIRE_REPORT_PREVIEW_URLS!=='undefined'?QUESTIONNAIRE_REPORT_PREVIEW_URLS:null,prefix:'report-photo-preview-'}
+    ];
+    for(const group of groups){
+      if(!Array.isArray(group.urls))continue;
+      for(let index=0;index<group.urls.length;index++){
+        const url=String(group.urls[index]||'');
+        if(url.startsWith('blob:'))try{URL.revokeObjectURL(url);}catch(error){}
+        group.urls[index]='';
+        const preview=document.getElementById(group.prefix+index);
+        if(preview&&String(preview.src||'').startsWith('blob:')){preview.removeAttribute('src');preview.classList.remove('active');}
+      }
+    }
+  }
+
+  if(typeof decodeImageForCompression==='function'&&!decodeImageForCompression.__tbMobileDecode){
+    const wrapped=async function(file){
+      if(!(file instanceof Blob))throw new Error('Escolha uma imagem válida.');
+      const type=normalizeType(file);
+      if(!type&&!String(file.type||'').toLowerCase().startsWith('image/'))throw new Error('Escolha uma imagem válida.');
+      if('createImageBitmap'in window){
+        try{
+          const bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});
+          if(bitmap?.width&&bitmap?.height)return{source:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()};
+          bitmap?.close?.();
+        }catch(error){}
+        // Alguns WebViews Android reconhecem o arquivo, mas rejeitam a opção
+        // imageOrientation. Uma segunda tentativa sem opções evita falso negativo.
+        try{
+          const bitmap=await createImageBitmap(file);
+          if(bitmap?.width&&bitmap?.height)return{source:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()};
+          bitmap?.close?.();
+        }catch(error){}
+      }
+      try{
+        const decoded=await decodeViaImage(file);
+        if(decoded.width&&decoded.height)return decoded;
+        decoded.close?.();
+      }catch(error){}
+      throw decodeFailure(file,type);
+    };
+    wrapped.__tbMobileDecode=true;
+    decodeImageForCompression=wrapped;
+  }
+
+  async function lightweightPreview(file){
+    const decoded=await decodeImageForCompression(file);
+    try{return encodeImageVariant(decoded,520,.68,240000);}
+    finally{decoded.close?.();}
+  }
+
+  async function prepareReportPreview(kind,index,event){
+    const file=event?.target?.files?.[0]||null;if(!file)return;
+    const type=normalizeType(file);
+    if(!type&&!String(file.type||'').toLowerCase().startsWith('image/')){alert('Escolha uma imagem válida.');event.target.value='';return;}
+    const weekly=kind==='weekly';
+    const files=weekly?WEEKLY_CHECKIN_FILES:QUESTIONNAIRE_REPORT_FILES;
+    const urls=weekly?WEEKLY_CHECKIN_PREVIEW_URLS:QUESTIONNAIRE_REPORT_PREVIEW_URLS;
+    const prefix=weekly?'weekly-photo-preview-':'report-photo-preview-';
+    const token=++previewTokens[kind][index];
+    if(urls[index])try{URL.revokeObjectURL(urls[index]);}catch(error){}
+    urls[index]='';files[index]=file;
+    const preview=document.getElementById(prefix+index);
+    if(preview){preview.removeAttribute('src');preview.classList.remove('active');preview.dataset.tbPhotoPreparing='1';}
+    try{
+      const dataUrl=await lightweightPreview(file);
+      if(token!==previewTokens[kind][index]||files[index]!==file)return;
+      if(preview){preview.src=dataUrl;preview.classList.add('active');}
+    }catch(error){
+      if(token===previewTokens[kind][index]&&files[index]===file){files[index]=null;event.target.value='';if(preview){preview.removeAttribute('src');preview.classList.remove('active');}}
+      alert(error?.message||'Não foi possível preparar esta imagem.');
+    }finally{if(preview&&token===previewTokens[kind][index])delete preview.dataset.tbPhotoPreparing;}
+  }
+
+  if(typeof previewWeeklyCheckinPhoto==='function'){
+    previewWeeklyCheckinPhoto=function(index,event){return prepareReportPreview('weekly',Math.max(0,Math.min(5,Number(index)||0)),event);};
+    previewWeeklyCheckinPhoto.__tbLightPreview=true;
+  }
+  if(typeof previewQuestionnaireReportPhoto==='function'){
+    previewQuestionnaireReportPhoto=function(index,event){return prepareReportPreview('questionnaire',Math.max(0,Math.min(5,Number(index)||0)),event);};
+    previewQuestionnaireReportPhoto.__tbLightPreview=true;
+  }
 
   async function getStorage(){
     if(typeof ensureStorageService!=='function')return null;
@@ -90,11 +203,14 @@
   if(typeof buildProgressPhotoVariants==='function'&&!buildProgressPhotoVariants.__tbOriginalArchive){
     const baseBuild=buildProgressPhotoVariants;
     const wrapped=async function(file){
+      releaseLegacyReportPreviewSurfaces();
+      await nextPaint();
       const variants=await baseBuild(file);
       if(file instanceof Blob&&typeof variants?.full==='string')pendingOriginals.set(variants.full,file);
       return variants;
     };
     wrapped.__tbOriginalArchive=true;
+    wrapped.__tbMobilePreviewRelease=true;
     buildProgressPhotoVariants=wrapped;
   }
 
@@ -211,5 +327,5 @@
     deleteCloudPhoto=wrapped;
   }
 
-  window.TeamBullsPhotoQuality=Object.freeze({version:VERSION,maxOriginalBytes:MAX_ORIGINAL_BYTES});
+  window.TeamBullsPhotoQuality=Object.freeze({version:VERSION,maxOriginalBytes:MAX_ORIGINAL_BYTES,normalizeType,releaseReportPreviews:releaseLegacyReportPreviewSurfaces});
 })();
