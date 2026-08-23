@@ -34,3 +34,5 @@ jobs:
           node scripts/firestore-read-baseline-check.mjs
           node scripts/diet-calculation-evolution-check.mjs
           node scripts/diet-portion-presets-check.mjs
+          node scripts/loader-retry-check.mjs
+          node scripts/production-audit-check.mjs

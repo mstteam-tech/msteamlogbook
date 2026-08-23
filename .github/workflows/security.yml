@@ -18,4 +18,6 @@ jobs:
         with:
           node-version: '20'
       - name: Security regression checks
-        run: node scripts/security-check.mjs
+        run: |
+          node scripts/security-check.mjs
+          node scripts/production-audit-check.mjs
