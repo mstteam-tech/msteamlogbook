@@ -1,0 +1,37 @@
+import fs from 'node:fs';
+import {spawnSync} from 'node:child_process';
+const fail=[];const read=p=>fs.readFileSync(p,'utf8');const has=(t,n,m)=>{if(!t.includes(n))fail.push(m)};const lacks=(t,n,m)=>{if(t.includes(n))fail.push(m)};
+const files=['modules/diet-personalization-v10_10_11.js','modules/training-integrity-v10_10_11.js','modules/report-schedule-consistency-v10_10_11.js','modules/cardio-finish-alert-v10_10_11.js'];
+for(const file of files){if(!fs.existsSync(file)){fail.push('Arquivo ausente: '+file);continue;}const r=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(r.status!==0)fail.push('JavaScript inválido em '+file+': '+r.stderr.trim());}
+const diet=read(files[0]),training=read(files[1]),schedule=read(files[2]),cardio=read(files[3]),workflow=read('modules/workflow-controls-v10_10_10.js'),core=read('app_v10_10_9_core.js'),rules=read('firebase/firestore_27_compacto.rules'),config=read('config_v10_7.js'),sw=read('sw.js'),bridge=read('sw_47.js');
+has(diet,'Porção de Carboidrato','Tabela não corrige Carbo para Carboidrato.');
+has(diet,"const CATALOG_FIELD='dietPortionItems'",'Alimentos personalizados não possuem campo privado próprio.');
+has(diet,"db.collection(CATALOG_COLLECTION).doc(CURRENT_USER.uid).set(payload,{merge:true})",'Alimentos personalizados não são salvos de forma compatível com o workspace privado do treinador.');
+has(diet,"individualInstructions:text",'Instruções individuais da dieta não são persistidas.');
+has(diet,"db.collection('mealPlans').doc(uid).set(payload,{merge:true})",'Instruções individuais não usam a dieta do próprio aluno.');
+has(rules,'match /trainerSupplementCatalog/{trainerUid}','Catálogo privado do treinador não está protegido nas regras atuais.');
+has(rules,'allow read: if isTrainer() && request.auth.uid == trainerUid','Aluno poderia ler a tabela privada do treinador.');
+has(rules,'match /mealPlans/{uid}','mealPlans ausente nas regras.');
+has(training,'2 reps na reserva','GER 1 não foi fixado em 2 reps na reserva.');
+has(training,'weeklyEditLocks?.all===true','Trava total não é reconhecida pela camada final.');
+has(training,"'v104CopyPrescriptionToAll'",'Repasse de séries não está guardado pela trava total.');
+has(training,"'confirmPropagateWeekTechniques'",'Repasse de técnicas não está guardado pela trava total.');
+has(training,'event.stopImmediatePropagation()','Cliques residuais podem furar a trava total.');
+has(workflow,'function nextScheduledDueFromSubmission(schedule,checkins)','Agenda semanal pós-envio foi perdida.');
+has(workflow,'return addDaysIso(last.submittedDate,interval);','Agenda semanal não usa o último envio real.');
+has(schedule,'if(iso(schedule.lastCompletedDate))return addDays(String(schedule.lastCompletedDate),weeks*7);','Agenda mensal não usa a última atualização concluída.');
+has(schedule,'markProtocolReviewCompleted()','Comentário de segurança não referencia o fluxo oficial de conclusão mensal.');
+lacks(schedule,'sendFeedback=','Feedback não pode avançar automaticamente o ciclo mensal.');
+has(core,'function markProtocolReviewCompleted()','Fluxo oficial de conclusão da atualização mensal desapareceu.');
+has(core,'lastCompletedDate:today()','Conclusão mensal não registra a data real da atualização.');
+has(cardio,'navigator.vibrate','Alerta final não oferece vibração quando suportada.');
+has(cardio,'AudioContext','Alerta final não oferece alarme sonoro.');
+has(cardio,'state.remainingSeconds>0','Alarme não está condicionado ao fim do cronômetro.');
+has(cardio,'alreadyAlerted(key)','Alarme pode repetir indefinidamente para o mesmo término.');
+has(cardio,'return{...state,completedAt:Date.now()}','Alerta configurável não suprime a duplicação do aviso legado.');
+lacks(cardio,'setInterval(','Alerta não deve criar um segundo ticker de cardio.');
+for(const file of files){has(config,'./'+file+'?v=',`Loader não inclui ${file}.`);has(sw,'./'+file+'?v=',`Service Worker não prepara ${file} para uso offline.`);has(bridge,'./'+file+'?v=',`Ponte legada não prepara ${file} para uso offline.`);}
+has(sw,"const CACHE_HOTFIX='trainerworkflow1'",'Service Worker não força uma revisão nova do shell.');
+const order=['diet-portion-presets-v10_10_9.js','diet-personalization-v10_10_11.js','training-integrity-v10_10_11.js','report-schedule-consistency-v10_10_11.js','cardio-finish-alert-v10_10_11.js','release-coherence-v10_10_10.js'];
+for(let i=1;i<order.length;i++)if(config.indexOf(order[i-1])<0||config.indexOf(order[i])<=config.indexOf(order[i-1]))fail.push('Ordem do loader incorreta: '+order[i-1]+' → '+order[i]);
+if(fail.length){console.error('FALHA — trainer workflow 10.10.11\n- '+fail.join('\n- '));process.exit(1);}console.log('APROVADO — tabela personalizável, GER, trava total, instruções individuais, agendas e alerta do cardio validados.');
