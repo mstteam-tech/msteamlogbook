@@ -34,7 +34,7 @@ has(legacy,"studentInvites').where('trainerId','==',trainerUid)",'Reconciliaçã
 has(config,'security-hardening-v10_10_9.js?v=10.10.10-security8','Loader não entrega security8.');
 has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','Loader não entrega legacy-links6.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',sw47]]){
-  assert(/const CACHE_HOTFIX='(?:reads1|trainerworkflow1)'/.test(text),`${name} não força shell nova para a redução de leituras ou evolução posterior.`);
+  assert(/const CACHE_HOTFIX='(?:reads1|trainerworkflow1|mobilestartup1)'/.test(text),`${name} não força shell nova para a redução de leituras ou evolução posterior.`);
   has(text,'security-hardening-v10_10_9.js?v=10.10.10-security8',`${name} não prepara security8 offline.`);
   has(text,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6',`${name} não prepara legacy-links6 offline.`);
 }

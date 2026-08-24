@@ -4,6 +4,12 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 (function(){
   let revealTimer=null;
   function loadingActive(){return !!document.getElementById('screen-loading')?.classList.contains('active');}
+  function stored(key){try{return localStorage.getItem(key);}catch(error){return null;}}
+  function returningCloudSession(){
+    const uid=String(stored('teamms_last_user_uid')||'').trim();
+    const guest=stored('teamms_offline_pref')==='1'||stored('teamms_offline_mode')==='guest';
+    return !!uid&&!guest;
+  }
   function reveal(message){
     const run=()=>{
       const box=document.getElementById('loading-recovery');
@@ -27,17 +33,24 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     location.replace('./index.html?local='+Date.now());
   }
   window.TeamBullsRecovery={reveal,hide,retry:()=>location.reload(),clearCachesAndReload,localMode};
-  revealTimer=setTimeout(()=>{if(loadingActive())reveal('A sessão está sendo restaurada em segundo plano. Você já pode entrar ou usar o modo local.');},2500);
-  // Última barreira contra carregamento infinito, inclusive se outro trecho do
-  // aplicativo falhar antes de registrar os próprios timeouts.
+
+  const restoring=returningCloudSession();
+  revealTimer=setTimeout(()=>{
+    if(loadingActive())reveal(restoring?'Restaurando sua sessão e conferindo os arquivos do app. Você pode aguardar mais alguns segundos ou usar as opções abaixo.':'A inicialização está demorando. Você já pode entrar ou usar o modo local.');
+  },restoring?3200:2200);
+
+  // Em aparelhos que já possuem uma sessão válida, não trocamos a tela de
+  // carregamento pelo login cedo demais. Isso evita duas autenticações concorrentes
+  // e a sensação de que o app abriu pela metade enquanto o Firebase ainda restaura.
   setTimeout(()=>{
     if(!loadingActive())return;
     const loading=document.getElementById('screen-loading');
     const auth=document.getElementById('screen-auth');
     loading?.classList.remove('active');
     auth?.classList.add('active');
-    reveal('A verificação demorou, mas a tela foi liberada. A sessão continuará sendo restaurada em segundo plano.');
-  },1600);
+    reveal(restoring?'A restauração da sessão demorou além do esperado. A tela de acesso foi liberada sem apagar seus dados; a conexão continuará sendo conferida.':'A verificação demorou, mas a tela de acesso foi liberada.');
+  },restoring?6500:1800);
+
   window.addEventListener('error',event=>{
     window.__teamBullsBootErrors.push(String(event?.message||'erro de inicialização'));
     if(loadingActive())reveal('O aplicativo encontrou uma falha ao iniciar. Seus registros locais foram preservados.');

@@ -8,6 +8,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = '10.10.9'
+BUILD = 2026082401
 REQUIRED = [
     'index.html', 'manifest.json', 'version.json', 'sw.js', 'sw_47.js',
     'update_v10_10_9.js', 'app_v10_10_9_core.js', 'styles_v10_10_9.css',
@@ -85,7 +86,7 @@ def main():
     version=json.loads((ROOT/'version.json').read_text(encoding='utf-8'))
     if manifest.get('start_url')!='./index.html' or manifest.get('scope')!='./':
         fail('manifesto ainda depende de URL versionada')
-    if version.get('version')!=VERSION or version.get('updateMode')!='in-app':
+    if version.get('version')!=VERSION or version.get('updateMode')!='in-app' or version.get('build')!=BUILD:
         fail('version.json incorreto')
 
     for name in JS_FILES:
@@ -112,20 +113,24 @@ def main():
 
     updater=(ROOT/'update_v10_10_9.js').read_text(encoding='utf-8')
     need(updater,[
-        "const CURRENT_VERSION='10.10.9'", 'register(`./sw.js?v=${encodeURIComponent(CURRENT_VERSION)}`',
+        "const CURRENT_VERSION='10.10.9'", f'const CURRENT_BUILD={BUILD}',
+        'register(`./sw.js?v=${encodeURIComponent(CURRENT_VERSION)}&b=${CURRENT_BUILD}`',
         "cache:'no-store'", 'prepareLatest', 'applyLatestUpdate', 'TB?.flushDrafts?.()',
+        'sessionStorage.setItem(UPDATE_RELOAD_KEY,releaseKey(target))',
+        'function compareRelease(info)', 'function safeForAutomaticHotfix()',
         'manualCheck:()=>checkForUpdates', 'Não é necessário desinstalar'
     ],'atualizador')
 
     worker=(ROOT/'sw.js').read_text(encoding='utf-8')
     bridge=(ROOT/'sw_47.js').read_text(encoding='utf-8')
     need(worker,[
-        "const APP_VERSION='10.10.9'", "const SHELL_CACHE=`team-bulls-shell-",
+        "const APP_VERSION='10.10.9'", f'const BUILD_REVISION={BUILD}', "const SHELL_CACHE=`team-bulls-shell-",
         "'./version.json'", "'./update_v10_10_9.js?v=10.10.9'",
         'navigationCacheFirst(request,event)', 'refreshNavigation(request,event,fallback)',
         "relativePath==='/version.json'", 'MUTABLE_NETWORK_TIMEOUT_MS=1800',
         'NAVIGATION_REFRESH_TIMEOUT_MS=1800',
-        'await self.skipWaiting()', 'await self.clients.claim()', 'CLEAR_APP_CACHES'
+        'await self.skipWaiting()', 'await self.clients.claim()', 'CLEAR_APP_CACHES',
+        "type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION"
     ],'Service Worker')
     if 'ponte de migração' not in bridge: fail('ponte sw_47.js ausente')
     if 'navigationNetworkFirst(request,event)' in worker:
@@ -178,16 +183,16 @@ def main():
             sums.append(hashlib.sha256(path.read_bytes()).hexdigest()+'  '+path.relative_to(ROOT).as_posix())
     (ROOT/'SHA256SUMS-v10.10.9.txt').write_text('\n'.join(sums)+'\n',encoding='utf-8')
     result={
-        'version':VERSION,'status':'approved','html_ids':len(parser.ids),
+        'version':VERSION,'build':BUILD,'status':'approved','html_ids':len(parser.ids),
         'assets':len(set(parser.assets)),'javascript_files':len(JS_FILES),
         'service_worker':'sw.js','legacy_bridge':'sw_47.js','manifest':'manifest.json',
-        'version_endpoint':'version.json','in_app_updates':True,
+        'version_endpoint':'version.json','in_app_updates':True,'build_aware_updates':True,
         'reinstall_required':False,'navigation_strategy':'cache-first-background-refresh',
         'local_data_preserved':True,'audio_cache_preserved':True,
         'firestore_rules':'firestore_26_compacto.rules','storage_rules':'storage_5.rules',
         'exercise_day_context_locked':True,'session_delete_fixed':True,'trainer_operations_hidden_from_students':True,'themed_student_navigation':True,'free_meals_merged_into_supplements':True,'exercise_pdf_links':65,'automatic_exercise_videos':True,'cardio_module':True,'cardio_substitutions_individual':True,'cardio_timer_prescribed':True
     }
     (ROOT/'testes/RESULTADO-VALIDACAO-v10.10.9.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print(f'APROVADO: {len(parser.ids)} IDs únicos; {len(set(parser.assets))} recursos; atualização interna, regressões, cache e regras validados.')
+    print(f'APROVADO: {len(parser.ids)} IDs únicos; {len(set(parser.assets))} recursos; atualização interna build-aware, regressões, cache e regras validados.')
 
 if __name__=='__main__': main()
