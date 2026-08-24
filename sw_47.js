@@ -2,8 +2,9 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
+const BUILD_REVISION=2026082401;
 const CACHE_REVISION='guidance2';
-const CACHE_HOTFIX='trainerworkflow1';
+const CACHE_HOTFIX='mobilestartup1';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -135,8 +136,7 @@ async function cachePathsWithLimit(cache,paths,{required=false,limit=4}={}){
   const worker=async()=>{
     while(true){
       const index=next++;if(index>=queue.length)return;
-      try{await cacheOne(cache,queue[index],required);}
-      catch(error){failures.push(error);}
+      try{await cacheOne(cache,queue[index],required);}catch(error){failures.push(error);}
     }
   };
   const count=Math.min(Math.max(1,Math.trunc(Number(limit)||1)),queue.length);
@@ -156,161 +156,85 @@ async function broadcast(message){
 }
 
 self.addEventListener('install',event=>{
-  event.waitUntil((async()=>{
-    await prepareShell();
-    await self.skipWaiting();
-  })());
+  event.waitUntil((async()=>{await prepareShell();await self.skipWaiting();})());
 });
 
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const keys=await caches.keys();
-    await Promise.all(keys
-      .filter(key=>key.startsWith(CACHE_PREFIX)&&![SHELL_CACHE,RUNTIME_CACHE,AUDIO_CACHE_NAME].includes(key))
-      .map(key=>caches.delete(key)));
+    await Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&![SHELL_CACHE,RUNTIME_CACHE,AUDIO_CACHE_NAME].includes(key)).map(key=>caches.delete(key)));
     if(self.registration.navigationPreload)await self.registration.navigationPreload.enable().catch(()=>{});
     await self.clients.claim();
-    await broadcast({type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION});
+    await broadcast({type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION});
   })());
 });
 
 self.addEventListener('message',event=>{
   const type=event.data?.type;
-  if(type==='SKIP_WAITING'){
-    event.waitUntil(self.skipWaiting());
-    return;
-  }
-  if(type==='GET_VERSION'){
-    event.source?.postMessage?.({type:'TEAM_BULLS_VERSION',version:APP_VERSION});
-    return;
-  }
+  if(type==='SKIP_WAITING'){event.waitUntil(self.skipWaiting());return;}
+  if(type==='GET_VERSION'){event.source?.postMessage?.({type:'TEAM_BULLS_VERSION',version:APP_VERSION,build:BUILD_REVISION});return;}
   if(type==='REFRESH_APP_SHELL'){
-    event.waitUntil((async()=>{
-      const ok=await prepareShell().then(()=>true).catch(()=>false);
-      event.source?.postMessage?.({type:'TEAM_BULLS_REFRESHED',ok,version:APP_VERSION});
-    })());
-    return;
+    event.waitUntil((async()=>{const ok=await prepareShell().then(()=>true).catch(()=>false);event.source?.postMessage?.({type:'TEAM_BULLS_REFRESHED',ok,version:APP_VERSION,build:BUILD_REVISION});})());return;
   }
   if(type==='CLEAR_APP_CACHES'){
     event.waitUntil((async()=>{
       const keys=await caches.keys();
       await Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==AUDIO_CACHE_NAME).map(key=>caches.delete(key)));
       await prepareShell().catch(()=>false);
-      event.source?.postMessage?.({type:'TEAM_BULLS_CACHES_CLEARED',version:APP_VERSION});
-    })());
-    return;
+      event.source?.postMessage?.({type:'TEAM_BULLS_CACHES_CLEARED',version:APP_VERSION,build:BUILD_REVISION});
+    })());return;
   }
   if(type!=='CACHE_AUDIO')return;
-  const raw=String(event.data?.url||'');
-  let url;
+  const raw=String(event.data?.url||'');let url;
   try{url=new URL(raw,self.location.href);}catch(error){return;}
   const name=url.pathname.split('/').pop()||'';
   if(url.origin!==self.location.origin||!AUDIO_NAME_PATTERN.test(name))return;
   const asset=scopedUrl('./'+name);
   event.waitUntil((async()=>{
-    const cache=await caches.open(AUDIO_CACHE_NAME);
-    if(await cache.match(asset))return;
-    try{
-      const response=await fetch(asset,{cache:'no-cache'});
-      if(response.ok)await cache.put(asset,response.clone());
-    }catch(error){}
+    const cache=await caches.open(AUDIO_CACHE_NAME);if(await cache.match(asset))return;
+    try{const response=await fetch(asset,{cache:'no-cache'});if(response.ok)await cache.put(asset,response.clone());}catch(error){}
   })());
 });
 
 async function cacheHtml(response,cacheKey){
   if(!response?.ok)return response;
-  const type=(response.headers.get('Content-Type')||'').toLowerCase();
-  if(!type.includes('text/html'))return response;
-  const cache=await caches.open(SHELL_CACHE);
-  await cache.put(cacheKey,response.clone());
-  return response;
+  const type=(response.headers.get('Content-Type')||'').toLowerCase();if(!type.includes('text/html'))return response;
+  const cache=await caches.open(SHELL_CACHE);await cache.put(cacheKey,response.clone());return response;
 }
 async function refreshNavigation(request,event,fallback){
-  try{
-    const preload=await event.preloadResponse.catch(()=>null);
-    const response=preload?.ok?preload:await fetchWithTimeout(request,NAVIGATION_REFRESH_TIMEOUT_MS,{cache:'no-store'});
-    if(response?.ok)await cacheHtml(response,fallback);
-  }catch(error){}
+  try{const preload=await event.preloadResponse.catch(()=>null);const response=preload?.ok?preload:await fetchWithTimeout(request,NAVIGATION_REFRESH_TIMEOUT_MS,{cache:'no-store'});if(response?.ok)await cacheHtml(response,fallback);}catch(error){}
 }
 async function navigationCacheFirst(request,event){
-  const url=new URL(request.url);
-  const recovery=/\/recuperar\.html$/.test(url.pathname);
-  const fallback=scopedUrl(recovery?'./recuperar.html':'./index.html');
-  const cache=await caches.open(SHELL_CACHE);
-  const cached=await cache.match(fallback);
-  if(cached){
-    event.waitUntil(refreshNavigation(request,event,fallback));
-    return secureResponse(cached.clone(),{html:true});
-  }
-  try{
-    const preload=await event.preloadResponse.catch(()=>null);
-    const response=preload?.ok?preload:await fetchWithTimeout(request,NETWORK_TIMEOUT_MS,{cache:'no-store'});
-    if(response?.ok)return secureResponse(await cacheHtml(response,fallback),{html:true});
-  }catch(error){}
+  const url=new URL(request.url),recovery=/\/recuperar\.html$/.test(url.pathname),fallback=scopedUrl(recovery?'./recuperar.html':'./index.html');
+  const cache=await caches.open(SHELL_CACHE),cached=await cache.match(fallback);
+  if(cached){event.waitUntil(refreshNavigation(request,event,fallback));return secureResponse(cached.clone(),{html:true});}
+  try{const preload=await event.preloadResponse.catch(()=>null);const response=preload?.ok?preload:await fetchWithTimeout(request,NETWORK_TIMEOUT_MS,{cache:'no-store'});if(response?.ok)return secureResponse(await cacheHtml(response,fallback),{html:true});}catch(error){}
   return secureResponse(new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Team Bulls</title><body style="background:#0c0c0c;color:#eee;font-family:system-ui;padding:24px"><h1>Team Bulls</h1><p>Sem conexão e sem uma cópia offline disponível. Conecte-se e tente novamente.</p><button onclick="location.reload()">Tentar novamente</button></body>',{status:503,headers:{'Content-Type':'text/html; charset=utf-8'}}),{html:true});
 }
 async function networkFirst(request,{cacheName=RUNTIME_CACHE,timeout=NETWORK_TIMEOUT_MS}={}){
   const cache=await caches.open(cacheName);
-  try{
-    const response=await fetchWithTimeout(request,timeout,{cache:'no-cache'});
-    if(response?.ok)await cache.put(request,response.clone());
-    return secureResponse(response);
-  }catch(error){
-    const cached=await cache.match(request,{ignoreSearch:false})||await (await caches.open(SHELL_CACHE)).match(request,{ignoreSearch:false});
-    return cached?secureResponse(cached):new Response('',{status:504});
-  }
+  try{const response=await fetchWithTimeout(request,timeout,{cache:'no-cache'});if(response?.ok)await cache.put(request,response.clone());return secureResponse(response);}
+  catch(error){const cached=await cache.match(request,{ignoreSearch:false})||await (await caches.open(SHELL_CACHE)).match(request,{ignoreSearch:false});return cached?secureResponse(cached):new Response('',{status:504});}
 }
 async function cacheFirst(request,{cacheName=SHELL_CACHE}={}){
-  const cache=await caches.open(cacheName);
-  const cached=await cache.match(request,{ignoreSearch:false});
-  if(cached)return secureResponse(cached);
-  try{
-    const response=await fetch(request);
-    if(response?.ok)await cache.put(request,response.clone());
-    return secureResponse(response);
-  }catch(error){return new Response('',{status:504});}
+  const cache=await caches.open(cacheName),cached=await cache.match(request,{ignoreSearch:false});if(cached)return secureResponse(cached);
+  try{const response=await fetch(request);if(response?.ok)await cache.put(request,response.clone());return secureResponse(response);}catch(error){return new Response('',{status:504});}
 }
 async function audioResponse(request,url){
-  const cache=await caches.open(AUDIO_CACHE_NAME);
-  const cached=await cache.match(url.href);
-  if(cached&&!request.headers.has('range'))return secureResponse(cached);
-  try{
-    const response=await fetchWithTimeout(request,AUDIO_NETWORK_TIMEOUT_MS);
-    if(response?.ok&&!request.headers.has('range'))await cache.put(url.href,response.clone());
-    return secureResponse(response);
-  }catch(error){return cached?secureResponse(cached):new Response('',{status:504});}
+  const cache=await caches.open(AUDIO_CACHE_NAME),cached=await cache.match(url.href);if(cached&&!request.headers.has('range'))return secureResponse(cached);
+  try{const response=await fetchWithTimeout(request,AUDIO_NETWORK_TIMEOUT_MS);if(response?.ok&&!request.headers.has('range'))await cache.put(url.href,response.clone());return secureResponse(response);}catch(error){return cached?secureResponse(cached):new Response('',{status:504});}
 }
 
 self.addEventListener('fetch',event=>{
-  const request=event.request;
-  if(request.method!=='GET')return;
-  const url=new URL(request.url);
-  if(url.origin!==self.location.origin)return;
-  const relativePath=pathWithinScope(url);
-  const fileName=url.pathname.split('/').pop()||'';
-
-  if(AUDIO_NAME_PATTERN.test(fileName)){
-    event.respondWith(audioResponse(request,url));
-    return;
-  }
-  if(request.mode==='navigate'){
-    event.respondWith(navigationCacheFirst(request,event));
-    return;
-  }
-  if(relativePath==='/version.json'){
-    event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));
-    return;
-  }
-  /* URLs versionadas são imutáveis para aquela versão e devem sair do cache
-     imediatamente. Antes, config/v107 passavam por network-first só por estarem
-     em MUTABLE_PATHS, podendo acrescentar até vários segundos ao boot. */
-  if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v')){
-    event.respondWith(cacheFirst(request,{cacheName:SHELL_CACHE}));
-    return;
-  }
-  if(MUTABLE_PATHS.has(relativePath)){
-    event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));
-    return;
-  }
+  const request=event.request;if(request.method!=='GET')return;
+  const url=new URL(request.url);if(url.origin!==self.location.origin)return;
+  const relativePath=pathWithinScope(url),fileName=url.pathname.split('/').pop()||'';
+  if(AUDIO_NAME_PATTERN.test(fileName)){event.respondWith(audioResponse(request,url));return;}
+  if(request.mode==='navigate'){event.respondWith(navigationCacheFirst(request,event));return;}
+  if(relativePath==='/version.json'){event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));return;}
+  /* URLs versionadas continuam cache-first para não penalizar o login móvel.
+     version.json e a revisão do Service Worker são as fontes de invalidação. */
+  if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v')){event.respondWith(cacheFirst(request,{cacheName:SHELL_CACHE}));return;}
+  if(MUTABLE_PATHS.has(relativePath)){event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));return;}
   event.respondWith(networkFirst(request,{cacheName:RUNTIME_CACHE}));
 });
