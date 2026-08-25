@@ -2,7 +2,7 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026082401;
+  const CURRENT_BUILD=2026082501;
   const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
@@ -178,7 +178,7 @@
           setTimeout(()=>{if(banner)banner.hidden=true;},4200);
         }
         return info;
-      }catch(error){if(showErrors)setBannerState({title:'VERIFICAÇÃO INDISPONÍVEL',text:'Não foi possível consultar uma atualização agora.',error:true});return null;}
+      }catch(error){if(showErrors)setBannerState({title:'VERIFICAÇÃO INDISPONÍVEL',text:'Não foi possível consultar uma atualização agora.',error:true);return null;}
       finally{checking=null;}
     })();return checking;
   }
