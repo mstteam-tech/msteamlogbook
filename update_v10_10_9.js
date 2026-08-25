@@ -178,7 +178,7 @@
           setTimeout(()=>{if(banner)banner.hidden=true;},4200);
         }
         return info;
-      }catch(error){if(showErrors)setBannerState({title:'VERIFICAÇÃO INDISPONÍVEL',text:'Não foi possível consultar uma atualização agora.',error:true);return null;}
+      }catch(error){if(showErrors)setBannerState({title:'VERIFICAÇÃO INDISPONÍVEL',text:'Não foi possível consultar uma atualização agora.',error:true});return null;}
       finally{checking=null;}
     })();return checking;
   }
