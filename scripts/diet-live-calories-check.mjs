@@ -35,7 +35,12 @@ has(source,'function legacyMacroPayload(result=divisionResult())','Macros autom�
 has(source,"macroGrid.hidden=true",'Campos manuais de macro não são ocultados quando a dieta passa a ser a fonte.');
 has(source,"title.textContent='MACRONUTRIENTES DA DIETA — AUTOMÁTICO'",'Calculadora não identifica a origem automática dos macros.');
 has(source,"calculatorMacroRow('Proteína total'",'Tabela da calculadora ainda separa proteína animal/vegetal em vez do total prescrito.');
-has(source,'gramsPerKg:calc.referenceWeightKg>0?n(result.protein)/calc.referenceWeightKg:0','Proteína total não recalcula g/kg pelo peso de cálculo.');
+has(source,"function bodyWeightKg(body=calculatorBody())",'Cálculo não possui base explícita de peso corporal atual.');
+has(source,"headers[4].textContent='G/KG CORPORAL'",'Tabela não identifica que a razão é por kg corporal.');
+has(source,'gramsPerKg:weight>0?n(result.protein)/weight:0','Proteína total não calcula g/kg pelo peso corporal atual.');
+has(source,'bodyWeightMacroRow(m.carbs,result.carbs,weight)','Carboidratos não calculam g/kg pelo peso corporal atual.');
+has(source,'bodyWeightMacroRow(m.fat,result.fat,weight)','Gorduras não calculam g/kg pelo peso corporal atual.');
+has(source,'g/kg corporal usando o peso atual do aluno','Interface não explica a base corporal do cálculo.');
 has(source,'window.TeamBullsDietCalculator=Object.freeze(wrapped)','Integração não substitui com segurança a API pública da calculadora.');
 has(source,'syncCalculatorMacroInputs(divisionResult())','Salvar cálculo não sincroniza os macros efetivamente prescritos.');
 lacks(source,'db.collection(','Cálculo automático não deve criar leitura/gravação Firestore.');
@@ -94,4 +99,4 @@ if(source){
 }
 
 if(fail.length){console.error('FALHA — diet live calories\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — calorias/macros em tempo real, cálculo automático do treinador, g/kg, offline e compatibilidade validados.');
+console.log('APROVADO — calorias/macros em tempo real, cálculo automático do treinador, g/kg corporal, offline e compatibilidade validados.');
