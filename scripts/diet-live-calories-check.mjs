@@ -91,14 +91,15 @@ const trainingIndex=config.indexOf('training-integrity-v10_10_11.js');
 assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex&&workspaceIndex>releaseIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → ponte personalizada → workspace do treinador.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2",`${name} não prepara a revisão automática de macros para uso offline.`);
-  has(text,"const CACHE_HOTFIX='dietautomacros1'",`${name} não invalida o shell antigo da calculadora.`);
+  has(text,"./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1",`${name} não prepara o workspace do treinador para uso offline.`);
+  has(text,"const CACHE_HOTFIX='dietworkspace1'",`${name} não invalida o shell anterior para o novo workspace.`);
 }
 
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
 const swBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
-assert(version.build===2026082501&&version.revision==='diet-live-calories-1','Release base da funcionalidade não está identificada em version.json.');
-assert(updaterBuild===version.build&&swBuild===version.build&&bridgeBuild===version.build,'Build da dieta não está coerente entre version.json, atualizador e Service Workers.');
+assert(version.build===2026082502&&version.revision==='trainer-diet-workspace-1','Release do workspace não está identificado em version.json.');
+assert(updaterBuild===version.build&&swBuild===version.build&&bridgeBuild===version.build,'Build do workspace não está coerente entre version.json, atualizador e Service Workers.');
 
 if(source){
   const head={appendChild(){}};
@@ -137,4 +138,4 @@ if(source){
 }
 
 if(fail.length){console.error('FALHA — diet live calories/workspace\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — macros em tempo real, alimentos personalizados, g/kg corporal e workspace contínuo do treinador validados.');
+console.log('APROVADO — macros em tempo real, alimentos personalizados, g/kg corporal, workspace contínuo do treinador e revisão PWA validados.');
