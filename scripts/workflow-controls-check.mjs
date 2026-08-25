@@ -49,7 +49,7 @@ has(config,'workflow-controls-v10_10_10.js?v=10.10.10-workflow1','Loader não en
 assert(config.indexOf('prescription-propagation-v10_10_9.js')<config.indexOf('workflow-controls-v10_10_10.js'),'Workflow controls precisa executar depois das camadas de propagação.');
 assert(config.indexOf('workflow-controls-v10_10_10.js')<config.indexOf('modal-stack-stability-v10_10_9.js'),'Workflow controls precisa executar antes da estabilidade final de modais.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',legacySw]]){
-  assert(/const CACHE_HOTFIX='(?:workflow1|audit1|reads1|trainerworkflow1|mobilestartup1|dietautomacros1)'/.test(text),`${name} não possui cache compatível com workflow-controls ou evolução posterior.`);
+  assert(/const CACHE_HOTFIX='(?:workflow1|audit1|reads1|trainerworkflow1|mobilestartup1|dietautomacros1|dietworkspace1)'/.test(text),`${name} não possui cache compatível com workflow-controls ou evolução posterior.`);
   has(text,'security-hardening-v10_10_9.js?v=10.10.10-security8',`${name} não prepara o hardening security8.`);
   has(text,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6',`${name} não prepara o reconciliador legacy-links6 offline.`);
   has(text,'workflow-controls-v10_10_10.js?v=10.10.10-workflow1',`${name} não prepara workflow-controls offline.`);
