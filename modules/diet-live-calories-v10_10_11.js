@@ -73,7 +73,7 @@
       .tb-live-energy-kcal{flex:0 0 auto;font:900 21px 'Barlow Condensed',sans-serif;color:#f5f5f5;line-height:1}.tb-live-energy-macros{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.tb-live-energy-macros span{border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(0,0,0,.18);padding:5px 7px;font:700 8px 'DM Mono',monospace;color:#bbb}
       .tb-live-energy-note{display:block;margin-top:8px;color:#827a74;font-size:9px;line-height:1.45}.tb-live-energy-note.warn{color:#d5aa65}.tb-meal-live-badge{display:inline-flex;align-items:center;margin-left:auto;border:1px solid rgba(34,197,94,.22);border-radius:999px;background:rgba(34,197,94,.055);padding:4px 7px;color:#8bd5a8;font:700 7px 'DM Mono',monospace;white-space:nowrap}
       .tb-division-live-energy{margin:8px 0 12px}.tb-division-live-energy .tb-live-energy-kcal{font-size:24px}.tb-division-live-energy[data-partial="1"]{border-color:rgba(245,158,11,.27);background:linear-gradient(135deg,rgba(245,158,11,.06),rgba(255,255,255,.015))}.tb-division-live-energy[data-partial="1"] .tb-live-energy-kicker{color:#d7ae6b}
-      .tb-calc-auto-macros{margin:8px 0 12px;border:1px solid rgba(34,197,94,.25);border-radius:10px;background:rgba(34,197,94,.055);padding:11px 12px}.tb-calc-auto-macros[data-partial="1"]{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.045)}.tb-calc-auto-macros strong{display:block;color:#e9f7ed;font:800 14px 'Barlow Condensed',sans-serif}.tb-calc-auto-macros small{display:block;margin-top:5px;color:#837b75;font-size:9px;line-height:1.45}.tb-calc-auto-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.tb-calc-auto-item{padding:8px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(0,0,0,.16)}.tb-calc-auto-item span{display:block;color:#756e69;font:700 8px 'DM Mono',monospace;text-transform:uppercase}.tb-calc-auto-item b{display:block;margin-top:4px;color:#eee;font:800 16px 'Barlow Condensed',sans-serif}.tb-calc-auto-source{display:block;margin-top:7px;color:#72d79a;font:700 8px 'DM Mono',monospace;letter-spacing:.35px}.tb-calc-auto-source.warn{color:#d7ae6b}
+      .tb-calc-auto-macros{margin:8px 0 12px;border:1px solid rgba(34,197,94,.25);border-radius:10px;background:rgba(34,197,94,.055);padding:11px 12px}.tb-calc-auto-macros[data-partial="1"]{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.045)}.tb-calc-auto-macros strong{display:block;color:#e9f7ed;font:800 14px 'Barlow Condensed',sans-serif}.tb-calc-auto-macros small{display:block;margin-top:5px;color:#837b75;font-size:9px;line-height:1.45}.tb-calc-auto-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.tb-calc-auto-item{padding:8px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(0,0,0,.16)}.tb-calc-auto-item span{display:block;color:#756e69;font:700 8px 'DM Mono',monospace;text-transform:uppercase}.tb-calc-auto-item b{display:block;margin-top:4px;color:#eee;font:800 16px 'Barlow Condensed',sans-serif}.tb-calc-auto-item em{display:block;margin-top:3px;color:#8bd5a8;font:700 9px 'DM Mono',monospace;font-style:normal}.tb-calc-auto-source{display:block;margin-top:7px;color:#72d79a;font:700 8px 'DM Mono',monospace;letter-spacing:.35px}.tb-calc-auto-source.warn{color:#d7ae6b}
       @media(max-width:520px){.tb-live-energy-head{align-items:flex-start}.tb-live-energy-kcal{font-size:19px}.tb-meal-live-badge{margin-left:0;margin-top:5px}.meal-card-top{flex-wrap:wrap}.tb-calc-auto-grid{grid-template-columns:1fr 1fr}}
     `;document.head.appendChild(style);
   }
@@ -134,6 +134,7 @@
   function calculatorBody(){return document.getElementById('tb-diet-calc-body');}
   function calculatorField(body,name){return body?.querySelector?.(`[data-calc="${name}"]`)||null;}
   function calculatorNumber(body,name,fallback=0){const value=calculatorField(body,name)?.value;const parsed=n(value);return Number.isFinite(parsed)?parsed:fallback;}
+  function bodyWeightKg(body=calculatorBody()){const weight=calculatorNumber(body,'actualWeightKg');return weight>0?weight:0;}
   function legacyMacroPayload(result=divisionResult()){
     return{animalProtein:n(result.protein),plantProtein:0,carbs:n(result.carbs),fat:n(result.fat)};
   }
@@ -161,9 +162,9 @@
     };
   }
   function calculatorAutoCardMarkup(result){
-    const partial=result.unknown>0;
+    const partial=result.unknown>0,weight=bodyWeightKg(),perKg=grams=>weight>0?n(grams)/weight:0;
     const source=partial?`${result.matched} porção(ões) somada(s); ${result.unknown} linha(s) fora da tabela não entram no total.`:`${result.matched} porção(ões) somada(s) diretamente da dieta atual.`;
-    return`<strong>Macros puxados automaticamente da dieta</strong><div class="tb-calc-auto-grid"><div class="tb-calc-auto-item"><span>Proteína</span><b>${br(result.protein)} g</b></div><div class="tb-calc-auto-item"><span>Carboidratos</span><b>${br(result.carbs)} g</b></div><div class="tb-calc-auto-item"><span>Gorduras</span><b>${br(result.fat)} g</b></div><div class="tb-calc-auto-item"><span>Calorias</span><b>${Math.round(result.kcal)} kcal</b></div></div><span class="tb-calc-auto-source${partial?' warn':''}">${h(source)}</span><small>Você não precisa mais preencher os macros manualmente. O quadro abaixo calcula gramas, kcal, percentual e g/kg usando a divisão da dieta que está aberta.</small>`;
+    return`<strong>Macros puxados automaticamente da dieta</strong><div class="tb-calc-auto-grid"><div class="tb-calc-auto-item"><span>Proteína</span><b>${br(result.protein)} g</b><em>${weight?br(perKg(result.protein),2)+' g/kg corporal':'— g/kg corporal'}</em></div><div class="tb-calc-auto-item"><span>Carboidratos</span><b>${br(result.carbs)} g</b><em>${weight?br(perKg(result.carbs),2)+' g/kg corporal':'— g/kg corporal'}</em></div><div class="tb-calc-auto-item"><span>Gorduras</span><b>${br(result.fat)} g</b><em>${weight?br(perKg(result.fat),2)+' g/kg corporal':'— g/kg corporal'}</em></div><div class="tb-calc-auto-item"><span>Calorias</span><b>${Math.round(result.kcal)} kcal</b><em>${weight?`base: ${br(weight,1)} kg`:'peso corporal não informado'}</em></div></div><span class="tb-calc-auto-source${partial?' warn':''}">${h(source)}</span><small>Você não precisa preencher os macros manualmente. O quadro abaixo calcula gramas, kcal, percentual e g/kg corporal usando o peso atual do aluno.</small>`;
   }
   function ensureCalculatorAutoUi(result=divisionResult()){
     const body=calculatorBody();if(!body||body.dataset.ready!=='1'||body.hidden)return null;
@@ -177,21 +178,24 @@
     return card;
   }
   function calculatorMacroRow(label,row){return`<tr><td>${h(label)}</td><td>${br(row?.grams,1)}</td><td>${br(row?.kcal,0)}</td><td>${br(row?.percent,1)}%</td><td>${br(row?.gramsPerKg,2)}</td></tr>`;}
+  function bodyWeightMacroRow(row,grams,weight){return{grams:n(row?.grams),kcal:n(row?.kcal),percent:n(row?.percent),gramsPerKg:weight>0?n(grams)/weight:0};}
   function rewriteCalculatorMacroTable(result=divisionResult()){
     const body=calculatorBody(),math=window.TeamBullsDietMath;if(!body||body.dataset.ready!=='1'||body.hidden||typeof math?.calculate!=='function')return null;
     const host=document.getElementById('tb-calc-results');if(!host)return null;
     const table=host.querySelector('.tb-macro-table');if(!table)return null;
     const calc=math.calculate(calculatorInputFromBody(body,result)),m=calc.macros,tbody=table.querySelector('tbody');if(!tbody)return calc;
+    const weight=bodyWeightKg(body),headers=table.querySelectorAll('thead th');if(headers[4])headers[4].textContent='G/KG CORPORAL';
     const proteinRow={
       grams:n(m.animalProtein?.grams)+n(m.plantProtein?.grams),
       kcal:n(m.animalProtein?.kcal)+n(m.plantProtein?.kcal),
       percent:n(m.animalProtein?.percent)+n(m.plantProtein?.percent),
-      gramsPerKg:calc.referenceWeightKg>0?n(result.protein)/calc.referenceWeightKg:0
+      gramsPerKg:weight>0?n(result.protein)/weight:0
     };
-    tbody.innerHTML=`${calculatorMacroRow('Proteína total',proteinRow)}${calculatorMacroRow('Carboidratos',m.carbs)}${calculatorMacroRow('Gorduras',m.fat)}`;
+    const carbsRow=bodyWeightMacroRow(m.carbs,result.carbs,weight),fatRow=bodyWeightMacroRow(m.fat,result.fat,weight);
+    tbody.innerHTML=`${calculatorMacroRow('Proteína total',proteinRow)}${calculatorMacroRow('Carboidratos',carbsRow)}${calculatorMacroRow('Gorduras',fatRow)}`;
     const kcalCard=[...host.querySelectorAll('.tb-calc-result')].find(node=>/Kcal dos macros/i.test(String(node.querySelector('span')?.textContent||'')));
     if(kcalCard){const strong=kcalCard.querySelector('strong');if(strong)strong.textContent=result.matched?`${Math.round(result.kcal).toLocaleString('pt-BR')} kcal`:'—';}
-    body.dataset.macroKcal=String(result.matched?Math.round(result.kcal):0);
+    body.dataset.macroKcal=String(result.matched?Math.round(result.kcal):0);body.dataset.bodyWeightKg=String(weight||0);
     return calc;
   }
   function refreshCalculatorFromDiet({callBase=true}={}){
