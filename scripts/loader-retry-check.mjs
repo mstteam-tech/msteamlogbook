@@ -12,7 +12,7 @@ assert(config.includes('ok=await loadScriptOnce(src,Math.max(6500,Number(timeout
 assert(config.includes('for(const src of modules)await loadScript(src)'),'Loader perdeu a execução sequencial determinística dos módulos.');
 assert(config.includes('const healFailedModules=async()=>'),'Loader não possui autorreparo após falha temporária.');
 assert(config.includes('failedModules.add(src)'),'Falhas temporárias não são mantidas para nova tentativa.');
-assert(config.includes('release-coherence-v10_10_10.js?v=10.10.10-release1'),'Camada final de coerência não está carregada.');
+assert(/release-coherence-v10_10_10\.js\?v=10\.10\.(?:10-release1|11-release2)/.test(config),'Camada final de coerência não está carregada em revisão compatível.');
 assert(config.indexOf('diet-portion-presets-v10_10_9.js')<config.indexOf('release-coherence-v10_10_10.js'),'Camada final precisa carregar depois da tabela de porções.');
 assert(release.includes("replace(/firestore_26_compacto\\.rules/g,ACTIVE_FIRESTORE_RULES)"),'Mensagem legada de regra Firebase não é corrigida.');
 
