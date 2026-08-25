@@ -19,7 +19,7 @@
 
   function sortedMeals(){
     const meals=typeof MEAL_PLAN_CACHE!=='undefined'&&Array.isArray(MEAL_PLAN_CACHE?.meals)?MEAL_PLAN_CACHE.meals:[];
-    return[...meals].sort((a,b)=>String(a?.time||'').localeCompare(String(b?.time||''))||String(a?.id||'').localeCompare(String(b?.id||'')));
+    return[...meals].sort((a,b)=>String(a?.time||'').localeCompare(String(b?.time||'')));
   }
   function formState(){return{
     time:String(document.getElementById('input-meal-time')?.value||''),
@@ -32,8 +32,9 @@
   function currentPosition(){
     const meals=sortedMeals();
     if(!EDIT_MEAL_ID)return{index:meals.length,total:meals.length,isNew:true,meals};
-    const index=Math.max(0,meals.findIndex(item=>item.id===EDIT_MEAL_ID));
-    return{index,total:meals.length,isNew:false,meals};
+    const found=meals.findIndex(item=>item.id===EDIT_MEAL_ID);
+    if(found<0)return{index:meals.length,total:meals.length,isNew:true,meals};
+    return{index:found,total:meals.length,isNew:false,meals};
   }
 
   function analyze(text){
@@ -108,7 +109,7 @@
   function syncSnapshot(){formSnapshot=stateKey();updateNavState();}
 
   async function persistCurrent({allowEmpty=false,notify=false}={}){
-    if(!editable()||navigating)return false;
+    if(!editable())return false;
     const state=formState();
     if(!EDIT_MEAL_ID&&!hasDraft(state)&&!allowEmpty){toast('Adicione ao menos um alimento, horário ou observação antes de salvar.',true);return false;}
     if(EDIT_MEAL_ID&&!isDirty())return true;
@@ -195,7 +196,7 @@
       #modal-meal.tb-trainer-diet-workspace #tb-meal-portion-tool .tb-portion-note{display:none}
       #modal-meal.tb-trainer-diet-workspace .tb-custom-foods{margin:10px 0 0;border-top:1px solid rgba(255,255,255,.07);padding-top:10px}#modal-meal.tb-trainer-diet-workspace .tb-custom-scroll{max-height:none;overflow:visible}#modal-meal.tb-trainer-diet-workspace .tb-custom-table{min-width:0}
       #modal-meal.tb-trainer-diet-workspace #tb-live-meal-energy{display:none!important}
-      #modal-meal.tb-trainer-diet-workspace .tb-workspace-editor-body>.btn-primary[onclick="saveMeal()"]{margin-top:12px}#modal-meal.tb-trainer-diet-workspace .tb-workspace-editor-body>.btn-primary[onclick="saveMeal()"]::after{content:' E FECHAR'}
+      #modal-meal.tb-trainer-diet-workspace .tb-workspace-editor-body>.btn-primary[onclick="saveMeal()"]{margin-top:12px}
       @media(max-width:900px){
         #modal-meal.tb-trainer-diet-workspace{padding:0;align-items:stretch}
         #modal-meal.tb-trainer-diet-workspace>.modal-sheet{width:100%;max-width:none;height:100dvh;max-height:100dvh;border-radius:0}
