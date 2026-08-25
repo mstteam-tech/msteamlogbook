@@ -10,13 +10,17 @@ const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const close=(left,right)=>Math.abs(Number(left)-Number(right))<1e-9;
 
 const modulePath='modules/diet-live-calories-v10_10_11.js';
-assert(fs.existsSync(modulePath),'Módulo de calorias automáticas da dieta ausente.');
-if(fs.existsSync(modulePath)){
-  const syntax=spawnSync(process.execPath,['--check',modulePath],{encoding:'utf8'});
-  assert(syntax.status===0,'diet-live-calories possui JavaScript inválido: '+String(syntax.stderr||'').trim());
+const releasePath='modules/release-coherence-v10_10_10.js';
+for(const file of [modulePath,releasePath]){
+  assert(fs.existsSync(file),`Arquivo ausente: ${file}`);
+  if(fs.existsSync(file)){
+    const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+    assert(syntax.status===0,`${file} possui JavaScript inválido: `+String(syntax.stderr||'').trim());
+  }
 }
 
 const source=fs.existsSync(modulePath)?read(modulePath):'';
+const release=fs.existsSync(releasePath)?read(releasePath):'';
 const config=read('config_v10_7.js');
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
@@ -46,11 +50,22 @@ has(source,'syncCalculatorMacroInputs(divisionResult())','Salvar cálculo não s
 lacks(source,'db.collection(','Cálculo automático não deve criar leitura/gravação Firestore.');
 lacks(source,'cloudWrite(','Cálculo automático deve ser derivado localmente, sem gravação extra.');
 
+has(release,"const PATCH_VERSION='10.10.11-release2'",'Ponte de alimentos personalizados não possui revisão própria.');
+has(release,"document.querySelectorAll('[data-custom-food-list] .tb-custom-table tbody tr')",'Alimentos personalizados não são lidos da tabela já carregada.');
+has(release,"protein:customNumber(cells[1]?.textContent)",'Proteína do alimento personalizado não entra na base automática.');
+has(release,"carbs:customNumber(cells[2]?.textContent)",'Carboidrato do alimento personalizado não entra na base automática.');
+has(release,"fat:customNumber(cells[3]?.textContent)",'Gordura do alimento personalizado não entra na base automática.');
+has(release,'presets.splice(0,presets.length,...base,...custom)','Tabela automática não incorpora alimentos personalizados.');
+has(release,'window.TeamBullsDietLiveCalories?.refresh?.()','Mudança no catálogo personalizado não recalcula a dieta aberta.');
+has(release,"customFoodObserver.observe(host,{childList:true,subtree:true,characterData:true})",'Alterações em Meus Alimentos não são observadas para recálculo.');
+lacks(release,"db.collection(",'Ponte de alimentos personalizados não deve criar nova leitura Firestore.');
+
 const portionIndex=config.indexOf('diet-portion-presets-v10_10_9.js');
 const personalizationIndex=config.indexOf('diet-personalization-v10_10_11.js');
 const caloriesIndex=config.indexOf('diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2');
+const releaseIndex=config.indexOf('release-coherence-v10_10_10.js?v=10.10.11-release2');
 const trainingIndex=config.indexOf('training-integrity-v10_10_11.js');
-assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex,'Ordem do loader não garante tabela → personalização → calorias/macros.');
+assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → ponte personalizada.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2",`${name} não prepara a revisão automática de macros para uso offline.`);
   has(text,"const CACHE_HOTFIX='dietautomacros1'",`${name} não invalida o shell antigo da calculadora.`);
@@ -99,4 +114,4 @@ if(source){
 }
 
 if(fail.length){console.error('FALHA — diet live calories\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — calorias/macros em tempo real, cálculo automático do treinador, g/kg corporal, offline e compatibilidade validados.');
+console.log('APROVADO — calorias/macros em tempo real, alimentos personalizados, g/kg corporal, offline e compatibilidade validados.');
