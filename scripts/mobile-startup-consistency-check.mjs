@@ -24,8 +24,8 @@ const workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 
 assert(version.version==='10.10.9','version.json alterou a versão pública inesperadamente.');
-assert(version.build===2026082501,'version.json não possui o build esperado.');
-assert(version.revision==='diet-live-calories-1','version.json não identifica a revisão atual.');
+assert(version.build===2026082502,'version.json não possui o build esperado.');
+assert(version.revision==='trainer-diet-workspace-1','version.json não identifica a revisão atual.');
 assert(updaterBuild===version.build,'Atualizador e version.json usam builds diferentes.');
 assert(workerBuild===version.build&&bridgeBuild===version.build,'Service Workers e version.json usam builds diferentes.');
 
@@ -41,11 +41,12 @@ has(updater,'function safeForAutomaticHotfix()','Atualização automática não 
 has(updater,"if(screen!=='screen-auth')return false",'Atualizador poderia reiniciar durante uso ativo.');
 has(updater,'&b=${CURRENT_BUILD}','Service Worker não é registrado com build.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
-  has(text,"const CACHE_HOTFIX='dietautomacros1'",`${name} não preserva a revisão atual do shell móvel.`);
+  has(text,"const CACHE_HOTFIX='dietworkspace1'",`${name} não preserva a revisão atual do shell móvel.`);
   has(text,"type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION",`${name} não anuncia o build ativado.`);
   has(text,"if(relativePath==='/version.json')",`${name} deixou de tratar version.json como mutável.`);
+  has(text,"./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1",`${name} não prepara o workspace do treinador para uso offline.`);
 }
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'sw_47.js divergiu do Service Worker principal.');
 
 if(fail.length){console.error('FALHA — mobile startup consistency\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — restauração móvel, autorreparo e consistência de build verificados.');
+console.log('APROVADO — restauração móvel, autorreparo, workspace do treinador e consistência de build verificados.');
