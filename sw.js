@@ -238,6 +238,6 @@ self.addEventListener('fetch',event=>{
   /* URLs versionadas continuam cache-first para não penalizar o login móvel.
      version.json e a revisão do Service Worker são as fontes de invalidação. */
   if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v')){event.respondWith(cacheFirst(request,{cacheName:SHELL_CACHE}));return;}
-  if(MUTABLE_PATHS.has(relativePath)){event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout=MUTABLE_NETWORK_TIMEOUT_MS}));return;}
+  if(MUTABLE_PATHS.has(relativePath)){event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));return;}
   event.respondWith(networkFirst(request,{cacheName:RUNTIME_CACHE}));
 });
