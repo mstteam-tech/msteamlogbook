@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082401,
-  "revision": "mobile-startup-1",
-  "publishedAt": "2026-08-24T20:40:00Z",
+  "build": 2026082501,
+  "revision": "diet-live-calories-1",
+  "publishedAt": "2026-08-25T12:56:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Inicialização móvel mais rápida e resiliente, autorreparo de módulos e atualização automática de hotfixes."
+  "message": "Contagem automática de calorias e macronutrientes ao montar a dieta com a tabela de porções pré-estabelecidas."
 }
