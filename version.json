@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082502,
-  "revision": "trainer-diet-workspace-1",
-  "publishedAt": "2026-08-25T19:35:00Z",
+  "build": 2026082503,
+  "revision": "trainer-inbox-payments-1",
+  "publishedAt": "2026-08-25T20:24:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Workspace contínuo do treinador para montar refeições, navegar entre elas e acompanhar macros e tabela de porções sem fechar a prescrição."
+  "message": "Central do treinador para relatórios e atualizações com notificações internas, além de controle privado de pagamentos, vencimentos e comprovantes."
 }
