@@ -2,9 +2,9 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const BUILD_REVISION=2026082502;
+const BUILD_REVISION=2026082503;
 const CACHE_REVISION='guidance2';
-const CACHE_HOTFIX='dietworkspace1';
+const CACHE_HOTFIX='inboxpayments1';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -74,6 +74,7 @@ const OPTIONAL_SHELL=[
   './modules/report-schedule-consistency-v10_10_11.js?v=10.10.11-reportschedule1',
   './modules/cardio-finish-alert-v10_10_11.js?v=10.10.11-cardioalert1',
   './modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1',
+  './modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments1',
   './assets/photo-guide/page-1.png?v=10.10.9',
   './assets/photo-guide/page-2.png?v=10.10.9',
   './assets/photo-guide/page-3.png?v=10.10.9',
@@ -237,6 +238,6 @@ self.addEventListener('fetch',event=>{
   /* URLs versionadas continuam cache-first para não penalizar o login móvel.
      version.json e a revisão do Service Worker são as fontes de invalidação. */
   if(VERSIONED_PATH_PATTERN.test(fileName)||url.searchParams.has('v')){event.respondWith(cacheFirst(request,{cacheName:SHELL_CACHE}));return;}
-  if(MUTABLE_PATHS.has(relativePath)){event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout:MUTABLE_NETWORK_TIMEOUT_MS}));return;}
+  if(MUTABLE_PATHS.has(relativePath)){event.respondWith(networkFirst(request,{cacheName:SHELL_CACHE,timeout=MUTABLE_NETWORK_TIMEOUT_MS}));return;}
   event.respondWith(networkFirst(request,{cacheName:RUNTIME_CACHE}));
 });
