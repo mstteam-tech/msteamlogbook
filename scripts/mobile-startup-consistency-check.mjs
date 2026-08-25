@@ -41,7 +41,7 @@ has(updater,'function safeForAutomaticHotfix()','Atualização automática não 
 has(updater,"if(screen!=='screen-auth')return false",'Atualizador poderia reiniciar durante uso ativo.');
 has(updater,'&b=${CURRENT_BUILD}','Service Worker não é registrado com build.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
-  has(text,"const CACHE_HOTFIX='mobilestartup1'",`${name} não preserva o shell móvel.`);
+  has(text,"const CACHE_HOTFIX='dietautomacros1'",`${name} não preserva a revisão atual do shell móvel.`);
   has(text,"type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION",`${name} não anuncia o build ativado.`);
   has(text,"if(relativePath==='/version.json')",`${name} deixou de tratar version.json como mutável.`);
 }

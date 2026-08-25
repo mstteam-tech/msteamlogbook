@@ -4,7 +4,7 @@
 const APP_VERSION='10.10.9';
 const BUILD_REVISION=2026082501;
 const CACHE_REVISION='guidance2';
-const CACHE_HOTFIX='mobilestartup1';
+const CACHE_HOTFIX='dietautomacros1';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -69,7 +69,7 @@ const OPTIONAL_SHELL=[
   './team-bulls-desktop-menu-v10-5-6.webp',
   './modules/photo-guide-v10_10_9.js?v=10.10.9',
   './modules/diet-personalization-v10_10_11.js?v=10.10.11-dietpersonal1',
-  './modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories1',
+  './modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2',
   './modules/training-integrity-v10_10_11.js?v=10.10.11-training1',
   './modules/report-schedule-consistency-v10_10_11.js?v=10.10.11-reportschedule1',
   './modules/cardio-finish-alert-v10_10_11.js?v=10.10.11-cardioalert1',
