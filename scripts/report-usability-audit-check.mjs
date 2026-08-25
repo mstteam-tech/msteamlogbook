@@ -71,7 +71,7 @@ const modalIndex=config.indexOf('modal-stack-stability-v10_10_9.js?v=10.10.9-mod
 assert(workflowIndex>=0&&lockIndex>workflowIndex&&gerLockIndex>lockIndex&&reportIndex>gerLockIndex&&auditIndex>reportIndex&&modalIndex>auditIndex,'Ordem dos hotfixes de tranca/relatório/auditoria está incorreta.');
 
 for(const [name,source] of [['sw.js',sw],['sw_47.js',sw47]]){
-  assert(/const CACHE_HOTFIX='(?:audit1|reads1|trainerworkflow1|mobilestartup1)'/.test(source),`${name} não força shell compatível com auditoria ou evolução posterior.`);
+  assert(/const CACHE_HOTFIX='(?:audit1|reads1|trainerworkflow1|mobilestartup1|dietautomacros1)'/.test(source),`${name} não força shell compatível com auditoria ou evolução posterior.`);
   has(source,"./modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1",`${name} não prepara fotos rápidas de relatório.`);
   has(source,"./modules/usability-audit-v10_10_10.js?v=10.10.10-audit1",`${name} não prepara auditoria de usabilidade.`);
 }
