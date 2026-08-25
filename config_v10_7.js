@@ -1,4 +1,4 @@
-/* Configuração pública Team Bulls v10.10.10.
+/* Configuração pública Team Bulls v10.10.11 — bootstrap móvel resiliente.
    A chave do App Check/reCAPTCHA Enterprise é pública por definição.
    Não coloque senhas, chaves privadas ou credenciais administrativas aqui. */
 window.TEAM_BULLS_PUBLIC_CONFIG=Object.freeze({
@@ -12,10 +12,44 @@ if('caches' in window){
 (()=>{
   let installed=false;
   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  const stored=key=>{try{return typeof storageGet==='function'?storageGet(key):localStorage.getItem(key);}catch(error){return null;}};
+  const restoringCloudSession=()=>{
+    const uid=String(stored('teamms_last_user_uid')||'').trim();
+    const guest=stored('teamms_offline_pref')==='1'||stored('teamms_offline_mode')==='guest';
+    return !!uid&&!guest&&navigator.onLine!==false;
+  };
   const patch=()=>{
     if(installed)return true;
     if(typeof withTimeout!=='function'||typeof ensureFirebaseReady!=='function'||typeof cloudGet!=='function')return false;
     installed=true;
+
+    // O bootstrap original liberava o login cedo demais durante a restauração de
+    // uma sessão existente. Mantemos entrada rápida para primeira utilização, mas
+    // damos tempo real ao Firebase quando o aparelho já conhece o usuário.
+    if(typeof startBootWatchdog==='function'&&!startBootWatchdog.__tbMobileSessionRestore){
+      const wrapped=function(){
+        BOOT_SETTLED=false;
+        clearTimeout(BOOT_WATCHDOG);
+        clearTimeout(AUTH_UI_FALLBACK_TIMER);
+        const restoring=restoringCloudSession();
+        const authDelay=restoring?4200:700;
+        const hardDelay=restoring?8500:4600;
+        AUTH_UI_FALLBACK_TIMER=setTimeout(()=>{
+          if(BOOT_SETTLED||!document.getElementById('screen-loading')?.classList.contains('active'))return;
+          showScreen('screen-auth');
+          if(restoring)window.TeamBullsRecovery?.reveal?.('A sessão está levando mais tempo que o normal para ser restaurada. Você pode aguardar ou entrar novamente.');
+        },authDelay);
+        BOOT_WATCHDOG=setTimeout(()=>{
+          if(BOOT_SETTLED||!document.getElementById('screen-loading')?.classList.contains('active'))return;
+          AUTH_HANDLED=false;
+          showScreen('screen-auth');
+          window.TeamBullsRecovery?.reveal?.('A conexão ainda está sendo conferida. A tela de acesso foi liberada sem apagar seus dados locais.');
+        },hardDelay);
+      };
+      wrapped.__tbMobileSessionRestore=true;
+      startBootWatchdog=wrapped;
+    }
+
     if(!withTimeout.__tbFirebaseResilience){
       const base=withTimeout;
       const wrapped=function(task,ms,label='operação'){
@@ -63,41 +97,118 @@ if('caches' in window){
       const wrapped=async function(reference,label='consulta'){
         try{return await base(reference,label);}catch(error){
           const retryable=navigator.onLine&&(typeof isNetworkLikeError==='function'?isNetworkLikeError(error):false);
-          if(!retryable)throw error;await delay(400);return base(reference,label+' · nova tentativa');
+          if(!retryable)throw error;
+          await delay(400);
+          return base(reference,label+' · nova tentativa');
         }
       };
       wrapped.__tbRetry=true;cloudGet=wrapped;
     }
     return true;
   };
-  patch();document.addEventListener('DOMContentLoaded',patch,{once:true});window.addEventListener('load',()=>{if(!installed)patch();},{once:true});
+  patch();
+  document.addEventListener('DOMContentLoaded',patch,{once:true});
+  window.addEventListener('load',()=>{if(!installed)patch();},{once:true});
 })();
 
 (()=>{
-  let requested=false,deferredStarted=false,deferredBatchCount=0;
+  let requested=false,deferredStarted=false,deferredBatchCount=0,healing=false,healTimer=null,readyResolved=false,hadFailures=false;
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const criticalModules=['./modules/security-hardening-v10_10_9.js?v=10.10.10-security8'];
   const modules=[
     './modules/session-save-performance-v10_10_9.js?v=10.10.9-sessionperf1','./modules/week-selection-fix-v10_10_9.js?v=10.10.9-weekselection1','./modules/stability_v10_10_9.js?v=10.10.9','./modules/app-update-v10_10_9.js?v=10.10.9','./modules/diet-scroll-fix-v10_10_9.js?v=10.10.9','./modules/modal-form-guard-v10_10_9.js?v=10.10.9','./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3','./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1','./modules/global-performance-v10_10_9.js?v=10.10.9-perf2','./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1','./modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1','./modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1','./modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2','./modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1','./modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1','./modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2','./modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1','./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1','./modules/usability-checkup-v10_10_9.js?v=10.10.9-usability1','./modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','./modules/workflow-controls-v10_10_10.js?v=10.10.10-workflow1','./modules/prescription-lock-bridge-v10_10_10.js?v=10.10.10-lockbridge1','./modules/ger-lock-bridge-v10_10_10.js?v=10.10.10-gerlock1','./modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1','./modules/usability-audit-v10_10_10.js?v=10.10.10-audit1','./modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1','./modules/diet-calculation-math-v10_10_9.js?v=10.10.10-dietmath1','./modules/diet-calculation-evolution-v10_10_9.js?v=10.10.10-dietcalc1','./modules/diet-portion-presets-v10_10_9.js?v=10.10.10-portions1','./modules/diet-personalization-v10_10_11.js?v=10.10.11-dietpersonal1','./modules/training-integrity-v10_10_11.js?v=10.10.11-training1','./modules/report-schedule-consistency-v10_10_11.js?v=10.10.11-reportschedule1','./modules/cardio-finish-alert-v10_10_11.js?v=10.10.11-cardioalert1','./modules/release-coherence-v10_10_10.js?v=10.10.10-release1'
   ];
-  const preloadModules=items=>items.forEach(src=>{if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;document.head.appendChild(link);});
-  const loadScriptOnce=(src,timeoutMs=3200)=>new Promise(resolve=>{
-    const script=document.createElement('script');let settled=false;
-    const finish=(ok,reason='')=>{if(settled)return;settled=true;clearTimeout(timer);script.onload=null;script.onerror=null;if(!ok&&script.isConnected)script.remove();if(reason)console.warn('[Team Bulls] Extensão opcional indisponível:',src,reason);const settle=()=>resolve(ok);if(deferredStarted&&++deferredBatchCount%4===0)requestAnimationFrame(settle);else settle();};
-    script.src=src;script.async=false;script.onload=()=>finish(true);script.onerror=()=>finish(false,'erro de carregamento');
-    const timer=setTimeout(()=>finish(false,'tempo limite'),Math.max(1200,Number(timeoutMs)||3200));document.head.appendChild(script);
+  const loadedModules=new Set(),failedModules=new Set();
+  let readyResolve=null;
+  const ready=new Promise(resolve=>{readyResolve=resolve;});
+
+  const preloadModules=items=>items.forEach(src=>{
+    if(document.head.querySelector(`link[rel="preload"][as="script"][href="${src}"]`))return;
+    const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;document.head.appendChild(link);
   });
+  const preloadAhead=index=>preloadModules(modules.slice(Math.max(0,index),Math.max(0,index)+6));
+  const runtimeDetail=()=>({loaded:loadedModules.size,total:criticalModules.length+modules.length,failed:[...failedModules]});
+  const emitRuntimeState=type=>{try{window.dispatchEvent(new CustomEvent(type,{detail:runtimeDetail()}));}catch(error){}};
+  const markReady=()=>{
+    if(readyResolved||failedModules.size)return;
+    readyResolved=true;document.documentElement.dataset.teamBullsRuntime='ready';
+    readyResolve?.(true);emitRuntimeState('team-bulls-runtime-ready');
+    if(hadFailures&&typeof showToast==='function')showToast('✓ Recursos do aplicativo sincronizados');
+  };
+
+  const loadScriptOnce=(src,timeoutMs=3200)=>{
+    if(loadedModules.has(src))return Promise.resolve(true);
+    return new Promise(resolve=>{
+      const script=document.createElement('script');let settled=false;
+      const finish=(ok,reason='')=>{
+        if(settled)return;settled=true;clearTimeout(timer);script.onload=null;script.onerror=null;
+        if(ok){loadedModules.add(src);failedModules.delete(src);script.dataset.tbModuleReady='1';}
+        else{failedModules.add(src);hadFailures=true;if(script.isConnected)script.remove();}
+        if(reason)console.warn('[Team Bulls] Extensão temporariamente indisponível:',src,reason);
+        emitRuntimeState('team-bulls-runtime-state');
+        const settle=()=>resolve(ok);if(deferredStarted&&++deferredBatchCount%4===0)requestAnimationFrame(settle);else settle();
+      };
+      script.src=src;script.async=false;script.onload=()=>finish(true);script.onerror=()=>finish(false,'erro de carregamento');
+      const timer=setTimeout(()=>finish(false,'tempo limite'),Math.max(1200,Number(timeoutMs)||3200));document.head.appendChild(script);
+    });
+  };
   const loadScript=async(src,timeoutMs=3200)=>{
+    if(loadedModules.has(src))return true;
     let ok=await loadScriptOnce(src,timeoutMs);
     if(!ok&&navigator.onLine){
       await wait(250);
       ok=await loadScriptOnce(src,Math.max(6500,Number(timeoutMs)||3200));
     }
-    if(!ok)console.warn('[Team Bulls] Módulo opcional não carregado após nova tentativa:',src);
+    if(!ok)console.warn('[Team Bulls] Módulo colocado na fila de autorreparo:',src);
     return ok;
   };
-  const loadDeferred=async()=>{if(deferredStarted)return;deferredStarted=true;for(const src of modules)await loadScript(src);};
-  const scheduleDeferred=()=>{const queue=()=>{'requestIdleCallback'in window?requestIdleCallback(()=>loadDeferred(),{timeout:1200}):setTimeout(()=>loadDeferred(),220);};const afterPaint=()=>requestAnimationFrame(()=>requestAnimationFrame(queue));if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});else afterPaint();};
-  const load=async()=>{if(requested)return;requested=true;preloadModules(criticalModules);for(const src of criticalModules)await loadScript(src,6500);scheduleDeferred();};
+  const scheduleHeal=(delay=1800)=>{
+    clearTimeout(healTimer);
+    if(!failedModules.size)return;
+    healTimer=setTimeout(()=>healFailedModules(),Math.max(400,delay));
+  };
+  const healFailedModules=async()=>{
+    if(healing||!failedModules.size||navigator.onLine===false)return false;
+    healing=true;
+    const pending=[...failedModules];preloadModules(pending.slice(0,6));
+    try{for(const src of pending)await loadScript(src,9000);}
+    finally{healing=false;}
+    if(failedModules.size)scheduleHeal(5000);else markReady();
+    return failedModules.size===0;
+  };
+  const loadDeferred=async()=>{
+    if(deferredStarted)return;
+    deferredStarted=true;document.documentElement.dataset.teamBullsRuntime='loading';
+    for(const src of modules)await loadScript(src);
+    if(failedModules.size){
+      if(typeof showToast==='function')showToast('Conexão instável: alguns recursos continuam sendo finalizados automaticamente.',true);
+      scheduleHeal(1200);
+    }else markReady();
+  };
+  const scheduleDeferred=()=>{
+    const queue=()=>{
+      preloadAhead(0);
+      if('requestIdleCallback'in window)requestIdleCallback(()=>loadDeferred(),{timeout:900});else setTimeout(()=>loadDeferred(),160);
+    };
+    const afterPaint=()=>requestAnimationFrame(queue);
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterPaint,{once:true});else afterPaint();
+  };
+  const load=async()=>{
+    if(requested)return;requested=true;
+    for(const src of criticalModules)await loadScript(src,6500);
+    scheduleDeferred();
+  };
+
+  // A camada de segurança começa a baixar ainda durante o parse, sem executar
+  // antes do núcleo. Isso reduz a janela entre autenticação e painel do treinador.
+  preloadModules(criticalModules);
+  window.TeamBullsRuntimeLoader=Object.freeze({
+    version:'10.10.11-startup1',ready,
+    state:runtimeDetail,
+    retry:healFailedModules
+  });
+  window.addEventListener('online',()=>scheduleHeal(500));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scheduleHeal(700);});
+  window.addEventListener('pageshow',()=>scheduleHeal(900));
   if(window.TeamBulls107)load();else window.addEventListener('team-bulls-v107-ready',load,{once:true});
 })();
