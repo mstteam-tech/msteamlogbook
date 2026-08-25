@@ -2,7 +2,7 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026082501;
+  const CURRENT_BUILD=2026082502;
   const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
