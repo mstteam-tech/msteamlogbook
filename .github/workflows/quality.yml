@@ -38,3 +38,4 @@ jobs:
           node scripts/production-audit-check.mjs
           node scripts/trainer-workflow-v10_10_11-check.mjs
           node scripts/mobile-startup-consistency-check.mjs
+          node scripts/diet-live-calories-check.mjs

@@ -12,16 +12,17 @@ const worker=read('sw.js');
 const bridge=read('sw_47.js');
 const manifest=JSON.parse(read('manifest.json'));
 const version=JSON.parse(read('version.json'));
+const BUILD=2026082501;
 
 assert(version.version==='10.10.9','version.json incorreto');
-assert(version.build===2026082401,'version.json não informa o build atual');
+assert(version.build===BUILD,'version.json não informa o build atual');
 assert(manifest.start_url==='./index.html','start_url ainda está preso a uma versão antiga');
 assert(manifest.scope==='./','scope do manifesto incorreto');
 assert(html.includes('update_v10_10_9.js?v=10.10.9'),'gerenciador de atualização não é carregado');
 assert(html.includes('manifest.json?v=10.10.9'),'manifesto estável não é utilizado');
 assert(html.includes('modules/v107-core.js?v=10.10.9'),'módulos estáveis não possuem bust de versão');
 assert(!core.includes("serviceWorker.register('sw_47.js'"),'núcleo ainda registra o worker obsoleto');
-assert(updater.includes('const CURRENT_BUILD=2026082401'),'atualizador não conhece o build atual');
+assert(updater.includes(`const CURRENT_BUILD=${BUILD}`),'atualizador não conhece o build atual');
 assert(updater.includes('navigator.serviceWorker.register(`./sw.js?v=${encodeURIComponent(CURRENT_VERSION)}&b=${CURRENT_BUILD}`'),'worker estável não é registrado com build');
 assert(updater.includes("fetch(`${VERSION_URL}?t=${Date.now()}`"),'verificação de versão não evita cache HTTP');
 assert(updater.includes('sessionStorage.setItem(UPDATE_RELOAD_KEY,releaseKey(target))'),'recarga de atualização não grava versão + build');
@@ -31,7 +32,7 @@ assert(updater.includes("if(screen!=='screen-auth')return false"),'hotfix poderi
 assert(updater.includes("TB?.flushDrafts?.()"),'rascunhos não são salvos antes da atualização');
 assert(updater.includes("manualCheck:()=>checkForUpdates"),'verificação manual não está exposta');
 assert(worker.includes("const APP_VERSION='10.10.9'"),'versão do Service Worker incorreta');
-assert(worker.includes('const BUILD_REVISION=2026082401'),'Service Worker não anuncia build');
+assert(worker.includes(`const BUILD_REVISION=${BUILD}`),'Service Worker não anuncia build');
 assert(worker.includes("request.mode==='navigate'"),'navegação não é interceptada');
 assert(worker.includes('navigationCacheFirst(request,event)'),'navegação não abre imediatamente pelo cache');
 assert(worker.includes('event.waitUntil(refreshNavigation(request,event,fallback))'),'HTML não é atualizado em segundo plano após abrir pelo cache');
