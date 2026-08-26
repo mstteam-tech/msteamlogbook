@@ -54,7 +54,8 @@ for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
 }
 
 has(invites,'suspendAuthListenerForRegistration','Cadastro canônico perdeu a pausa do listener de autenticação.');
-has(invites,'cred.user.getIdToken(true)','Cadastro canônico perdeu a renovação de token.');
+has(invites,'cred.user.getIdTokenResult(true)','Cadastro canônico perdeu a renovação de token/claims.');
+has(invites,'await ensureRegistrationAppCheck()','Cadastro canônico perdeu o preflight de App Check.');
 has(invites,'doRegister.__tbCanonicalInviteRegistration=true','Cadastro canônico não está identificado para autorreparo.');
 has(invites,"window.addEventListener('team-bulls-runtime-state',enforceCanonicalRegistration)",'Cadastro canônico não se restaura após módulos diferidos.');
 lacks(integrity,'doRegister=secured','registration-integrity voltou a sobrescrever o cadastro canônico.');
@@ -63,4 +64,4 @@ has(integrity,"const VERSION='10.10.9-registration2'",'Camada passiva de integri
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'sw_47.js divergiu do Service Worker principal.');
 
 if(fail.length){console.error('FALHA — mobile startup consistency\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — build ${version.build}, cadastro por convite, cache móvel, Rules 27 e Service Workers coerentes.`);
+console.log(`APROVADO — build ${version.build}, cadastro por convite, App Check, cache móvel, Rules 27 e Service Workers coerentes.`);
