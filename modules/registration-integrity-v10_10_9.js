@@ -8,22 +8,18 @@
 
   /*
    * O fluxo de cadastro pertence exclusivamente a modules/v107-invites.js.
-   * Esta camada existia para proteger commits incertos, mas a revisão anterior
-   * reinstalava uma cópia própria de doRegister depois do carregamento inicial.
-   * Isso desfazia a correção que pausa o listener de autenticação durante a
-   * criação de /users/{uid} + consumo do convite e reabria a corrida que podia
-   * causar `Missing or insufficient permissions` em aparelhos onde este módulo
-   * terminava de carregar antes de o usuário tocar em "Criar novo registro".
-   *
-   * A partir de registration2 esta extensão é deliberadamente passiva: ela
-   * observa o fluxo canônico, expõe diagnóstico e nunca substitui doRegister.
+   * Esta camada é deliberadamente passiva: observa o fluxo canônico, expõe
+   * diagnóstico e nunca substitui doRegister. A renovação da credencial pode
+   * usar getIdToken(true) ou getIdTokenResult(true); a segunda forma também
+   * permite usar o e-mail canônico presente nas claims das Rules.
    */
   function inspect(){
     const available=typeof doRegister==='function';
     const source=available?String(doRegister):'';
+    const refreshedToken=source.includes('getIdToken(true)')||source.includes('getIdTokenResult(true)');
     const canonical=available
       && source.includes('suspendAuthListenerForRegistration')
-      && source.includes('getIdToken(true)')
+      && refreshedToken
       && source.includes('db.runTransaction');
     const state=Object.freeze({version:VERSION,available,canonical});
     window.TeamBullsRegistrationIntegrity=state;
