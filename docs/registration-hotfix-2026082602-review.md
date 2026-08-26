@@ -1,0 +1,1 @@
+Validação esperada: o teste `testes/testar_cadastro_convite_v10_10_9.js` deve confirmar que `registration-integrity` não substitui mais `doRegister` e que o fluxo canônico se restaura após módulos diferidos.
