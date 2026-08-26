@@ -2,6 +2,7 @@
 const fs=require('fs'),path=require('path');
 const root=path.resolve(__dirname,'..');
 const invites=fs.readFileSync(path.join(root,'modules/v107-invites.js'),'utf8');
+const integrity=fs.readFileSync(path.join(root,'modules/registration-integrity-v10_10_9.js'),'utf8');
 const rules=fs.readFileSync(path.join(root,'firebase/firestore_27_compacto.rules'),'utf8');
 function need(v,m){if(!v)throw new Error(m);}
 const pause=invites.indexOf('authListenerSuspended=suspendAuthListenerForRegistration()');
@@ -17,6 +18,10 @@ need(profileWrite>transaction&&inviteWrite>profileWrite,'Perfil e consumo do con
 need(resume>transaction,'O observador só pode voltar depois da janela crítica do cadastro.');
 need(invites.includes("if(typeof AUTH_UNSUBSCRIBE==='function')"),'A pausa precisa usar o unsubscribe já controlado pelo núcleo.');
 need(invites.includes("if(typeof startAuthListener==='function')startAuthListener()"),'O observador precisa ser restaurado pelo inicializador oficial.');
+need(invites.includes('doRegister.__tbCanonicalInviteRegistration=true'),'O fluxo canônico precisa ser identificado explicitamente.');
+need(invites.includes("window.addEventListener('team-bulls-runtime-state',enforceCanonicalRegistration)"),'O cadastro seguro deve se restaurar após cada módulo diferido.');
+need(!integrity.includes('doRegister=secured'),'A camada de integridade não pode mais substituir doRegister.');
+need(integrity.includes("const VERSION='10.10.9-registration2'"),'A revisão passiva da integridade do cadastro precisa estar ativa.');
 need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid"),'A criação do aluno deve continuar dependente do convite consumido atomicamente.');
 need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
-console.log('APROVADO: cadastro por convite preserva atomicidade e não sofre logout concorrente do guard de autenticação.');
+console.log('APROVADO: cadastro por convite mantém o fluxo canônico mesmo após módulos diferidos e preserva a atomicidade das regras.');

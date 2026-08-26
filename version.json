@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082601,
-  "revision": "registration-permission-race-1",
-  "publishedAt": "2026-08-26T16:20:00Z",
+  "build": 2026082602,
+  "revision": "registration-integrity-hotfix-2",
+  "publishedAt": "2026-08-26T16:40:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Correção do cadastro por convite para impedir logout concorrente durante a criação segura do perfil do aluno."
+  "message": "Correção definitiva do cadastro por convite: impede que módulos carregados depois substituam o fluxo seguro de registro do aluno."
 }

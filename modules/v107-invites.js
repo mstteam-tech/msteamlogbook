@@ -162,6 +162,22 @@
     }
   };
 
+  /* A camada de integridade legada era carregada depois deste módulo e podia
+     substituir doRegister por uma cópia antiga. Em instalações que ainda tenham
+     esse arquivo no cache, restauramos imediatamente o fluxo canônico depois de
+     cada módulo diferido. Isso torna o hotfix compatível até com caches antigos. */
+  doRegister.__tbCanonicalInviteRegistration=true;
+  const CANONICAL_REGISTER=doRegister;
+  function enforceCanonicalRegistration(){
+    if(typeof doRegister==='function'&&doRegister!==CANONICAL_REGISTER){
+      console.warn('[Team Bulls] Fluxo legado de cadastro ignorado; restaurando cadastro seguro por convite.');
+      doRegister=CANONICAL_REGISTER;
+    }
+  }
+  window.addEventListener('team-bulls-runtime-state',enforceCanonicalRegistration);
+  window.addEventListener('team-bulls-runtime-ready',enforceCanonicalRegistration);
+  window.addEventListener('pageshow',enforceCanonicalRegistration);
+
   function updateRegisterCopy(){
     const input=document.getElementById('reg-code');if(!input)return;
     const label=input.closest('.form-group')?.querySelector('.form-label');
