@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082601,
-  "revision": "registration-integrity-hotfix-2-loop-stop",
-  "publishedAt": "2026-08-26T16:50:00Z",
+  "build": 2026082603,
+  "revision": "registration-release-coherence-3",
+  "publishedAt": "2026-08-26T18:10:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Correção do cadastro por convite mantida; build publicado alinhado ao atualizador para impedir ciclo infinito de atualização."
+  "message": "Correção do cadastro por convite e da atualização móvel: release, cache e Service Worker sincronizados para impedir permission-denied e ciclos de atualização."
 }
