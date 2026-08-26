@@ -1,9 +1,14 @@
 'use strict';
 const fs=require('fs'),path=require('path');
 const root=path.resolve(__dirname,'..');
-const invites=fs.readFileSync(path.join(root,'modules/v107-invites.js'),'utf8');
-const integrity=fs.readFileSync(path.join(root,'modules/registration-integrity-v10_10_9.js'),'utf8');
-const rules=fs.readFileSync(path.join(root,'firebase/firestore_27_compacto.rules'),'utf8');
+const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+const invites=read('modules/v107-invites.js');
+const integrity=read('modules/registration-integrity-v10_10_9.js');
+const rules=read('firebase/firestore_27_compacto.rules');
+const updater=read('update_v10_10_9.js');
+const sw=read('sw.js');
+const bridge=read('sw_47.js');
+const version=JSON.parse(read('version.json'));
 function need(v,m){if(!v)throw new Error(m);}
 const pause=invites.indexOf('authListenerSuspended=suspendAuthListenerForRegistration()');
 const create=invites.indexOf('auth.createUserWithEmailAndPassword(email,pass)');
@@ -12,6 +17,9 @@ const transaction=invites.indexOf('db.runTransaction(async transaction=>');
 const profileWrite=invites.indexOf("transaction.set(db.collection('users').doc(cred.user.uid),userData)");
 const inviteWrite=invites.indexOf("transaction.update(inviteRef,{active:false,usedBy:cred.user.uid");
 const resume=invites.indexOf('resumeAuthListenerAfterRegistration(authListenerSuspended)');
+const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
+const workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
+const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 need(pause>=0&&create>pause,'O observador de autenticação deve ser pausado antes de criar a conta Auth.');
 need(token>create&&transaction>token,'A credencial deve ser renovada antes da transação protegida.');
 need(profileWrite>transaction&&inviteWrite>profileWrite,'Perfil e consumo do convite devem permanecer na mesma transação.');
@@ -24,4 +32,8 @@ need(!integrity.includes('doRegister=secured'),'A camada de integridade não pod
 need(integrity.includes("const VERSION='10.10.9-registration2'"),'A revisão passiva da integridade do cadastro precisa estar ativa.');
 need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid"),'A criação do aluno deve continuar dependente do convite consumido atomicamente.');
 need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
-console.log('APROVADO: cadastro por convite mantém o fluxo canônico mesmo após módulos diferidos e preserva a atomicidade das regras.');
+need(updaterBuild===version.build&&workerBuild===version.build&&bridgeBuild===version.build,'Build do cadastro precisa ser idêntico no endpoint, atualizador e dois Service Workers.');
+need(updater.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Atualizador deve renovar explicitamente a integridade do cadastro.');
+need(sw.includes("const CACHE_HOTFIX='registration3'")&&bridge.includes("const CACHE_HOTFIX='registration3'"),'Hotfix precisa invalidar os caches de shell antigos.');
+need(sw.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2")&&bridge.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Service Workers não podem preparar a revisão registration1 antiga.');
+console.log(`APROVADO: cadastro por convite, atomicidade, entrega do hotfix e build ${version.build} estão coerentes.`);

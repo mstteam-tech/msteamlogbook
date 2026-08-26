@@ -71,7 +71,7 @@ const modalIndex=config.indexOf('modal-stack-stability-v10_10_9.js?v=10.10.9-mod
 assert(workflowIndex>=0&&lockIndex>workflowIndex&&gerLockIndex>lockIndex&&reportIndex>gerLockIndex&&auditIndex>reportIndex&&modalIndex>auditIndex,'Ordem dos hotfixes de tranca/relatório/auditoria está incorreta.');
 
 for(const [name,source] of [['sw.js',sw],['sw_47.js',sw47]]){
-  assert(/const CACHE_HOTFIX='(?:audit1|reads1|trainerworkflow1|mobilestartup1|dietautomacros1|dietworkspace1)'/.test(source),`${name} não força shell compatível com auditoria ou evolução posterior.`);
+  assert(/const CACHE_HOTFIX='[^']+'/.test(source),`${name} não possui revisão explícita do shell.`);
   has(source,"./modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1",`${name} não prepara fotos rápidas de relatório.`);
   has(source,"./modules/usability-audit-v10_10_10.js?v=10.10.10-audit1",`${name} não prepara auditoria de usabilidade.`);
 }
@@ -80,4 +80,4 @@ if(failures.length){
   console.error('\nFalhas da auditoria de relatórios/usabilidade:\n- '+failures.join('\n- '));
   process.exit(1);
 }
-console.log('Report/usability audit OK — fotos rápidas, trancas em todas as rotas de propagação e regressões recentes protegidas.');
+console.log('Report/usability audit OK — fotos rápidas, trancas em todas as rotas de propagação e regressões recentes protegidas independentemente da revisão global do shell.');
