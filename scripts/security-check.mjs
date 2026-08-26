@@ -10,15 +10,9 @@ const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const requireFile=rel=>assert(fs.existsSync(path.join(root,rel)),`Arquivo obrigatório ausente: ${rel}`);
 
 const required=[
-  'firebase/firestore_27_compacto.rules',
-  'firebase/storage_5.rules',
-  'modules/security-hardening-v10_10_9.js',
-  'modules/registration-integrity-v10_10_9.js',
-  'modules/remove-stretch-planilha-v10_10_9.js',
-  'modules/v107-invites.js',
-  'config_v10_7.js',
-  'index.html',
-  'firebase.json'
+  'firebase/firestore_27_compacto.rules','firebase/storage_5.rules','modules/security-hardening-v10_10_9.js',
+  'modules/registration-integrity-v10_10_9.js','modules/remove-stretch-planilha-v10_10_9.js','modules/v107-invites.js',
+  'config_v10_7.js','index.html','firebase.json'
 ];
 required.forEach(requireFile);
 if(failures.length){console.error(failures.join('\n'));process.exit(1);}
@@ -69,7 +63,10 @@ has(invites,"return'unknown'",'Cadastro não trata resultado de commit indetermi
 has(invites,"if(state==='committed')",'Cadastro não reconcilia commit confirmado após falha de rede.');
 has(invites,'TB.inviteHash=sha256','Fluxo canônico não expõe o hash criptográfico dos convites.');
 has(invites,'authListenerSuspended=suspendAuthListenerForRegistration()','Cadastro não pausa o listener global antes da criação Auth.');
-has(invites,'cred.user.getIdToken(true)','Cadastro não renova a credencial antes da transação protegida.');
+has(invites,'cred.user.getIdTokenResult(true)','Cadastro não renova a credencial/claims antes da transação protegida.');
+has(invites,'await ensureRegistrationAppCheck()','Cadastro não valida App Check antes de criar a conta Auth.');
+has(invites,'service.getToken(true)','Cadastro não força token App Check válido antes do convite.');
+has(invites,"window.TeamBullsRegistrationDiagnostics=registrationDiagnostic",'Cadastro não expõe diagnóstico seguro por etapa.');
 has(invites,'doRegister.__tbCanonicalInviteRegistration=true','Cadastro seguro não está marcado como implementação canônica.');
 
 const registration=read('modules/registration-integrity-v10_10_9.js');
@@ -77,7 +74,7 @@ lacks(registration,'withTimeout(db.runTransaction','Camada de integridade voltou
 lacks(registration,'doRegister=secured','Camada de integridade voltou a substituir o fluxo canônico de cadastro.');
 has(registration,"const VERSION='10.10.9-registration2'",'Camada passiva de integridade não está na revisão segura atual.');
 has(registration,"source.includes('suspendAuthListenerForRegistration')",'Diagnóstico de integridade não confirma a pausa do listener.');
-has(registration,"source.includes('getIdToken(true)')",'Diagnóstico de integridade não confirma a renovação de token.');
+has(registration,"source.includes('getIdTokenResult(true)')",'Diagnóstico de integridade não reconhece a renovação moderna de token/claims.');
 
 const stretch=read('modules/remove-stretch-planilha-v10_10_9.js');
 lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar toda a árvore DOM permanentemente.');
@@ -95,23 +92,9 @@ has(index,"base-uri 'self'",'CSP não limita base-uri.');
 has(index,"upgrade-insecure-requests",'CSP não força upgrade de conteúdo inseguro.');
 
 const jsFiles=[];
-function walk(dir){
-  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
-    if(['.git','node_modules'].includes(entry.name))continue;
-    const full=path.join(dir,entry.name);
-    if(entry.isDirectory())walk(full);else if(entry.isFile()&&entry.name.endsWith('.js'))jsFiles.push(full);
-  }
-}
+function walk(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){if(['.git','node_modules'].includes(entry.name))continue;const full=path.join(dir,entry.name);if(entry.isDirectory())walk(full);else if(entry.isFile()&&entry.name.endsWith('.js'))jsFiles.push(full);}}
 walk(root);
-for(const file of jsFiles){
-  const text=fs.readFileSync(file,'utf8');
-  const relative=path.relative(root,file);
-  assert(!/localStorage\.setItem\([^\n]{0,180}(?:password|senha|pass\s*\))/i.test(text),`Possível senha em texto persistida em ${relative}.`);
-}
+for(const file of jsFiles){const text=fs.readFileSync(file,'utf8');const relative=path.relative(root,file);assert(!/localStorage\.setItem\([^\n]{0,180}(?:password|senha|pass\s*\))/i.test(text),`Possível senha em texto persistida em ${relative}.`);}
 
-if(failures.length){
-  console.error('Falhas de segurança/regressão:');
-  failures.forEach(item=>console.error('- '+item));
-  process.exit(1);
-}
-console.log('Security checks OK — Rules 27, isolamento, cadastro atômico e camada canônica validados.');
+if(failures.length){console.error('Falhas de segurança/regressão:');failures.forEach(item=>console.error('- '+item));process.exit(1);}
+console.log('Security checks OK — Rules 27, isolamento, App Check, cadastro atômico e camada canônica validados.');
