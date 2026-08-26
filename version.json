@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082603,
-  "revision": "registration-release-coherence-3",
-  "publishedAt": "2026-08-26T18:10:00Z",
+  "build": 2026082604,
+  "revision": "registration-preflight-appcheck-4",
+  "publishedAt": "2026-08-26T18:20:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Correção do cadastro por convite e da atualização móvel: release, cache e Service Worker sincronizados para impedir permission-denied e ciclos de atualização."
+  "message": "Cadastro com preflight de App Check, validação do token Auth e diagnóstico por etapa antes de consumir o convite."
 }
