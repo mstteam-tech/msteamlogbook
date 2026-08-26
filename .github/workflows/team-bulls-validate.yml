@@ -16,4 +16,6 @@ jobs:
         with:
           node-version: '22'
       - name: Executar validação estática
-        run: python testes/validar_v10_10_9.py
+        run: |
+          python testes/validar_v10_10_9.py
+          node testes/testar_cadastro_convite_v10_10_9.js
