@@ -2,9 +2,9 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const BUILD_REVISION=2026082502;
+const BUILD_REVISION=2026082603;
 const CACHE_REVISION='guidance2';
-const CACHE_HOTFIX='dietworkspace1';
+const CACHE_HOTFIX='registration3';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -47,7 +47,7 @@ const REQUIRED_SHELL=[
   './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
   './modules/security-hardening-v10_10_9.js?v=10.10.10-security8',
   './modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6',
-  './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration1',
+  './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2',
   './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1',
   './modules/workflow-controls-v10_10_10.js?v=10.10.10-workflow1',
   './modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1',
