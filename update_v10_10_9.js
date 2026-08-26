@@ -2,7 +2,7 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026082601;
+  const CURRENT_BUILD=2026082603;
   const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
@@ -23,6 +23,7 @@
     './modules/v107-core.js?v=10.10.9',
     './modules/v107-invites.js?v=10.10.9',
     './modules/v107-operations.js?v=10.10.9',
+    './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2',
     './interaction_v10_10_9.js?v=10.10.9',
     './styles_v10_10_9.css?v=10.10.9'
   ];
