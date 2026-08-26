@@ -26,7 +26,7 @@ need(appCheck>=0&&invitePrecheck>appCheck&&create>invitePrecheck,'App Check e co
 need(invites.includes('service.getToken(true)'),'O cadastro deve forçar um token App Check válido antes de continuar.');
 need(invites.includes("error.code='team-bulls/app-check-failed'"),'Falha de App Check precisa possuir código próprio e não virar permission-denied genérico.');
 need(invites.includes("stage='transaction'"),'O cadastro precisa registrar a etapa exata antes da transação.');
-need(invites.includes("'[REG-FS-403]'" )||invites.includes('[REG-FS-403]'),'Permission denied da transação deve possuir diagnóstico estável REG-FS-403.');
+need(invites.includes('[REG-FS-403]'),'Permission denied da transação deve possuir diagnóstico estável REG-FS-403.');
 need(invites.includes("window.TeamBullsRegistrationDiagnostics=registrationDiagnostic"),'Diagnóstico seguro da última etapa deve ficar disponível sem expor e-mail, senha ou convite.');
 need(pause>=0&&create>pause,'O observador de autenticação deve ser pausado antes de criar a conta Auth.');
 need(token>create&&transaction>token,'A credencial Auth deve ser renovada antes da transação protegida.');
@@ -44,6 +44,6 @@ need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(
 need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
 need(updaterBuild===version.build&&workerBuild===version.build&&bridgeBuild===version.build,'Build do cadastro precisa ser idêntico no endpoint, atualizador e dois Service Workers.');
 need(updater.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Atualizador deve renovar explicitamente a integridade do cadastro.');
-need(sw.includes("const CACHE_HOTFIX='registration3'")&&bridge.includes("const CACHE_HOTFIX='registration3'"),'Hotfix precisa invalidar os caches de shell antigos.');
+need(sw.includes("const CACHE_HOTFIX='registration4'")&&bridge.includes("const CACHE_HOTFIX='registration4'"),'Hotfix precisa invalidar os caches de shell antigos.');
 need(sw.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2")&&bridge.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Service Workers não podem preparar a revisão registration1 antiga.');
 console.log(`APROVADO: cadastro por convite, preflight App Check, diagnóstico por etapa, atomicidade e build ${version.build} estão coerentes.`);
