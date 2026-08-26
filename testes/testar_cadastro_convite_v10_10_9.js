@@ -1,0 +1,22 @@
+'use strict';
+const fs=require('fs'),path=require('path');
+const root=path.resolve(__dirname,'..');
+const invites=fs.readFileSync(path.join(root,'modules/v107-invites.js'),'utf8');
+const rules=fs.readFileSync(path.join(root,'firebase/firestore_27_compacto.rules'),'utf8');
+function need(v,m){if(!v)throw new Error(m);}
+const pause=invites.indexOf('authListenerSuspended=suspendAuthListenerForRegistration()');
+const create=invites.indexOf('auth.createUserWithEmailAndPassword(email,pass)');
+const token=invites.indexOf('cred.user.getIdToken(true)');
+const transaction=invites.indexOf('db.runTransaction(async transaction=>');
+const profileWrite=invites.indexOf("transaction.set(db.collection('users').doc(cred.user.uid),userData)");
+const inviteWrite=invites.indexOf("transaction.update(inviteRef,{active:false,usedBy:cred.user.uid");
+const resume=invites.indexOf('resumeAuthListenerAfterRegistration(authListenerSuspended)');
+need(pause>=0&&create>pause,'O observador de autenticação deve ser pausado antes de criar a conta Auth.');
+need(token>create&&transaction>token,'A credencial deve ser renovada antes da transação protegida.');
+need(profileWrite>transaction&&inviteWrite>profileWrite,'Perfil e consumo do convite devem permanecer na mesma transação.');
+need(resume>transaction,'O observador só pode voltar depois da janela crítica do cadastro.');
+need(invites.includes("if(typeof AUTH_UNSUBSCRIBE==='function')"),'A pausa precisa usar o unsubscribe já controlado pelo núcleo.');
+need(invites.includes("if(typeof startAuthListener==='function')startAuthListener()"),'O observador precisa ser restaurado pelo inicializador oficial.');
+need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid"),'A criação do aluno deve continuar dependente do convite consumido atomicamente.');
+need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
+console.log('APROVADO: cadastro por convite preserva atomicidade e não sofre logout concorrente do guard de autenticação.');
