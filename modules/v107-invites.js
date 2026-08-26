@@ -72,12 +72,38 @@
     await rememberOfflineCredential(email,pass,cred.user.uid,userData);
     window.TeamBullsAuthFields?.clearSecrets?.();
   }
+  function suspendAuthListenerForRegistration(){
+    try{
+      if(typeof AUTH_UNSUBSCRIBE==='function'){
+        AUTH_UNSUBSCRIBE();
+        AUTH_UNSUBSCRIBE=null;
+        AUTH_CALLBACK_SEEN=false;
+        AUTH_PROCESSING_UID='';
+        return true;
+      }
+    }catch(error){console.warn('Não foi possível pausar o observador de autenticação durante o cadastro:',error);}
+    return false;
+  }
+  function resumeAuthListenerAfterRegistration(wasSuspended){
+    if(!wasSuspended)return;
+    try{
+      AUTH_HANDLED=false;
+      AUTH_PROCESSING_UID='';
+      if(typeof startAuthListener==='function')startAuthListener();
+    }catch(error){console.error('Não foi possível restaurar o observador de autenticação:',error);}
+  }
 
   /* Cadastro seguro: o código fixo foi substituído por um documento aleatório,
      expirável e consumido na mesma transação que cria o perfil do aluno.
      A transação NÃO recebe timeout artificial: abortá-la localmente enquanto o
      servidor ainda confirma o commit poderia consumir o convite e depois apagar
-     a conta Auth, deixando um cadastro órfão. */
+     a conta Auth, deixando um cadastro órfão.
+
+     O observador global de autenticação é pausado somente durante esta janela.
+     createUserWithEmailAndPassword autentica a conta antes de o documento /users
+     existir; sem essa pausa, o guard de sessão pode interpretar a ausência
+     temporária do perfil como cadastro incompleto, deslogar o usuário e fazer a
+     transação seguinte falhar com permission-denied. */
   doRegister=async function(){
     clearAuthError('reg-error');
     const name=document.getElementById('reg-name').value.trim();
@@ -90,14 +116,16 @@
     if(!navigator.onLine){showAuthError('reg-error','O cadastro inicial exige conexão com a internet.');return;}
     const btn=document.getElementById('btn-register');if(btn.disabled)return;
     btn.disabled=true;btn.textContent='VALIDANDO CONVITE...';
-    let cred=null,inviteId='',userData=null;
+    let cred=null,inviteId='',userData=null,authListenerSuspended=false;
     try{
       if(!await ensureFirebaseReady())throw new Error('Não foi possível carregar a conexão segura.');
       inviteId=await sha256(code);const inviteRef=db.collection('studentInvites').doc(inviteId);
       const precheck=await cloudGet(inviteRef,'validar convite');
       if(!precheck.exists||!inviteValid(precheck.data())){const error=new Error('Convite inválido, expirado ou já utilizado.');error.code='team-bulls/invalid-invite';throw error;}
       btn.textContent='CRIANDO CONTA...';AUTH_HANDLED=false;startBootWatchdog();
+      authListenerSuspended=suspendAuthListenerForRegistration();
       cred=await withTimeout(auth.createUserWithEmailAndPassword(email,pass),12000,'criação da conta');
+      await withTimeout(cred.user.getIdToken(true),6000,'atualização da credencial de cadastro');
       userData={name:name.slice(0,100),email,role:'student',status:'active',trainerId:String(precheck.data().trainerId||''),inviteId,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
       await db.runTransaction(async transaction=>{
         const fresh=await transaction.get(inviteRef);if(!fresh.exists||!inviteValid(fresh.data())){const error=new Error('Este convite acabou de expirar ou já foi usado.');error.code='team-bulls/invalid-invite';throw error;}
@@ -124,10 +152,14 @@
       const messages={
         'auth/email-already-in-use':'E-mail já cadastrado.','auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.',
         'team-bulls/invalid-invite':'Convite inválido, expirado ou já utilizado. Peça um novo ao treinador.',
-        'team-bulls/timeout':'O servidor demorou para concluir o cadastro. Tente entrar com a mesma conta antes de cadastrar novamente.'
+        'team-bulls/timeout':'O servidor demorou para concluir o cadastro. Tente entrar com a mesma conta antes de cadastrar novamente.',
+        'permission-denied':'O Firebase recusou a criação do perfil. Atualize o app e, se persistir, confira se as regras atuais do Firestore foram publicadas.'
       };
       showAuthError('reg-error',messages[error.code]||error.message||'Não foi possível criar a conta.');
-    }finally{btn.disabled=false;btn.textContent='CRIAR NOVO REGISTRO';}
+    }finally{
+      resumeAuthListenerAfterRegistration(authListenerSuspended);
+      btn.disabled=false;btn.textContent='CRIAR NOVO REGISTRO';
+    }
   };
 
   function updateRegisterCopy(){
