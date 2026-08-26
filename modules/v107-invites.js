@@ -2,6 +2,7 @@
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
+  const REGISTRATION_DIAGNOSTIC_REVISION='preflight1';
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   function randomCode(){
     const bytes=new Uint8Array(15);crypto.getRandomValues(bytes);
@@ -53,6 +54,37 @@
   };
   TB.inviteHash=sha256;
 
+  let registrationDiagnostic=Object.freeze({revision:REGISTRATION_DIAGNOSTIC_REVISION,stage:'idle',code:'',appCheck:'unknown'});
+  function setRegistrationDiagnostic(stage,code='',appCheck=registrationDiagnostic.appCheck){
+    registrationDiagnostic=Object.freeze({revision:REGISTRATION_DIAGNOSTIC_REVISION,stage:String(stage||'unknown'),code:String(code||''),appCheck:String(appCheck||'unknown')});
+    window.TeamBullsRegistrationDiagnostics=registrationDiagnostic;
+    return registrationDiagnostic;
+  }
+  setRegistrationDiagnostic('idle');
+
+  async function ensureRegistrationAppCheck(){
+    const key=String(typeof CFG!=='undefined'&&CFG.appCheckSiteKey||'').trim();
+    if(!key){setRegistrationDiagnostic('app-check','disabled','disabled');return true;}
+    try{
+      if(typeof initOptionalAppCheck==='function')await withTimeout(initOptionalAppCheck(),8000,'App Check');
+      const service=typeof firebase!=='undefined'&&typeof firebase.appCheck==='function'?firebase.appCheck():null;
+      if(!service||typeof service.getToken!=='function'){
+        const error=new Error('A proteção de segurança do aplicativo não iniciou neste aparelho.');
+        error.code='team-bulls/app-check-unavailable';throw error;
+      }
+      const result=await withTimeout(service.getToken(true),8000,'validar proteção App Check');
+      if(!result?.token){const error=new Error('Não foi possível validar a proteção de segurança neste aparelho.');error.code='team-bulls/app-check-failed';throw error;}
+      setRegistrationDiagnostic('app-check','ok','valid');return true;
+    }catch(error){
+      if(!String(error?.code||'').startsWith('team-bulls/app-check'))error.code='team-bulls/app-check-failed';
+      setRegistrationDiagnostic('app-check',error.code,'invalid');throw error;
+    }
+  }
+  function registrationPermissionMessage(stage){
+    if(stage==='invite-precheck')return'Não foi possível validar o convite com o servidor [REG-INV-403]. A proteção do aparelho foi validada; se isso persistir, as regras do Firestore publicadas precisam ser conferidas.';
+    if(stage==='transaction')return'O servidor recusou a criação do perfil [REG-FS-403]. Não use outro convite ainda. O aplicativo já validou conexão, App Check, convite e autenticação; confira as regras Firestore publicadas.';
+    return'O servidor recusou esta etapa do cadastro [REG-403]. Não repita o cadastro até a configuração do Firebase ser conferida.';
+  }
   async function registrationState(uid,inviteId,trainerId){
     if(!uid||!db)return'unknown';
     try{
@@ -75,39 +107,24 @@
   function suspendAuthListenerForRegistration(){
     try{
       if(typeof AUTH_UNSUBSCRIBE==='function'){
-        AUTH_UNSUBSCRIBE();
-        AUTH_UNSUBSCRIBE=null;
-        AUTH_CALLBACK_SEEN=false;
-        AUTH_PROCESSING_UID='';
-        return true;
+        AUTH_UNSUBSCRIBE();AUTH_UNSUBSCRIBE=null;AUTH_CALLBACK_SEEN=false;AUTH_PROCESSING_UID='';return true;
       }
     }catch(error){console.warn('Não foi possível pausar o observador de autenticação durante o cadastro:',error);}
     return false;
   }
   function resumeAuthListenerAfterRegistration(wasSuspended){
     if(!wasSuspended)return;
-    try{
-      AUTH_HANDLED=false;
-      AUTH_PROCESSING_UID='';
-      if(typeof startAuthListener==='function')startAuthListener();
-    }catch(error){console.error('Não foi possível restaurar o observador de autenticação:',error);}
+    try{AUTH_HANDLED=false;AUTH_PROCESSING_UID='';if(typeof startAuthListener==='function')startAuthListener();}
+    catch(error){console.error('Não foi possível restaurar o observador de autenticação:',error);}
   }
 
-  /* Cadastro seguro: o código fixo foi substituído por um documento aleatório,
-     expirável e consumido na mesma transação que cria o perfil do aluno.
-     A transação NÃO recebe timeout artificial: abortá-la localmente enquanto o
-     servidor ainda confirma o commit poderia consumir o convite e depois apagar
-     a conta Auth, deixando um cadastro órfão.
-
-     O observador global de autenticação é pausado somente durante esta janela.
-     createUserWithEmailAndPassword autentica a conta antes de o documento /users
-     existir; sem essa pausa, o guard de sessão pode interpretar a ausência
-     temporária do perfil como cadastro incompleto, deslogar o usuário e fazer a
-     transação seguinte falhar com permission-denied. */
+  /* Cadastro seguro e diagnosticável. Antes de criar qualquer conta Auth, valida
+     Firebase, App Check e convite. Depois da criação usa o e-mail canônico do token
+     Auth para corresponder literalmente às regras e mantém perfil+convite atômicos. */
   doRegister=async function(){
-    clearAuthError('reg-error');
+    clearAuthError('reg-error');setRegistrationDiagnostic('form');
     const name=document.getElementById('reg-name').value.trim();
-    const email=document.getElementById('reg-email').value.trim();
+    const email=document.getElementById('reg-email').value.trim().toLowerCase();
     const pass=document.getElementById('reg-pass').value;
     const code=normalizeCode(document.getElementById('reg-code').value);
     if(!name||!email||!pass||!code){showAuthError('reg-error','Preencha nome, e-mail, senha e convite.');return;}
@@ -115,63 +132,76 @@
     if(pass.length<8){showAuthError('reg-error','Use uma senha com pelo menos 8 caracteres.');return;}
     if(!navigator.onLine){showAuthError('reg-error','O cadastro inicial exige conexão com a internet.');return;}
     const btn=document.getElementById('btn-register');if(btn.disabled)return;
-    btn.disabled=true;btn.textContent='VALIDANDO CONVITE...';
-    let cred=null,inviteId='',userData=null,authListenerSuspended=false;
+    btn.disabled=true;
+    let cred=null,inviteId='',userData=null,authListenerSuspended=false,stage='firebase';
     try{
+      btn.textContent='VERIFICANDO CONEXÃO...';setRegistrationDiagnostic(stage);
       if(!await ensureFirebaseReady())throw new Error('Não foi possível carregar a conexão segura.');
+
+      stage='app-check';btn.textContent='VERIFICANDO SEGURANÇA...';setRegistrationDiagnostic(stage);
+      await ensureRegistrationAppCheck();
+
+      stage='invite-precheck';btn.textContent='VALIDANDO CONVITE...';setRegistrationDiagnostic(stage,'',registrationDiagnostic.appCheck);
       inviteId=await sha256(code);const inviteRef=db.collection('studentInvites').doc(inviteId);
       const precheck=await cloudGet(inviteRef,'validar convite');
       if(!precheck.exists||!inviteValid(precheck.data())){const error=new Error('Convite inválido, expirado ou já utilizado.');error.code='team-bulls/invalid-invite';throw error;}
-      btn.textContent='CRIANDO CONTA...';AUTH_HANDLED=false;startBootWatchdog();
+      const trainerId=String(precheck.data().trainerId||'');
+      if(!trainerId){const error=new Error('O convite não possui treinador válido.');error.code='team-bulls/invalid-invite';throw error;}
+
+      stage='auth-create';btn.textContent='CRIANDO CONTA...';setRegistrationDiagnostic(stage);AUTH_HANDLED=false;startBootWatchdog();
       authListenerSuspended=suspendAuthListenerForRegistration();
       cred=await withTimeout(auth.createUserWithEmailAndPassword(email,pass),12000,'criação da conta');
-      await withTimeout(cred.user.getIdToken(true),6000,'atualização da credencial de cadastro');
-      userData={name:name.slice(0,100),email,role:'student',status:'active',trainerId:String(precheck.data().trainerId||''),inviteId,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+
+      stage='auth-token';btn.textContent='VALIDANDO CONTA...';setRegistrationDiagnostic(stage);
+      const tokenResult=await withTimeout(cred.user.getIdTokenResult(true),8000,'atualização da credencial de cadastro');
+      const tokenEmail=String(tokenResult?.claims?.email||cred.user.email||'').trim().toLowerCase();
+      if(!tokenEmail){const error=new Error('O Firebase não retornou um e-mail autenticado para esta conta.');error.code='team-bulls/auth-email-claim';throw error;}
+      userData={name:name.slice(0,100),email:tokenEmail,role:'student',status:'active',trainerId,inviteId,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+
+      stage='transaction';btn.textContent='CRIANDO PERFIL...';setRegistrationDiagnostic(stage);
       await db.runTransaction(async transaction=>{
-        const fresh=await transaction.get(inviteRef);if(!fresh.exists||!inviteValid(fresh.data())){const error=new Error('Este convite acabou de expirar ou já foi usado.');error.code='team-bulls/invalid-invite';throw error;}
-        if(String(fresh.data().trainerId||'')!==userData.trainerId)throw new Error('Convite inconsistente.');
+        const fresh=await transaction.get(inviteRef);
+        if(!fresh.exists||!inviteValid(fresh.data())){const error=new Error('Este convite acabou de expirar ou já foi usado.');error.code='team-bulls/invalid-invite';throw error;}
+        if(String(fresh.data().trainerId||'')!==userData.trainerId){const error=new Error('Convite inconsistente.');error.code='team-bulls/invalid-invite';throw error;}
         transaction.set(db.collection('users').doc(cred.user.uid),userData);
         transaction.update(inviteRef,{active:false,usedBy:cred.user.uid,usedAt:firebase.firestore.FieldValue.serverTimestamp()});
       });
-      await finishRegisteredAccount(email,pass,cred,userData);
+      stage='committed';setRegistrationDiagnostic(stage,'ok');
+      await finishRegisteredAccount(tokenEmail,pass,cred,userData);
     }catch(error){
-      AUTH_HANDLED=false;
+      AUTH_HANDLED=false;setRegistrationDiagnostic(stage,error?.code||'error',registrationDiagnostic.appCheck);
       if(cred?.user&&userData&&uncertainCommit(error)){
         const state=await registrationState(cred.user.uid,inviteId,userData.trainerId);
-        if(state==='committed'){
-          await finishRegisteredAccount(email,pass,cred,userData);
-          return;
-        }
+        if(state==='committed'){setRegistrationDiagnostic('committed-after-check','ok');await finishRegisteredAccount(userData.email,pass,cred,userData);return;}
         if(state==='unknown'){
           try{await auth.signOut();}catch(signOutError){}
-          showAuthError('reg-error','Não foi possível confirmar o resultado do cadastro. Para evitar apagar uma conta que pode ter sido criada, tente entrar com este mesmo e-mail antes de usar outro convite.');
-          return;
+          showAuthError('reg-error','Não foi possível confirmar o resultado do cadastro [REG-UNCERTAIN]. Não use outro convite. Tente entrar com este mesmo e-mail; se não entrar, envie este código ao suporte.');return;
         }
       }
       if(cred?.user){try{await cred.user.delete();}catch(cleanupError){try{await auth.signOut();}catch(signOutError){}}}
       const messages={
-        'auth/email-already-in-use':'E-mail já cadastrado.','auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.',
+        'auth/email-already-in-use':'Este e-mail já possui uma conta. Antes de usar outro convite, tente entrar normalmente ou recuperar a senha.',
+        'auth/invalid-email':'E-mail inválido.','auth/weak-password':'Senha muito fraca.',
         'team-bulls/invalid-invite':'Convite inválido, expirado ou já utilizado. Peça um novo ao treinador.',
-        'team-bulls/timeout':'O servidor demorou para concluir o cadastro. Tente entrar com a mesma conta antes de cadastrar novamente.',
-        'permission-denied':'O Firebase recusou a criação do perfil. Atualize o app e, se persistir, confira se as regras atuais do Firestore foram publicadas.'
+        'team-bulls/app-check-unavailable':'A proteção de segurança do Team Bulls não iniciou neste aparelho [REG-APP-INIT]. Não foi criada nenhuma conta; verifique bloqueadores/DNS/navegador antes de tentar novamente.',
+        'team-bulls/app-check-failed':'Este aparelho não conseguiu concluir a validação de segurança [REG-APP-TOKEN]. Não foi criada nenhuma conta; não gaste outro convite.',
+        'team-bulls/auth-email-claim':'A autenticação foi criada sem a confirmação de e-mail exigida pelo perfil [REG-AUTH-EMAIL]. A tentativa foi cancelada com segurança.',
+        'team-bulls/timeout':'O servidor demorou para concluir o cadastro. Tente entrar com a mesma conta antes de cadastrar novamente.'
       };
-      showAuthError('reg-error',messages[error.code]||error.message||'Não foi possível criar a conta.');
+      const message=error?.code==='permission-denied'?registrationPermissionMessage(stage):(messages[error?.code]||error?.message||'Não foi possível criar a conta.');
+      showAuthError('reg-error',message);
     }finally{
       resumeAuthListenerAfterRegistration(authListenerSuspended);
       btn.disabled=false;btn.textContent='CRIAR NOVO REGISTRO';
     }
   };
 
-  /* A camada de integridade legada era carregada depois deste módulo e podia
-     substituir doRegister por uma cópia antiga. Em instalações que ainda tenham
-     esse arquivo no cache, restauramos imediatamente o fluxo canônico depois de
-     cada módulo diferido. Isso torna o hotfix compatível até com caches antigos. */
   doRegister.__tbCanonicalInviteRegistration=true;
+  doRegister.__tbRegistrationPreflight=REGISTRATION_DIAGNOSTIC_REVISION;
   const CANONICAL_REGISTER=doRegister;
   function enforceCanonicalRegistration(){
     if(typeof doRegister==='function'&&doRegister!==CANONICAL_REGISTER){
-      console.warn('[Team Bulls] Fluxo legado de cadastro ignorado; restaurando cadastro seguro por convite.');
-      doRegister=CANONICAL_REGISTER;
+      console.warn('[Team Bulls] Fluxo legado de cadastro ignorado; restaurando cadastro seguro por convite.');doRegister=CANONICAL_REGISTER;
     }
   }
   window.addEventListener('team-bulls-runtime-state',enforceCanonicalRegistration);
