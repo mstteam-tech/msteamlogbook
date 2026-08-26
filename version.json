@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082502,
-  "revision": "trainer-diet-workspace-1",
-  "publishedAt": "2026-08-25T19:35:00Z",
+  "build": 2026082601,
+  "revision": "registration-permission-race-1",
+  "publishedAt": "2026-08-26T16:20:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Workspace contínuo do treinador para montar refeições, navegar entre elas e acompanhar macros e tabela de porções sem fechar a prescrição."
+  "message": "Correção do cadastro por convite para impedir logout concorrente durante a criação segura do perfil do aluno."
 }
