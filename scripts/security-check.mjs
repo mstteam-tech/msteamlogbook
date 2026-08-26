@@ -10,19 +10,22 @@ const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const requireFile=rel=>assert(fs.existsSync(path.join(root,rel)),`Arquivo obrigatório ausente: ${rel}`);
 
 const required=[
-  'firebase/firestore_26_compacto.rules',
+  'firebase/firestore_27_compacto.rules',
   'firebase/storage_5.rules',
   'modules/security-hardening-v10_10_9.js',
   'modules/registration-integrity-v10_10_9.js',
   'modules/remove-stretch-planilha-v10_10_9.js',
   'modules/v107-invites.js',
   'config_v10_7.js',
-  'index.html'
+  'index.html',
+  'firebase.json'
 ];
 required.forEach(requireFile);
 if(failures.length){console.error(failures.join('\n'));process.exit(1);}
 
-const firestore=read('firebase/firestore_26_compacto.rules');
+const firebaseJson=JSON.parse(read('firebase.json'));
+assert(firebaseJson?.firestore?.rules==='firebase/firestore_27_compacto.rules','Firebase ativo não aponta para Rules 27.');
+const firestore=read('firebase/firestore_27_compacto.rules');
 has(firestore,'function trainerOwns(uid)','Firestore não possui isolamento trainer → aluno.');
 has(firestore,'function trainerOwnsWorkout(workoutId)','Firestore não protege consultas por workoutId.');
 has(firestore,"resource.data.trainerId == request.auth.uid",'Leitura normal de usuários não está vinculada ao trainerId.');
@@ -41,6 +44,8 @@ has(firestore,"(request.resource.data.get('dataUrl', '') != '' || request.resour
 lacks(firestore,'allow read: if isTrainer() || activeOwner(resource.data.userId);','Regra ampla de leitura de fotos/sessões por qualquer treinador reapareceu.');
 lacks(firestore,'allow read: if isTrainer() || activeOwner(resource.data.studentId);','Regra ampla de leitura de relatórios por qualquer treinador reapareceu.');
 lacks(firestore,"|| (isTrainer() && resource.data.role == 'student')",'Leitura global permanente de alunos por qualquer treinador reapareceu.');
+has(firestore,"getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid",'Criação de aluno não exige consumo atômico do convite pelo mesmo UID.');
+has(firestore,"getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id",'Consumo do convite não está vinculado ao perfil criado na mesma operação.');
 has(firestore,'match /{document=**} { allow read, write: if false; }','Firestore perdeu o deny-all final.');
 
 const storage=read('firebase/storage_5.rules');
@@ -62,10 +67,17 @@ const invites=read('modules/v107-invites.js');
 lacks(invites,'withTimeout(db.runTransaction','Transação de cadastro voltou a ter timeout artificial.');
 has(invites,"return'unknown'",'Cadastro não trata resultado de commit indeterminado.');
 has(invites,"if(state==='committed')",'Cadastro não reconcilia commit confirmado após falha de rede.');
+has(invites,'TB.inviteHash=sha256','Fluxo canônico não expõe o hash criptográfico dos convites.');
+has(invites,'authListenerSuspended=suspendAuthListenerForRegistration()','Cadastro não pausa o listener global antes da criação Auth.');
+has(invites,'cred.user.getIdToken(true)','Cadastro não renova a credencial antes da transação protegida.');
+has(invites,'doRegister.__tbCanonicalInviteRegistration=true','Cadastro seguro não está marcado como implementação canônica.');
 
 const registration=read('modules/registration-integrity-v10_10_9.js');
-lacks(registration,'withTimeout(db.runTransaction','Hotfix cache-safe voltou a abortar transação por timeout local.');
-has(registration,'TB.inviteHash','Hotfix de cadastro não reaproveita hash seguro do convite.');
+lacks(registration,'withTimeout(db.runTransaction','Camada de integridade voltou a executar/abortar transação por timeout local.');
+lacks(registration,'doRegister=secured','Camada de integridade voltou a substituir o fluxo canônico de cadastro.');
+has(registration,"const VERSION='10.10.9-registration2'",'Camada passiva de integridade não está na revisão segura atual.');
+has(registration,"source.includes('suspendAuthListenerForRegistration')",'Diagnóstico de integridade não confirma a pausa do listener.');
+has(registration,"source.includes('getIdToken(true)')",'Diagnóstico de integridade não confirma a renovação de token.');
 
 const stretch=read('modules/remove-stretch-planilha-v10_10_9.js');
 lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar toda a árvore DOM permanentemente.');
@@ -73,7 +85,8 @@ lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar
 const config=read('config_v10_7.js');
 has(config,'security-hardening-v10_10_9.js?v=10.10.10-security8','Loader não inclui o hardening security8 com URL nova.');
 has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','Loader não inclui o reconciliador legacy-links6 com URL nova.');
-has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader não inclui a correção cache-safe do cadastro.');
+has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration2','Loader não inclui a revisão passiva/cache-safe do cadastro.');
+lacks(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader ainda referencia a revisão antiga do cadastro.');
 has(config,'remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','Loader pode reutilizar a versão antiga do removedor de alongamento.');
 
 const index=read('index.html');
@@ -101,4 +114,4 @@ if(failures.length){
   failures.forEach(item=>console.error('- '+item));
   process.exit(1);
 }
-console.log('Security checks OK');
+console.log('Security checks OK — Rules 27, isolamento, cadastro atômico e camada canônica validados.');
