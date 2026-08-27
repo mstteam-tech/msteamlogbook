@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082702,
-  "revision": "mobile-report-photo-decode-2",
-  "publishedAt": "2026-08-27T10:05:00Z",
+  "build": 2026082703,
+  "revision": "mobile-report-heic-conversion-1",
+  "publishedAt": "2026-08-27T14:57:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Correção móvel do envio de fotos de relatórios: previews leves, fallback Android e liberação de memória antes da compressão."
+  "message": "Conversão local de HEIC/HEIF para JPG no envio de relatórios, mantendo previews leves, compatibilidade móvel e preservação segura das fotos originais."
 }
