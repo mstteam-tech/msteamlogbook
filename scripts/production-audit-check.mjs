@@ -28,19 +28,36 @@ function extractMatchBlock(source,header){
 
 const firebaseJson=JSON.parse(read('firebase.json'));
 const activeRules=String(firebaseJson?.firestore?.rules||'').replace(/\\/g,'/');
+const activeStorage=String(firebaseJson?.storage?.rules||'').replace(/\\/g,'/');
 assert(/^firebase\/firestore_\d+_compacto\.rules$/.test(activeRules),'firebase.json não aponta para uma regra Firestore versionada esperada.');
 assert(exists(activeRules),`Regra ativa não existe no repositório: ${activeRules}`);
+assert(activeRules==='firebase/firestore_28_compacto.rules','Release atual deve usar Firestore Rules 28.');
+assert(activeStorage==='firebase/storage_6.rules'&&exists(activeStorage),'Release atual deve usar Storage Rules 6 existente.');
 
 if(exists(activeRules)){
   const firestore=read(activeRules);
   const privateDiet=extractMatchBlock(firestore,'match /dietCalculations/{uid}');
+  const privateBilling=extractMatchBlock(firestore,'match /trainerBilling/{trainerUid}');
+  const trainerActivity=extractMatchBlock(firestore,'match /trainerActivity/{trainerUid}');
   assert(privateDiet.length>0,'Regra ativa não protege dietCalculations.');
   has(privateDiet,'allow read: if trainerOwns(uid)','Cálculos privados não exigem vínculo do treinador na leitura.');
   has(privateDiet,'allow create: if trainerOwns(uid)','Cálculos privados não exigem vínculo do treinador na criação.');
   has(privateDiet,'allow update: if trainerOwns(uid)','Cálculos privados não exigem vínculo do treinador na atualização.');
   has(privateDiet,'allow delete: if trainerOwns(uid)','Cálculos privados não exigem vínculo do treinador na exclusão.');
   lacks(privateDiet,'activeOwner(','Aluno recebeu acesso direto à coleção privada dietCalculations.');
+  assert(privateBilling.length>0,'Regra ativa não possui domínio financeiro privado trainerBilling.');
+  has(privateBilling,'request.auth.uid == trainerUid','trainerBilling não está limitado ao treinador proprietário.');
+  assert(trainerActivity.length>0,'Regra ativa não possui caixa agregada trainerActivity.');
+  has(trainerActivity,'userData(request.resource.data.studentId).trainerId == trainerUid','Evento de aluno pode apontar para treinador não vinculado.');
   has(firestore,'match /{document=**} { allow read, write: if false; }','Regra ativa perdeu o deny-all final.');
+}
+
+if(exists(activeStorage)){
+  const storage=read(activeStorage);
+  has(storage,'match /paymentReceipts/{trainerUid}/{studentUid}/{fileName}','Storage ativo não possui namespace privado de comprovantes.');
+  has(storage,'trainerOwns(studentUid)','Comprovante não exige vínculo do treinador ao aluno.');
+  has(storage,'validPaymentReceipt(15 * 1024 * 1024)','Comprovante não possui limite de 15 MB.');
+  has(storage,'match /{allPaths=**} { allow read, write: if false; }','Storage ativo perdeu o deny-all final.');
 }
 
 const config=read('config_v10_7.js');
@@ -53,11 +70,13 @@ has(config,'ok=await loadScriptOnce(src,Math.max(6500,Number(timeoutMs)||3200))'
 has(config,'for(const src of modules)await loadScript(src)','Loader perdeu a execução sequencial determinística.');
 const portions=config.indexOf('diet-portion-presets-v10_10_9.js');
 const release=config.indexOf('release-coherence-v10_10_10.js');
+const trainerHub=config.indexOf('trainer-inbox-payments-v10_10_12.js');
 assert(portions>=0&&release>portions,'Coerência de release precisa executar depois das extensões de dieta.');
+assert(trainerHub>release,'Central/Pagamentos deve carregar depois da coerência de release.');
 
 const releaseModule=read('modules/release-coherence-v10_10_10.js');
-has(releaseModule,"const ACTIVE_FIRESTORE_RULES='firestore_27_compacto.rules'",'Camada de coerência aponta para regra Firestore incorreta.');
-has(releaseModule,"replace(/firestore_26_compacto\\.rules/g,ACTIVE_FIRESTORE_RULES)",'Mensagem antiga de permissão não é corrigida para a regra ativa.');
+has(releaseModule,"const ACTIVE_FIRESTORE_RULES='firestore_28_compacto.rules'",'Camada de coerência aponta para regra Firestore incorreta.');
+has(releaseModule,"replace(/firestore_(?:26|27)_compacto\\.rules/g,ACTIVE_FIRESTORE_RULES)",'Mensagem antiga de permissão não é corrigida para a regra ativa.');
 has(releaseModule,"['TeamBullsDietCalculator',()=>!!window.TeamBullsDietCalculator]",'Diagnóstico de runtime não cobre calculadora da dieta.');
 has(releaseModule,"['TeamBullsDietPortions',()=>!!window.TeamBullsDietPortions]",'Diagnóstico de runtime não cobre tabela de porções.');
 
@@ -80,4 +99,4 @@ if(failures.length){
   console.error('FALHA — auditoria de produção\n- '+failures.join('\n- '));
   process.exit(1);
 }
-console.log(`APROVADO — regra ativa ${activeRules}, módulos do loader existentes, retry de rede e limites de tamanho validados.`);
+console.log(`APROVADO — regras ativas ${activeRules} / ${activeStorage}, módulos do loader, Central/Pagamentos, retry de rede e limites validados.`);
