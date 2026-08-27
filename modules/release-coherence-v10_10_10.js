@@ -4,8 +4,8 @@
   window.__TEAM_BULLS_RELEASE_COHERENCE_10_10_10__=true;
 
   const RELEASE_VERSION='10.10.9';
-  const PATCH_VERSION='10.10.11-release2';
-  const ACTIVE_FIRESTORE_RULES='firestore_27_compacto.rules';
+  const PATCH_VERSION='10.10.12-release4';
+  const ACTIVE_FIRESTORE_RULES='firestore_28_compacto.rules';
   const CUSTOM_BRIDGE_FLAG='__tbCustomFoodBridge';
   let customFoodObserver=null;
   let customRefreshFrame=0;
@@ -23,13 +23,13 @@
 
   function patchFirebaseRuleMessage(){
     try{
-      if(typeof cloudWriteError!=='function'||cloudWriteError.__tbActiveRules27)return;
+      if(typeof cloudWriteError!=='function'||cloudWriteError.__tbActiveRules28)return;
       const base=cloudWriteError;
       const wrapped=function(error,action){
         const message=String(base.apply(this,arguments)||'');
-        return message.replace(/firestore_26_compacto\.rules/g,ACTIVE_FIRESTORE_RULES);
+        return message.replace(/firestore_(?:26|27)_compacto\.rules/g,ACTIVE_FIRESTORE_RULES);
       };
-      wrapped.__tbActiveRules27=true;
+      wrapped.__tbActiveRules28=true;
       wrapped.__tbBase=base;
       cloudWriteError=wrapped;
     }catch(error){console.warn('[Team Bulls] Falha ao sincronizar mensagem de regras',error);}
