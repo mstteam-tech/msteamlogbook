@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082604,
-  "revision": "registration-preflight-appcheck-4",
-  "publishedAt": "2026-08-26T18:20:00Z",
+  "build": 2026082701,
+  "revision": "trainer-inbox-payments-2",
+  "publishedAt": "2026-08-27T09:30:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Cadastro com preflight de App Check, validação do token Auth e diagnóstico por etapa antes de consumir o convite."
+  "message": "Central de relatórios e atualizações do treinador, notificações internas e controle privado de pagamentos com comprovantes e vencimentos automáticos."
 }
