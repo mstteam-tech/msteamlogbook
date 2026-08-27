@@ -9,17 +9,20 @@ const has=(text,needle,message)=>assert(text.includes(needle),message);
 const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const requireFile=rel=>assert(fs.existsSync(path.join(root,rel)),`Arquivo obrigatório ausente: ${rel}`);
 
+const firebaseJson=JSON.parse(read('firebase.json'));
+const firestorePath=String(firebaseJson?.firestore?.rules||'');
+const storagePath=String(firebaseJson?.storage?.rules||'');
 const required=[
-  'firebase/firestore_27_compacto.rules','firebase/storage_5.rules','modules/security-hardening-v10_10_9.js',
+  firestorePath,storagePath,'modules/security-hardening-v10_10_9.js',
   'modules/registration-integrity-v10_10_9.js','modules/remove-stretch-planilha-v10_10_9.js','modules/v107-invites.js',
-  'config_v10_7.js','index.html','firebase.json'
-];
+  'modules/trainer-inbox-payments-v10_10_12.js','config_v10_7.js','index.html','firebase.json'
+].filter(Boolean);
 required.forEach(requireFile);
 if(failures.length){console.error(failures.join('\n'));process.exit(1);}
 
-const firebaseJson=JSON.parse(read('firebase.json'));
-assert(firebaseJson?.firestore?.rules==='firebase/firestore_27_compacto.rules','Firebase ativo não aponta para Rules 27.');
-const firestore=read('firebase/firestore_27_compacto.rules');
+assert(firestorePath==='firebase/firestore_28_compacto.rules','Firebase ativo não aponta para Rules 28.');
+assert(storagePath==='firebase/storage_6.rules','Firebase ativo não aponta para Storage 6.');
+const firestore=read(firestorePath);
 has(firestore,'function trainerOwns(uid)','Firestore não possui isolamento trainer → aluno.');
 has(firestore,'function trainerOwnsWorkout(workoutId)','Firestore não protege consultas por workoutId.');
 has(firestore,"resource.data.trainerId == request.auth.uid",'Leitura normal de usuários não está vinculada ao trainerId.');
@@ -40,12 +43,21 @@ lacks(firestore,'allow read: if isTrainer() || activeOwner(resource.data.student
 lacks(firestore,"|| (isTrainer() && resource.data.role == 'student')",'Leitura global permanente de alunos por qualquer treinador reapareceu.');
 has(firestore,"getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid",'Criação de aluno não exige consumo atômico do convite pelo mesmo UID.');
 has(firestore,"getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id",'Consumo do convite não está vinculado ao perfil criado na mesma operação.');
+has(firestore,'match /trainerActivity/{trainerUid}','Firestore não possui caixa privada de atividade por treinador.');
+has(firestore,'match /trainerBilling/{trainerUid}','Firestore não possui domínio financeiro privado por treinador.');
+has(firestore,"request.resource.data.planType in ['quarterly','semiannual']",'Planos financeiros aceitam valores fora do escopo solicitado.');
+has(firestore,'paymentReceiptPath','Firestore não valida o namespace do comprovante financeiro.');
+has(firestore,'allow read: if isTrainer() && request.auth.uid == trainerUid;','Leitura financeira não está limitada ao treinador dono.');
 has(firestore,'match /{document=**} { allow read, write: if false; }','Firestore perdeu o deny-all final.');
 
-const storage=read('firebase/storage_5.rules');
+const storage=read(storagePath);
 has(storage,'function trainerOwns(uid)','Storage não valida vínculo do treinador ao aluno.');
 has(storage,'allow read: if trainerOwns(uid) || activeOwner(uid);','Fotos no Storage ainda não estão isoladas por treinador.');
 lacks(storage,'allow read: if isTrainer() || activeOwner(uid);','Storage voltou a permitir qualquer treinador ler qualquer foto.');
+has(storage,'match /paymentReceipts/{trainerUid}/{studentUid}/{fileName}','Storage não isola comprovantes financeiros.');
+has(storage,'request.auth.uid == trainerUid','Comprovante não exige o próprio treinador no caminho.');
+has(storage,'trainerOwns(studentUid)','Comprovante não exige vínculo real treinador → aluno.');
+lacks(storage,'activeOwner(studentUid)','Aluno recebeu acesso ao domínio financeiro de comprovantes.');
 has(storage,'match /{allPaths=**} { allow read, write: if false; }','Storage perdeu o deny-all final.');
 
 const security=read('modules/security-hardening-v10_10_9.js');
@@ -76,6 +88,12 @@ has(registration,"const VERSION='10.10.9-registration2'",'Camada passiva de inte
 has(registration,"source.includes('suspendAuthListenerForRegistration')",'Diagnóstico de integridade não confirma a pausa do listener.');
 has(registration,"source.includes('getIdTokenResult(true)')",'Diagnóstico de integridade não reconhece a renovação moderna de token/claims.');
 
+const hub=read('modules/trainer-inbox-payments-v10_10_12.js');
+has(hub,"CURRENT_USER?.role==='trainer'",'Central/Pagamentos não possui gate de treinador.');
+has(hub,"CURRENT_USER?.role==='student'",'Notificação de relatório não possui gate de aluno.');
+has(hub,"paymentReceipts/${cleanId(trainerUid)}/${cleanId(studentId)}/${cleanId(paymentId)}",'Comprovante não usa namespace por treinador/aluno/pagamento.');
+lacks(hub,'localStorage.setItem','Módulo financeiro não deve persistir valores/comprovantes no localStorage.');
+
 const stretch=read('modules/remove-stretch-planilha-v10_10_9.js');
 lacks(stretch,'new MutationObserver','Remoção de alongamento voltou a observar toda a árvore DOM permanentemente.');
 
@@ -84,7 +102,7 @@ has(config,'security-hardening-v10_10_9.js?v=10.10.10-security8','Loader não in
 has(config,'legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','Loader não inclui o reconciliador legacy-links6 com URL nova.');
 has(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration2','Loader não inclui a revisão passiva/cache-safe do cadastro.');
 lacks(config,'registration-integrity-v10_10_9.js?v=10.10.9-registration1','Loader ainda referencia a revisão antiga do cadastro.');
-has(config,'remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','Loader pode reutilizar a versão antiga do removedor de alongamento.');
+has(config,'trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2','Loader não inclui Central/Pagamentos com a revisão de cache atual.');
 
 const index=read('index.html');
 has(index,"object-src 'none'",'CSP não bloqueia plugins/objetos.');
@@ -97,4 +115,4 @@ walk(root);
 for(const file of jsFiles){const text=fs.readFileSync(file,'utf8');const relative=path.relative(root,file);assert(!/localStorage\.setItem\([^\n]{0,180}(?:password|senha|pass\s*\))/i.test(text),`Possível senha em texto persistida em ${relative}.`);}
 
 if(failures.length){console.error('Falhas de segurança/regressão:');failures.forEach(item=>console.error('- '+item));process.exit(1);}
-console.log('Security checks OK — Rules 27, isolamento, App Check, cadastro atômico e camada canônica validados.');
+console.log('Security checks OK — Rules 28, Storage 6, isolamento financeiro, App Check e cadastro atômico validados.');

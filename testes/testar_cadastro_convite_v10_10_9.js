@@ -4,7 +4,9 @@ const root=path.resolve(__dirname,'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 const invites=read('modules/v107-invites.js');
 const integrity=read('modules/registration-integrity-v10_10_9.js');
-const rules=read('firebase/firestore_27_compacto.rules');
+const firebaseJson=JSON.parse(read('firebase.json'));
+const activeRules=String(firebaseJson?.firestore?.rules||'');
+const rules=read(activeRules);
 const updater=read('update_v10_10_9.js');
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
@@ -22,6 +24,7 @@ const resume=invites.indexOf('resumeAuthListenerAfterRegistration(authListenerSu
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
 const workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
+need(activeRules==='firebase/firestore_28_compacto.rules','Cadastro deve ser validado contra a Rules 28 ativa.');
 need(appCheck>=0&&invitePrecheck>appCheck&&create>invitePrecheck,'App Check e convite devem ser validados antes de qualquer criação no Firebase Auth.');
 need(invites.includes('service.getToken(true)'),'O cadastro deve forçar um token App Check válido antes de continuar.');
 need(invites.includes("error.code='team-bulls/app-check-failed'"),'Falha de App Check precisa possuir código próprio e não virar permission-denied genérico.');
@@ -44,6 +47,6 @@ need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(
 need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
 need(updaterBuild===version.build&&workerBuild===version.build&&bridgeBuild===version.build,'Build do cadastro precisa ser idêntico no endpoint, atualizador e dois Service Workers.');
 need(updater.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Atualizador deve renovar explicitamente a integridade do cadastro.');
-need(sw.includes("const CACHE_HOTFIX='registration4'")&&bridge.includes("const CACHE_HOTFIX='registration4'"),'Hotfix precisa invalidar os caches de shell antigos.');
+need(sw.includes("const CACHE_HOTFIX='inboxpayments2'")&&bridge.includes("const CACHE_HOTFIX='inboxpayments2'"),'A nova release precisa invalidar os caches sem perder o hotfix de cadastro.');
 need(sw.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2")&&bridge.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Service Workers não podem preparar a revisão registration1 antiga.');
-console.log(`APROVADO: cadastro por convite, preflight App Check, diagnóstico por etapa, atomicidade e build ${version.build} estão coerentes.`);
+console.log(`APROVADO: cadastro por convite, preflight App Check, diagnóstico por etapa, atomicidade e build ${version.build} seguem coerentes sob ${activeRules}.`);

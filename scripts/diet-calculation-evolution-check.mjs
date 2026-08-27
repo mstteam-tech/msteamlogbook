@@ -5,8 +5,10 @@ const require=createRequire(import.meta.url);
 const math=require('../modules/diet-calculation-math-v10_10_9.js');
 const ui=fs.readFileSync(new URL('../modules/diet-calculation-evolution-v10_10_9.js',import.meta.url),'utf8');
 const config=fs.readFileSync(new URL('../config_v10_7.js',import.meta.url),'utf8');
-const rules=fs.readFileSync(new URL('../firebase/firestore_27_compacto.rules',import.meta.url),'utf8');
-const firebaseConfig=fs.readFileSync(new URL('../firebase.json',import.meta.url),'utf8');
+const firebaseConfig=JSON.parse(fs.readFileSync(new URL('../firebase.json',import.meta.url),'utf8'));
+const activeRules=String(firebaseConfig?.firestore?.rules||'');
+assert.match(activeRules,/^firebase\/firestore_\d+_compacto\.rules$/,'firebase.json não aponta para regras Firestore versionadas');
+const rules=fs.readFileSync(new URL('../'+activeRules,import.meta.url),'utf8');
 
 const close=(actual,expected,tolerance=0.001)=>assert.ok(Math.abs(actual-expected)<=tolerance,`esperado ${expected}, recebido ${actual}`);
 
@@ -37,9 +39,9 @@ assert.match(ui,/não cria uma segunda base de dados/,'UI deve explicar a fonte 
 assert.match(ui,/profileCache\.clear\(\)/,'cache privado deve ser limpo ao sair da conta');
 assert.match(config,/diet-calculation-math-v10_10_9\.js\?v=10\.10\.10-dietmath1/,'módulo matemático não está carregado');
 assert.match(config,/diet-calculation-evolution-v10_10_9\.js\?v=10\.10\.10-dietcalc1/,'módulo visual não está carregado');
-assert.match(firebaseConfig,/firestore_27_compacto\.rules/,'firebase.json não aponta para as regras novas');
+assert.equal(activeRules,'firebase/firestore_28_compacto.rules','release atual deve validar dietCalculations sob Rules 28');
 assert.match(rules,/match \/dietCalculations\/\{uid\}/,'regras privadas de dietCalculations ausentes');
 assert.match(rules,/allow read: if trainerOwns\(uid\)/,'leitura dos cálculos não está restrita ao treinador vinculado');
 assert.doesNotMatch(rules,/match \/dietCalculations[\s\S]*activeOwner\(uid\)/,'aluno não pode receber acesso aos cálculos privados');
 
-console.log('APROVADO — fórmulas masculina/feminina, macros, privacidade do cálculo e evolução validadas.');
+console.log(`APROVADO — fórmulas masculina/feminina, macros, privacidade do cálculo e evolução validadas sob ${activeRules}.`);
