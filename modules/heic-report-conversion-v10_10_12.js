@@ -4,11 +4,12 @@
   if(window.__TEAM_BULLS_HEIC_REPORT_CONVERSION__)return;
   window.__TEAM_BULLS_HEIC_REPORT_CONVERSION__=true;
 
-  const VERSION='10.10.12-heic1';
+  const VERSION='10.10.12-heic2';
   const MAX_HEIC_BYTES=25*1024*1024;
-  const LIB_URL='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
-  const LIB_INTEGRITY='sha512-VjmsArkf8Vv2yyvbXCyVxp+R3n4N2WyS1GEQ+YQxa7Hu0tx836WpY4nW9/T1W5JBmvuIsxkVH/DlHgp7NEMjDw==';
-  let libraryPromise=null;
+  const WORKER_URL='./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1';
+  let workerPromise=null;
+  let workerSeq=0;
+  const pendingWorkerRequests=new Map();
   const batchInFlight=new WeakSet();
 
   const fileType=file=>{
@@ -26,33 +27,77 @@
   });
   const nextPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
 
-  function loadConverter(){
-    if(typeof window.heic2any==='function')return Promise.resolve(window.heic2any);
-    if(libraryPromise)return libraryPromise;
-    libraryPromise=new Promise((resolve,reject)=>{
-      const existing=document.querySelector(`script[data-team-bulls-heic="${VERSION}"]`);
-      if(existing){
-        const started=Date.now();
-        const poll=()=>{if(typeof window.heic2any==='function')return resolve(window.heic2any);if(Date.now()-started>15000)return reject(new Error('Conversor HEIC indisponível.'));setTimeout(poll,80);};
-        poll();return;
-      }
-      if(navigator.onLine===false){reject(new Error('Conecte-se à internet uma vez para preparar a conversão de fotos HEIC.'));return;}
-      const script=document.createElement('script');
-      script.src=LIB_URL;script.async=true;script.crossOrigin='anonymous';script.integrity=LIB_INTEGRITY;script.referrerPolicy='no-referrer';script.dataset.teamBullsHeic=VERSION;
-      script.onload=()=>typeof window.heic2any==='function'?resolve(window.heic2any):reject(new Error('Conversor HEIC carregado de forma inválida.'));
-      script.onerror=()=>reject(new Error('Não foi possível carregar o conversor HEIC seguro. Verifique a conexão e tente novamente.'));
-      document.head.appendChild(script);
-    }).catch(error=>{libraryPromise=null;throw error;});
-    return libraryPromise;
+  function resetWorker(error){
+    const reason=error instanceof Error?error:new Error(String(error||'Decoder HEIC reiniciado.'));
+    for(const request of pendingWorkerRequests.values())request.reject(reason);
+    pendingWorkerRequests.clear();
+    workerPromise=null;
+  }
+
+  function getWorker(){
+    if(workerPromise)return workerPromise;
+    workerPromise=new Promise((resolve,reject)=>{
+      if(typeof Worker!=='function'){reject(new Error('Este navegador não oferece o worker seguro necessário para HEIC.'));return;}
+      let settled=false;
+      let worker;
+      try{worker=new Worker(WORKER_URL);}catch(error){reject(error);return;}
+      const timer=setTimeout(()=>{
+        if(settled)return;settled=true;try{worker.terminate();}catch(error){};reject(new Error('O decoder HEIC não respondeu a tempo.'));
+      },18000);
+      worker.addEventListener('message',event=>{
+        const data=event.data||{};
+        if(data.type==='ready'&&!settled){
+          settled=true;clearTimeout(timer);
+          if(data.ok)resolve(worker);
+          else{try{worker.terminate();}catch(error){};reject(new Error(String(data.error||'Decoder HEIC indisponível.')));}
+          return;
+        }
+        const id=String(data.id||'');
+        if(!id||!pendingWorkerRequests.has(id))return;
+        const request=pendingWorkerRequests.get(id);pendingWorkerRequests.delete(id);
+        if(data.ok)request.resolve(data);else request.reject(new Error(String(data.error||'Falha ao decodificar HEIC.')));
+      });
+      worker.addEventListener('error',event=>{
+        const error=new Error(String(event?.message||'Falha no worker HEIC.'));
+        if(!settled){settled=true;clearTimeout(timer);reject(error);return;}
+        resetWorker(error);
+      });
+    }).catch(error=>{workerPromise=null;throw error;});
+    return workerPromise;
+  }
+
+  async function decodeHeicPixels(file){
+    const worker=await getWorker();
+    const buffer=await file.arrayBuffer();
+    const id=`tb-heic-${Date.now()}-${++workerSeq}`;
+    return timeout(new Promise((resolve,reject)=>{
+      pendingWorkerRequests.set(id,{resolve,reject});
+      try{worker.postMessage({id,buffer},[buffer]);}
+      catch(error){pendingWorkerRequests.delete(id);reject(error);}
+    }),50000,'Decodificar foto HEIC');
+  }
+
+  function pixelsToJpeg(decoded){
+    return new Promise((resolve,reject)=>{
+      try{
+        const width=Number(decoded?.width||0),height=Number(decoded?.height||0),buffer=decoded?.rgba;
+        if(!width||!height||!(buffer instanceof ArrayBuffer))throw new Error('O decoder HEIC retornou pixels inválidos.');
+        const pixels=new Uint8ClampedArray(buffer);
+        if(pixels.length!==width*height*4)throw new Error('O decoder HEIC retornou uma imagem incompleta.');
+        const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+        const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Canvas indisponível para finalizar a foto HEIC.');
+        ctx.putImageData(new ImageData(pixels,width,height),0,0);
+        canvas.toBlob(blob=>blob&&blob.size?resolve(blob):reject(new Error('Não foi possível gerar o JPG convertido.')),'image/jpeg',.94);
+      }catch(error){reject(error);}
+    });
   }
 
   async function convertHeic(file){
     if(!(file instanceof Blob)||!isHeic(file))return file;
     if(!file.size||file.size>MAX_HEIC_BYTES)throw new Error('A foto HEIC excede 25 MB. Escolha uma foto menor.');
-    const converter=await timeout(loadConverter(),18000,'Carregar conversor HEIC');
-    const result=await timeout(converter({blob:file,toType:'image/jpeg',quality:.94}),50000,'Converter foto HEIC');
-    const blob=Array.isArray(result)?result[0]:result;
-    if(!(blob instanceof Blob)||!blob.size)throw new Error('A conversão HEIC não gerou uma imagem válida.');
+    if(navigator.onLine===false)throw new Error('Conecte-se à internet uma vez para preparar o decoder HEIC.');
+    const decoded=await decodeHeicPixels(file);
+    const blob=await pixelsToJpeg(decoded);
     const base=String(file?.name||'foto').replace(/\.(heic|heif)$/i,'')||'foto';
     try{return new File([blob],`${base}.jpg`,{type:'image/jpeg',lastModified:Number(file?.lastModified)||Date.now()});}
     catch(error){blob.name=`${base}.jpg`;return blob;}
@@ -79,19 +124,15 @@
     return true;
   }
 
-  function syntheticEvent(file){
-    return{target:{files:[file],value:''},currentTarget:null};
-  }
-  function clearBatchInput(target){
-    try{if(target&&'value'in target)target.value='';}catch(error){}
-  }
+  function syntheticEvent(file){return{target:{files:[file],value:''},currentTarget:null};}
+  function clearBatchInput(target){try{if(target&&'value'in target)target.value='';}catch(error){}}
   async function processSixPhotoBatch(base,event,kind){
     const target=event?.target||null;
     const selected=Array.from(target?.files||[]);
     if(selected.length<=1)return null;
     if(selected.length!==6){
       clearBatchInput(target);
-      alert('Selecione exatamente 6 fotos de uma vez, na ordem indicada: Frente, Costas, Lado direito, Lado esquerdo, Frente contraída e Costas contraída.');
+      alert('Selecione exatamente 6 fotos de uma vez, na ordem indicada: Frente, Costas, Lado direito, Lado esquerdo, Lado direito braços estendidos e Lado esquerdo braços estendidos.');
       return false;
     }
     if(target&&typeof target==='object'&&batchInFlight.has(target))return false;
@@ -121,32 +162,18 @@
     let changed=false;
     if(typeof previewWeeklyCheckinPhoto==='function'&&!previewWeeklyCheckinPhoto.__tbSixPhotoBatch){
       const base=previewWeeklyCheckinPhoto;
-      const wrapped=function(index,event){
-        const count=Number(event?.target?.files?.length)||0;
-        if(count>1)return processSixPhotoBatch(base,event,'weekly');
-        return base.apply(this,arguments);
-      };
-      wrapped.__tbSixPhotoBatch=true;wrapped.__tbBase=base;
-      previewWeeklyCheckinPhoto=wrapped;changed=true;
+      const wrapped=function(index,event){const count=Number(event?.target?.files?.length)||0;if(count>1)return processSixPhotoBatch(base,event,'weekly');return base.apply(this,arguments);};
+      wrapped.__tbSixPhotoBatch=true;wrapped.__tbBase=base;previewWeeklyCheckinPhoto=wrapped;changed=true;
     }
     if(typeof previewQuestionnaireReportPhoto==='function'&&!previewQuestionnaireReportPhoto.__tbSixPhotoBatch){
       const base=previewQuestionnaireReportPhoto;
-      const wrapped=function(index,event){
-        const count=Number(event?.target?.files?.length)||0;
-        if(count>1)return processSixPhotoBatch(base,event,'questionnaire');
-        return base.apply(this,arguments);
-      };
-      wrapped.__tbSixPhotoBatch=true;wrapped.__tbBase=base;
-      previewQuestionnaireReportPhoto=wrapped;changed=true;
+      const wrapped=function(index,event){const count=Number(event?.target?.files?.length)||0;if(count>1)return processSixPhotoBatch(base,event,'questionnaire');return base.apply(this,arguments);};
+      wrapped.__tbSixPhotoBatch=true;wrapped.__tbBase=base;previewQuestionnaireReportPhoto=wrapped;changed=true;
     }
     return changed;
   }
 
-  function install(){
-    const decoder=installDecoder();
-    const batch=installBatchPreviewBridge();
-    return decoder||batch;
-  }
+  function install(){const decoder=installDecoder();const batch=installBatchPreviewBridge();return decoder||batch;}
 
   install();
   window.addEventListener('team-bulls-runtime-state',install);
