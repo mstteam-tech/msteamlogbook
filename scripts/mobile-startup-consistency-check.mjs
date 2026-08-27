@@ -40,13 +40,13 @@ has(updater,'function safeForAutomaticHotfix()','Atualização automática não 
 has(updater,"if(screen!=='screen-auth')return false",'Atualizador poderia reiniciar durante uso ativo.');
 has(updater,'&b=${CURRENT_BUILD}','Service Worker não é registrado com build.');
 has(updater,'heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','Atualizador não renova o módulo HEIC.');
-has(updater,'heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','Atualizador não prepara o worker HEIC same-origin.');
+has(updater,'heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker2','Atualizador não prepara a revisão corrigida do worker HEIC.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2",`${name} regrediu a integridade do cadastro.`);
   has(text,"./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2",`${name} não prepara a Central/Pagamentos.`);
   has(text,"./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2",`${name} não prepara a correção móvel de fotos.`);
   has(text,"./modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1",`${name} não prepara o módulo HEIC.`);
-  has(text,"./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1",`${name} não prepara o worker HEIC same-origin.`);
+  has(text,"./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker2",`${name} não prepara o worker HEIC corrigido.`);
   has(text,"worker-src 'self' blob:",`${name} CSP bloqueia workers locais necessários ao app.`);
   has(text,"type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION",`${name} não anuncia o build ativado.`);
   has(text,"if(relativePath==='/version.json')",`${name} deixou de tratar version.json como mutável.`);
@@ -56,9 +56,9 @@ has(photo,"const VERSION='10.10.9-photoquality2'",'Revisão móvel de fotos não
 has(photo,"createImageBitmap(file,{imageOrientation:'from-image'})",'Decoder móvel perdeu a primeira tentativa orientada.');
 has(photo,'createImageBitmap(file);','Decoder móvel perdeu o fallback Android sem opções.');
 has(photo,'releaseLegacyReportPreviewSurfaces()','Envio não libera previews pesados antes da compressão.');
-has(heic,"const VERSION='10.10.12-heic2'",'Fallback HEIC não está na revisão worker esperada.');
+has(heic,"const VERSION='10.10.12-heic3'",'Fallback HEIC não está na revisão corrigida esperada.');
 has(heic,"const MAX_HEIC_BYTES=25*1024*1024",'Fallback HEIC perdeu o limite de 25 MB.');
-has(heic,"const WORKER_URL='./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1'",'Conversor HEIC não usa worker same-origin fixado.');
+has(heic,"const WORKER_URL='./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker2'",'Conversor HEIC não usa a nova revisão do worker same-origin.');
 has(heic,"new Worker(WORKER_URL)",'Conversor HEIC não cria o worker same-origin.');
 has(heic,"file.arrayBuffer()",'Conversor HEIC não transfere o arquivo como ArrayBuffer.');
 has(heic,"new ImageData(pixels,width,height)",'Conversor HEIC não recompõe os pixels do worker.');
@@ -75,7 +75,10 @@ has(heic,'previewQuestionnaireReportPhoto.__tbSixPhotoBatch','Questionário não
 has(heic,'const batchInFlight=new WeakSet()','Seleção em lote pode iniciar processamento duplicado da mesma escolha.');
 has(heicWorker,"libheif-js@1.19.8/libheif/libheif.js",'Worker HEIC não fixa a versão do libheif.');
 has(heicWorker,'const MAX_PIXELS=32000000','Worker HEIC perdeu o limite preventivo de pixels.');
-has(heicWorker,'new self.libheif.HeifDecoder()','Worker HEIC não instancia o decoder libheif.');
+has(heicWorker,'function resolveLibheif()','Worker HEIC não resolve as formas de exportação do libheif em Web Worker.');
+has(heicWorker,"typeof libheif!=='undefined'",'Worker HEIC não verifica o global lexical exposto por importScripts.');
+has(heicWorker,"typeof candidate.HeifDecoder==='function'",'Worker HEIC não valida o construtor HeifDecoder.');
+has(heicWorker,'new HEIF.HeifDecoder()','Worker HEIC não usa o decoder libheif resolvido.');
 has(heicWorker,'self.postMessage({id,ok:true,width,height,rgba:data.buffer},[data.buffer])','Worker HEIC não devolve pixels por transferência eficiente.');
 has(invites,'suspendAuthListenerForRegistration','Cadastro canônico perdeu a pausa do listener de autenticação.');
 has(invites,'cred.user.getIdTokenResult(true)','Cadastro canônico perdeu a renovação de token/claims.');
