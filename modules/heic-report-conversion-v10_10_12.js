@@ -9,6 +9,7 @@
   const LIB_URL='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
   const LIB_INTEGRITY='sha512-VjmsArkf8Vv2yyvbXCyVxp+R3n4N2WyS1GEQ+YQxa7Hu0tx836WpY4nW9/T1W5JBmvuIsxkVH/DlHgp7NEMjDw==';
   let libraryPromise=null;
+  const batchInFlight=new WeakSet();
 
   const fileType=file=>{
     const raw=String(file?.type||'').toLowerCase().trim();
@@ -23,6 +24,7 @@
     const timer=setTimeout(()=>reject(new Error(`${label} demorou mais que o esperado.`)),ms);
     Promise.resolve(promise).then(value=>{clearTimeout(timer);resolve(value);},error=>{clearTimeout(timer);reject(error);});
   });
+  const nextPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
 
   function loadConverter(){
     if(typeof window.heic2any==='function')return Promise.resolve(window.heic2any);
@@ -56,7 +58,7 @@
     catch(error){blob.name=`${base}.jpg`;return blob;}
   }
 
-  function install(){
+  function installDecoder(){
     if(typeof decodeImageForCompression!=='function'||decodeImageForCompression.__tbHeicConversion)return false;
     const baseDecode=decodeImageForCompression;
     const wrapped=async function(file){
@@ -75,6 +77,75 @@
     wrapped.__tbHeicConversion=true;wrapped.__tbHeicVersion=VERSION;
     decodeImageForCompression=wrapped;
     return true;
+  }
+
+  function syntheticEvent(file){
+    return{target:{files:[file],value:''},currentTarget:null};
+  }
+  function clearBatchInput(target){
+    try{if(target&&'value'in target)target.value='';}catch(error){}
+  }
+  async function processSixPhotoBatch(base,event,kind){
+    const target=event?.target||null;
+    const selected=Array.from(target?.files||[]);
+    if(selected.length<=1)return null;
+    if(selected.length!==6){
+      clearBatchInput(target);
+      alert('Selecione exatamente 6 fotos de uma vez, na ordem indicada: Frente, Costas, Lado direito, Lado esquerdo, Frente contraída e Costas contraída.');
+      return false;
+    }
+    if(target&&typeof target==='object'&&batchInFlight.has(target))return false;
+    if(target&&typeof target==='object')batchInFlight.add(target);
+    try{
+      for(let slot=0;slot<6;slot++){
+        if(typeof showToast==='function')showToast(`Preparando foto ${slot+1} de 6...`);
+        await base(slot,syntheticEvent(selected[slot]));
+        await nextPaint();
+      }
+      let complete=false;
+      try{
+        const files=kind==='weekly'
+          ?(typeof WEEKLY_CHECKIN_FILES!=='undefined'?WEEKLY_CHECKIN_FILES:null)
+          :(typeof QUESTIONNAIRE_REPORT_FILES!=='undefined'?QUESTIONNAIRE_REPORT_FILES:null);
+        complete=Array.isArray(files)&&files.length===6&&files.every(file=>file instanceof File);
+      }catch(error){}
+      if(complete&&typeof showToast==='function')showToast('✓ As 6 fotos foram preparadas na ordem selecionada');
+      return complete;
+    }finally{
+      clearBatchInput(target);
+      if(target&&typeof target==='object')batchInFlight.delete(target);
+    }
+  }
+
+  function installBatchPreviewBridge(){
+    let changed=false;
+    if(typeof previewWeeklyCheckinPhoto==='function'&&!previewWeeklyCheckinPhoto.__tbSixPhotoBatch){
+      const base=previewWeeklyCheckinPhoto;
+      const wrapped=function(index,event){
+        const count=Number(event?.target?.files?.length)||0;
+        if(count>1)return processSixPhotoBatch(base,event,'weekly');
+        return base.apply(this,arguments);
+      };
+      wrapped.__tbSixPhotoBatch=true;wrapped.__tbBase=base;
+      previewWeeklyCheckinPhoto=wrapped;changed=true;
+    }
+    if(typeof previewQuestionnaireReportPhoto==='function'&&!previewQuestionnaireReportPhoto.__tbSixPhotoBatch){
+      const base=previewQuestionnaireReportPhoto;
+      const wrapped=function(index,event){
+        const count=Number(event?.target?.files?.length)||0;
+        if(count>1)return processSixPhotoBatch(base,event,'questionnaire');
+        return base.apply(this,arguments);
+      };
+      wrapped.__tbSixPhotoBatch=true;wrapped.__tbBase=base;
+      previewQuestionnaireReportPhoto=wrapped;changed=true;
+    }
+    return changed;
+  }
+
+  function install(){
+    const decoder=installDecoder();
+    const batch=installBatchPreviewBridge();
+    return decoder||batch;
   }
 
   install();
