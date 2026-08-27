@@ -24,6 +24,8 @@ const resume=invites.indexOf('resumeAuthListenerAfterRegistration(authListenerSu
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
 const workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
+const workerCache=sw.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
+const bridgeCache=bridge.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
 need(activeRules==='firebase/firestore_28_compacto.rules','Cadastro deve ser validado contra a Rules 28 ativa.');
 need(appCheck>=0&&invitePrecheck>appCheck&&create>invitePrecheck,'App Check e convite devem ser validados antes de qualquer criação no Firebase Auth.');
 need(invites.includes('service.getToken(true)'),'O cadastro deve forçar um token App Check válido antes de continuar.');
@@ -47,6 +49,6 @@ need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(
 need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
 need(updaterBuild===version.build&&workerBuild===version.build&&bridgeBuild===version.build,'Build do cadastro precisa ser idêntico no endpoint, atualizador e dois Service Workers.');
 need(updater.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Atualizador deve renovar explicitamente a integridade do cadastro.');
-need(sw.includes("const CACHE_HOTFIX='inboxpayments2'")&&bridge.includes("const CACHE_HOTFIX='inboxpayments2'"),'A nova release precisa invalidar os caches sem perder o hotfix de cadastro.');
+need(workerCache&&workerCache===bridgeCache,'A nova release precisa invalidar os caches de forma coerente nos dois Service Workers.');
 need(sw.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2")&&bridge.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Service Workers não podem preparar a revisão registration1 antiga.');
 console.log(`APROVADO: cadastro por convite, preflight App Check, diagnóstico por etapa, atomicidade e build ${version.build} seguem coerentes sob ${activeRules}.`);
