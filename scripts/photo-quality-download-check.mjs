@@ -11,8 +11,13 @@ const modulePath='modules/photo-quality-download-v10_10_9.js';
 assert(fs.existsSync(path.join(root,modulePath)),'Módulo de qualidade/download de fotos ausente.');
 const source=read(modulePath);
 const config=read('config_v10_7.js');
-const rules=read('firebase/storage_5.rules');
+const firebaseConfig=JSON.parse(read('firebase.json'));
+const storagePath=String(firebaseConfig?.storage?.rules||'');
+assert(storagePath==='firebase/storage_6.rules','firebase.json não aponta para Storage 6.');
+assert(fs.existsSync(path.join(root,storagePath)),`Regras Storage ativas ausentes: ${storagePath}`);
+const rules=fs.existsSync(path.join(root,storagePath))?read(storagePath):'';
 
+has(source,"const VERSION='10.10.9-photoquality2'",'Revisão móvel photoquality2 não está ativa.');
 has(source,"const ORIGINAL_KIND='progressPhotoOriginals'",'Arquivo original não é preservado em caminho separado.');
 has(source,'MAX_ORIGINAL_BYTES=25*1024*1024','Limite de original de 25 MiB ausente.');
 has(source,'buildProgressPhotoVariants.__tbOriginalArchive','Captura da foto fonte antes da otimização ausente.');
@@ -22,8 +27,14 @@ has(source,"button.textContent='↓ BAIXAR FOTO ORIGINAL'",'Botão de download d
 has(source,"CURRENT_USER?.role==='trainer'",'Download não está restrito à interface do treinador.');
 has(source,'safePhotoDataUrl(record?.dataUrl)','Compatibilidade de download com fotos antigas em Firestore ausente.');
 has(source,'service.ref(original).delete()','Exclusão não remove o original associado.');
+has(source,"if(raw==='image/jpg'||raw==='image/pjpeg')return'image/jpeg'",'MIME JPEG móvel alternativo não é normalizado.');
+has(source,"createImageBitmap(file,{imageOrientation:'from-image'})",'Primeira tentativa de decode móvel com orientação está ausente.');
+has(source,'createImageBitmap(file);','Fallback Android/WebView sem opções está ausente.');
+has(source,'releaseLegacyReportPreviewSurfaces()','Previews pesados não são liberados antes da compressão.');
+has(source,'encodeImageVariant(decoded,520,.68,240000)','Preview leve de relatório não está limitado a 520 px.');
+has(source,"type==='image/heic'||type==='image/heif'",'HEIC/HEIF não possui diagnóstico específico de incompatibilidade.');
 
-has(config,"./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality1",'Loader não inclui o módulo de qualidade/download.');
+has(config,"./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2",'Loader não inclui a revisão móvel de qualidade/download.');
 has(rules,'match /progressPhotoOriginals/{uid}/{photoId}','Regras do Storage não cobrem originais.');
 has(rules,"request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif|heic|heif)')",'Tipos de imagem originais permitidos estão incorretos.');
 has(rules,'validOriginalProgressPhoto(25 * 1024 * 1024)','Limite do Storage para original não é 25 MiB.');
@@ -32,4 +43,4 @@ has(rules,'allow read: if trainerOwns(uid) || activeOwner(uid);','Treinador vinc
 assert(!rules.includes('allow read: if isTrainer() || activeOwner(uid);'),'Qualquer treinador voltou a ter acesso às fotos de qualquer aluno.');
 
 if(fail.length){console.error('\nFalhas de qualidade/download de fotos:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Photo quality/download check OK — original preservado, fallback compatível e download restrito ao treinador vinculado.');
+console.log('Photo quality/download check OK — decode móvel, original preservado e download restrito ao treinador vinculado.');
