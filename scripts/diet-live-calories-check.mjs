@@ -52,7 +52,7 @@ has(source,'syncCalculatorMacroInputs(divisionResult())','Salvar cálculo não s
 lacks(source,'db.collection(','Cálculo automático não deve criar leitura/gravação Firestore.');
 lacks(source,'cloudWrite(','Cálculo automático deve ser derivado localmente, sem gravação extra.');
 
-has(release,"const PATCH_VERSION='10.10.11-release2'",'Ponte de alimentos personalizados não possui revisão própria.');
+has(release,"const PATCH_VERSION='10.10.12-release4'",'Ponte de alimentos personalizados não possui revisão própria compatível com a release atual.');
 has(release,"document.querySelectorAll('[data-custom-food-list] .tb-custom-table tbody tr')",'Alimentos personalizados não são lidos da tabela já carregada.');
 has(release,"protein:customNumber(cells[1]?.textContent)",'Proteína do alimento personalizado não entra na base automática.');
 has(release,"carbs:customNumber(cells[2]?.textContent)",'Carboidrato do alimento personalizado não entra na base automática.');
@@ -85,10 +85,11 @@ lacks(workspace,"cloudWrite(",'Workspace deve reutilizar persistMealPlan, sem no
 const portionIndex=config.indexOf('diet-portion-presets-v10_10_9.js');
 const personalizationIndex=config.indexOf('diet-personalization-v10_10_11.js');
 const caloriesIndex=config.indexOf('diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2');
-const releaseIndex=config.indexOf('release-coherence-v10_10_10.js?v=10.10.11-release2');
+const releaseIndex=config.indexOf('release-coherence-v10_10_10.js?v=10.10.12-release4');
 const workspaceIndex=config.indexOf('trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1');
+const trainerHubIndex=config.indexOf('trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2');
 const trainingIndex=config.indexOf('training-integrity-v10_10_11.js');
-assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex&&workspaceIndex>releaseIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → ponte personalizada → workspace do treinador.');
+assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex&&workspaceIndex>releaseIndex&&trainerHubIndex>workspaceIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → ponte personalizada → workspace → Central/Pagamentos.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2",`${name} não prepara a revisão automática de macros para uso offline.`);
   has(text,"./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1",`${name} não prepara o workspace do treinador para uso offline.`);
