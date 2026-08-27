@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082703,
-  "revision": "mobile-report-heic-conversion-1",
-  "publishedAt": "2026-08-27T14:57:00Z",
+  "build": 2026082704,
+  "revision": "mobile-report-heic-worker-1",
+  "publishedAt": "2026-08-27T16:05:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Conversão local de HEIC/HEIF para JPG no envio de relatórios, mantendo previews leves, compatibilidade móvel e preservação segura das fotos originais."
+  "message": "Corrige a conversão HEIC/HEIF em Android usando um worker same-origin, preservando o fluxo das 6 fotos e evitando bloqueio pela CSP da página."
 }
