@@ -11,7 +11,7 @@ const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const modulePath='modules/trainer-inbox-payments-v10_10_12.js';
 const rulesPath='firebase/firestore_28_compacto.rules';
 const storagePath='firebase/storage_6.rules';
-for(const file of [modulePath,'config_v10_7.js','sw.js','sw_47.js','update_v10_10_9.js']){
+for(const file of [modulePath,'config_v10_7.js','sw.js','sw_47.js','update_v10_10_9.js','modules/release-coherence-v10_10_10.js']){
   assert(fs.existsSync(file),`Arquivo ausente: ${file}`);
   if(fs.existsSync(file)){
     const result=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
@@ -31,6 +31,9 @@ const updater=read('update_v10_10_9.js');
 const release=read('modules/release-coherence-v10_10_10.js');
 const firebaseJson=JSON.parse(read('firebase.json'));
 const version=JSON.parse(read('version.json'));
+const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
+const workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
+const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 
 has(source,"const VERSION='10.10.12-inboxpayments1'",'Módulo não possui revisão própria.');
 has(source,"CURRENT_USER?.role==='trainer'",'Áreas administrativas não têm gate explícito de treinador.');
@@ -67,26 +70,31 @@ has(rules,'match /trainerBilling/{trainerUid}','Regras não possuem domínio fin
 has(rules,"request.resource.data.planType in ['quarterly','semiannual']",'Plano financeiro aceita valores fora dos dois tipos pedidos.');
 has(rules,'paymentReceiptPath','Firestore não valida caminho do comprovante.');
 has(rules,'allow read: if isTrainer() && request.auth.uid == trainerUid;','Dados financeiros não possuem leitura exclusiva do próprio treinador.');
+has(rules,'match /{document=**} { allow read, write: if false; }','Firestore 28 perdeu o deny-all final.');
 
 has(storage,'match /paymentReceipts/{trainerUid}/{studentUid}/{fileName}','Storage não isola comprovantes em domínio próprio.');
 has(storage,'request.auth.uid == trainerUid','Storage não exige o próprio treinador no comprovante.');
 has(storage,'trainerOwns(studentUid)','Storage não exige vínculo real do aluno.');
 has(storage,'validPaymentReceipt(15 * 1024 * 1024)','Storage não limita comprovantes a 15 MB.');
 lacks(storage,'activeOwner(studentUid)','Aluno recebeu regra de acesso ao comprovante financeiro.');
+has(storage,'match /{allPaths=**} { allow read, write: if false; }','Storage 6 perdeu o deny-all final.');
 
 assert(firebaseJson?.firestore?.rules===rulesPath,'firebase.json não ativa Firestore 28.');
 assert(firebaseJson?.storage?.rules===storagePath,'firebase.json não ativa Storage 6.');
 has(release,"const ACTIVE_FIRESTORE_RULES='firestore_28_compacto.rules'",'Diagnóstico do app não aponta para Firestore 28.');
-has(config,"trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments1",'Loader não entrega a central/pagamentos.');
+has(config,"trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2",'Loader não entrega a central/pagamentos com chave de cache atual.');
+has(config,"registration-integrity-v10_10_9.js?v=10.10.9-registration2",'Port da central regrediu o hotfix de cadastro registration2.');
 assert(config.indexOf('trainer-inbox-payments-v10_10_12.js')>config.indexOf('trainer-diet-workspace-v10_10_11.js'),'Central do treinador deve carregar após os módulos atuais de dieta.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
-  has(text,"const CACHE_HOTFIX='inboxpayments1'",`${name} não invalida o shell anterior.`);
-  has(text,"trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments1",`${name} não prepara a central/pagamentos para o shell.`);
-  has(text,'const BUILD_REVISION=2026082503',`${name} não anuncia o build da central.`);
+  has(text,"const CACHE_HOTFIX='inboxpayments2'",`${name} não invalida o shell anterior.`);
+  has(text,"trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2",`${name} não prepara a central/pagamentos para o shell.`);
+  has(text,"registration-integrity-v10_10_9.js?v=10.10.9-registration2",`${name} regrediu a entrega do cadastro corrigido.`);
 }
-has(updater,'const CURRENT_BUILD=2026082503','Atualizador não conhece o build da central.');
-assert(version.build===2026082503,'version.json não possui o build da central.');
-assert(version.revision==='trainer-inbox-payments-1','version.json não identifica a revisão da central.');
+has(updater,"trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2",'Atualizador não renova a central/pagamentos.');
+has(updater,"registration-integrity-v10_10_9.js?v=10.10.9-registration2",'Atualizador regrediu a integridade do cadastro.');
+assert(version.build===updaterBuild&&updaterBuild===workerBuild&&workerBuild===bridgeBuild,'Build deve ser idêntico em version.json, updater e dois Service Workers.');
+assert(version.build>2026082604,'Build da central precisa ser posterior ao último hotfix de cadastro.');
+assert(version.revision==='trainer-inbox-payments-2','version.json não identifica a revisão atual da central.');
 
 if(source){
   const window={};
@@ -107,4 +115,4 @@ if(source){
 }
 
 if(failures.length){console.error('FALHA — trainer inbox/payments\n- '+failures.join('\n- '));process.exit(1);}
-console.log('APROVADO — central de relatórios, notificações internas, pagamentos, vencimentos, comprovantes, privacidade e PWA validados.');
+console.log(`APROVADO — central de relatórios, notificações internas, pagamentos, vencimentos, comprovantes, privacidade e PWA validados no build ${version.build}.`);
