@@ -64,6 +64,13 @@ has(heic,"toType:'image/jpeg',quality:.94",'HEIC não é convertido localmente p
 has(heic,'if(!isHeic(file))return baseDecode(file);','Conversor HEIC interfere em formatos já suportados.');
 has(heic,'try{return await baseDecode(file);}catch(nativeError)','HEIC não tenta primeiro o decoder nativo do aparelho.');
 has(heic,"wrapped.__tbHeicConversion=true",'Wrapper HEIC não possui proteção contra instalação duplicada.');
+has(heic,'const selected=Array.from(target?.files||[])','Seleção em lote não preserva as seis fotos escolhidas.');
+has(heic,'if(selected.length!==6)','Seleção em lote deixou de exigir exatamente seis fotos.');
+has(heic,'for(let slot=0;slot<6;slot++)','Seleção em lote não percorre os seis slots.');
+has(heic,"await base(slot,syntheticEvent(selected[slot]))",'Seleção em lote voltou a enviar somente a primeira foto ao preview.');
+has(heic,'previewWeeklyCheckinPhoto.__tbSixPhotoBatch','Relatório semanal não possui proteção do seletor em lote.');
+has(heic,'previewQuestionnaireReportPhoto.__tbSixPhotoBatch','Questionário não possui proteção do seletor em lote.');
+has(heic,'const batchInFlight=new WeakSet()','Seleção em lote pode iniciar processamento duplicado da mesma escolha.');
 has(invites,'suspendAuthListenerForRegistration','Cadastro canônico perdeu a pausa do listener de autenticação.');
 has(invites,'cred.user.getIdTokenResult(true)','Cadastro canônico perdeu a renovação de token/claims.');
 has(invites,'await ensureRegistrationAppCheck()','Cadastro canônico perdeu o preflight de App Check.');
@@ -73,4 +80,4 @@ lacks(integrity,'doRegister=secured','registration-integrity voltou a sobrescrev
 has(integrity,"const VERSION='10.10.9-registration2'",'Camada passiva de integridade não está na revisão esperada.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'sw_47.js divergiu do Service Worker principal.');
 if(fail.length){console.error('FALHA — mobile startup consistency\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — build ${version.build}, cadastro, Central/Pagamentos, fotos móveis + HEIC, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);
+console.log(`APROVADO — build ${version.build}, cadastro, Central/Pagamentos, 6 fotos + HEIC, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);
