@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082701,
-  "revision": "trainer-inbox-payments-2",
-  "publishedAt": "2026-08-27T09:30:00Z",
+  "build": 2026082702,
+  "revision": "mobile-report-photo-decode-2",
+  "publishedAt": "2026-08-27T10:05:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Central de relatórios e atualizações do treinador, notificações internas e controle privado de pagamentos com comprovantes e vencimentos automáticos."
+  "message": "Correção móvel do envio de fotos de relatórios: previews leves, fallback Android e liberação de memória antes da compressão."
 }
