@@ -4,7 +4,7 @@
   window.__TEAM_BULLS_RELEASE_COHERENCE_10_10_10__=true;
 
   const RELEASE_VERSION='10.10.9';
-  const PATCH_VERSION='10.10.12-release4';
+  const PATCH_VERSION='10.10.12-release5';
   const ACTIVE_FIRESTORE_RULES='firestore_28_compacto.rules';
   const CUSTOM_BRIDGE_FLAG='__tbCustomFoodBridge';
   let customFoodObserver=null;
@@ -33,6 +33,39 @@
       wrapped.__tbBase=base;
       cloudWriteError=wrapped;
     }catch(error){console.warn('[Team Bulls] Falha ao sincronizar mensagem de regras',error);}
+  }
+
+  function installPrescriptionTechniqueOverflowFix(){
+    try{
+      if(document.getElementById('tb-prescription-technique-overflow-fix'))return;
+      const style=document.createElement('style');
+      style.id='tb-prescription-technique-overflow-fix';
+      style.textContent=`
+        @media (min-width:900px){
+          #modal-prescription .prescription-tech-panel{
+            overflow-y:auto!important;
+            overflow-x:hidden!important;
+            overscroll-behavior:contain;
+            scrollbar-gutter:stable;
+          }
+          #modal-prescription .week-technique-editor,
+          #modal-prescription .week-superset-config,
+          #modal-prescription .myo-optional-config{
+            flex:0 0 auto;
+          }
+        }
+        @media (min-width:900px) and (max-height:720px){
+          #modal-prescription .week-technique-picker{
+            max-height:min(180px,32dvh)!important;
+            min-height:0!important;
+          }
+          #modal-prescription .prescription-tech-panel{
+            padding-bottom:10px!important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }catch(error){console.warn('[Team Bulls] Falha ao corrigir rolagem do editor de técnicas',error);}
   }
 
   function customNumber(value){
@@ -108,8 +141,8 @@
     return missing;
   }
 
-  function install(){applyVersionLabels();patchFirebaseRuleMessage();installCustomFoodMacroBridge();setTimeout(verifyRuntime,0);}
+  function install(){applyVersionLabels();patchFirebaseRuleMessage();installPrescriptionTechniqueOverflowFix();installCustomFoodMacroBridge();setTimeout(verifyRuntime,0);}
   window.TeamBullsRelease=Object.freeze({version:RELEASE_VERSION,patchVersion:PATCH_VERSION,activeFirestoreRules:ACTIVE_FIRESTORE_RULES,verify:verifyRuntime,refreshLabels:applyVersionLabels,syncCustomFoodMacros:refreshDietTotalsFromCustomFoods});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  window.addEventListener('pageshow',()=>{applyVersionLabels();installCustomFoodMacroBridge();refreshDietTotalsFromCustomFoods();},{passive:true});
+  window.addEventListener('pageshow',()=>{applyVersionLabels();installPrescriptionTechniqueOverflowFix();installCustomFoodMacroBridge();refreshDietTotalsFromCustomFoods();},{passive:true});
 })();

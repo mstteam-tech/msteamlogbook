@@ -1,0 +1,20 @@
+name: Prescription technique overflow
+on:
+  pull_request:
+    paths:
+      - 'modules/release-coherence-v10_10_10.js'
+      - 'styles_v10_10_9.css'
+      - 'scripts/prescription-technique-overflow-check.mjs'
+      - '.github/workflows/prescription-technique-overflow.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate prescription technique layout
+        run: node scripts/prescription-technique-overflow-check.mjs
