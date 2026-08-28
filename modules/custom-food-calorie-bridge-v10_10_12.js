@@ -3,7 +3,7 @@
   if(window.__TEAM_BULLS_CUSTOM_FOOD_CALORIE_BRIDGE_1__)return;
   window.__TEAM_BULLS_CUSTOM_FOOD_CALORIE_BRIDGE_1__=true;
 
-  const VERSION='10.10.12-customfood3';
+  const VERSION='10.10.12-customfood2';
   const COLLECTION='trainerSupplementCatalog';
   const FIELD='dietPortionItems';
   const FLAG='__tbPersistentCustomFood';
