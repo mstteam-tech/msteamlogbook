@@ -10,9 +10,9 @@ const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const close=(left,right)=>Math.abs(Number(left)-Number(right))<1e-9;
 
 const modulePath='modules/diet-live-calories-v10_10_11.js';
-const releasePath='modules/release-coherence-v10_10_10.js';
+const customBridgePath='modules/custom-food-calorie-bridge-v10_10_12.js';
 const workspacePath='modules/trainer-diet-workspace-v10_10_11.js';
-for(const file of [modulePath,releasePath,workspacePath]){
+for(const file of [modulePath,customBridgePath,workspacePath]){
   assert(fs.existsSync(file),`Arquivo ausente: ${file}`);
   if(fs.existsSync(file)){
     const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
@@ -21,7 +21,7 @@ for(const file of [modulePath,releasePath,workspacePath]){
 }
 
 const source=fs.existsSync(modulePath)?read(modulePath):'';
-const release=fs.existsSync(releasePath)?read(releasePath):'';
+const customBridge=fs.existsSync(customBridgePath)?read(customBridgePath):'';
 const workspace=fs.existsSync(workspacePath)?read(workspacePath):'';
 const config=read('config_v10_7.js');
 const sw=read('sw.js');
@@ -52,15 +52,19 @@ has(source,'syncCalculatorMacroInputs(divisionResult())','Salvar cálculo não s
 lacks(source,'db.collection(','Cálculo automático não deve criar leitura/gravação Firestore.');
 lacks(source,'cloudWrite(','Cálculo automático deve ser derivado localmente, sem gravação extra.');
 
-has(release,"const PATCH_VERSION='10.10.12-release4'",'Ponte de alimentos personalizados não possui revisão própria compatível com a release atual.');
-has(release,"document.querySelectorAll('[data-custom-food-list] .tb-custom-table tbody tr')",'Alimentos personalizados não são lidos da tabela já carregada.');
-has(release,"protein:customNumber(cells[1]?.textContent)",'Proteína do alimento personalizado não entra na base automática.');
-has(release,"carbs:customNumber(cells[2]?.textContent)",'Carboidrato do alimento personalizado não entra na base automática.');
-has(release,"fat:customNumber(cells[3]?.textContent)",'Gordura do alimento personalizado não entra na base automática.');
-has(release,'presets.splice(0,presets.length,...base,...custom)','Tabela automática não incorpora alimentos personalizados.');
-has(release,'window.TeamBullsDietLiveCalories?.refresh?.()','Mudança no catálogo personalizado não recalcula a dieta aberta.');
-has(release,"customFoodObserver.observe(host,{childList:true,subtree:true,characterData:true})",'Alterações em Meus Alimentos não são observadas para recálculo.');
-lacks(release,"db.collection(",'Ponte de alimentos personalizados não deve criar nova leitura Firestore.');
+has(customBridge,"const VERSION='10.10.12-customfood2'",'Ponte de alimentos personalizados não possui revisão própria compatível.');
+has(customBridge,"const COLLECTION='trainerSupplementCatalog'",'Ponte não usa o catálogo canônico do treinador.');
+has(customBridge,"const FIELD='dietPortionItems'",'Ponte não lê os itens persistidos do catálogo.');
+has(customBridge,"CURRENT_USER?.role==='trainer'",'Leitura do catálogo personalizado não está restrita ao treinador.');
+has(customBridge,"db.collection(COLLECTION).doc(uid)",'Ponte não carrega o catálogo do treinador autenticado.');
+has(customBridge,'protein:n(raw.protein)','Proteína personalizada não entra nos presets.');
+has(customBridge,'carbs:n(raw.carbs)','Carboidrato personalizado não entra nos presets.');
+has(customBridge,'fat:n(raw.fat)','Gordura personalizada não entra nos presets.');
+has(customBridge,'presets.splice(0,presets.length,...base,...clean)','Presets personalizados não são aplicados de forma determinística.');
+has(customBridge,'window.TeamBullsDietLiveCalories?.refresh?.()','Totais não são recalculados após restaurar alimentos personalizados.');
+has(customBridge,'new MutationObserver','Mudanças no catálogo/refeição não restauram os presets personalizados.');
+has(customBridge,"target?.closest?.('[data-custom-food-list],#tb-meal-portion-body')",'Ponte não acompanha alterações relevantes do workspace.');
+lacks(customBridge,'cloudWrite(','Ponte de macros não deve gravar dados paralelos no Firestore.');
 
 has(workspace,"const VERSION='10.10.11-dietworkspace1'",'Workspace do treinador não possui revisão própria.');
 has(workspace,"CURRENT_USER?.role==='trainer'",'Workspace não está explicitamente restrito ao treinador.');
@@ -85,15 +89,18 @@ lacks(workspace,"cloudWrite(",'Workspace deve reutilizar persistMealPlan, sem no
 const portionIndex=config.indexOf('diet-portion-presets-v10_10_9.js');
 const personalizationIndex=config.indexOf('diet-personalization-v10_10_11.js');
 const caloriesIndex=config.indexOf('diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2');
-const releaseIndex=config.indexOf('release-coherence-v10_10_10.js?v=10.10.12-release4');
+const trainingIndex=config.indexOf('training-integrity-v10_10_11.js');
+const releaseIndex=config.indexOf('release-coherence-v10_10_10.js?v=10.10.12-release6');
+const customBridgeIndex=config.indexOf('custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2');
 const workspaceIndex=config.indexOf('trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1');
 const trainerHubIndex=config.indexOf('trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2');
-const trainingIndex=config.indexOf('training-integrity-v10_10_11.js');
-assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex&&workspaceIndex>releaseIndex&&trainerHubIndex>workspaceIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → ponte personalizada → workspace → Central/Pagamentos.');
+assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex&&customBridgeIndex>releaseIndex&&workspaceIndex>customBridgeIndex&&trainerHubIndex>workspaceIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → integridade → ponte persistente → workspace → Central/Pagamentos.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2",`${name} não prepara a revisão automática de macros para uso offline.`);
+  has(text,"./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2",`${name} não prepara alimentos personalizados para uso offline.`);
   has(text,"./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1",`${name} não prepara o workspace do treinador para uso offline.`);
 }
+has(updater,"./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2",'Atualizador não renova a ponte de alimentos personalizados.');
 
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
 const swBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
@@ -138,4 +145,4 @@ if(source){
 }
 
 if(fail.length){console.error('FALHA — diet live calories/workspace\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — macros em tempo real, alimentos personalizados, g/kg corporal, workspace contínuo do treinador e coerência da release PWA validados.');
+console.log('APROVADO — macros em tempo real, alimentos personalizados persistidos, g/kg corporal, workspace contínuo do treinador e coerência da release PWA validados.');
