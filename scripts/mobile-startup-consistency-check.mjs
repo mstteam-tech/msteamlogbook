@@ -7,10 +7,10 @@ const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const has=(text,needle,message)=>assert(text.includes(needle),message);
 const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 
-const files=['boot_v10.js','config_v10_7.js','update_v10_10_9.js','sw.js','sw_47.js','modules/v107-invites.js','modules/registration-integrity-v10_10_9.js','modules/trainer-inbox-payments-v10_10_12.js','modules/photo-quality-download-v10_10_9.js','modules/heic-report-conversion-v10_10_12.js','modules/heic-libheif-worker-v10_10_12.js'];
+const files=['boot_v10.js','config_v10_7.js','update_v10_10_9.js','sw.js','sw_47.js','modules/v107-invites.js','modules/registration-integrity-v10_10_9.js','modules/trainer-inbox-payments-v10_10_12.js','modules/photo-quality-download-v10_10_9.js','modules/heic-report-conversion-v10_10_12.js','modules/heic-libheif-worker-v10_10_12.js','modules/pdf-export-v10_10_12.js'];
 for(const file of files){const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);}
 
-const boot=read('boot_v10.js'),config=read('config_v10_7.js'),updater=read('update_v10_10_9.js'),sw=read('sw.js'),bridge=read('sw_47.js'),invites=read('modules/v107-invites.js'),integrity=read('modules/registration-integrity-v10_10_9.js'),photo=read('modules/photo-quality-download-v10_10_9.js'),heic=read('modules/heic-report-conversion-v10_10_12.js'),heicWorker=read('modules/heic-libheif-worker-v10_10_12.js');
+const boot=read('boot_v10.js'),config=read('config_v10_7.js'),updater=read('update_v10_10_9.js'),sw=read('sw.js'),bridge=read('sw_47.js'),invites=read('modules/v107-invites.js'),integrity=read('modules/registration-integrity-v10_10_9.js'),photo=read('modules/photo-quality-download-v10_10_9.js'),heic=read('modules/heic-report-conversion-v10_10_12.js'),heicWorker=read('modules/heic-libheif-worker-v10_10_12.js'),pdf=read('modules/pdf-export-v10_10_12.js');
 const version=JSON.parse(read('version.json')),firebase=JSON.parse(read('firebase.json'));
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0),workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0),bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const swHotfix=sw.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'',bridgeHotfix=bridge.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
@@ -41,12 +41,16 @@ has(updater,"if(screen!=='screen-auth')return false",'Atualizador poderia reinic
 has(updater,'&b=${CURRENT_BUILD}','Service Worker não é registrado com build.');
 has(updater,'heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','Atualizador não renova o módulo HEIC.');
 has(updater,'heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker2','Atualizador não prepara a revisão corrigida do worker HEIC.');
+has(updater,"const PDF_EXPORT_MODULE='./modules/pdf-export-v10_10_12.js?v=10.10.12-pdf1'",'Atualizador não conhece o exportador PDF nativo.');
+has(updater,'function loadPdfExporter()','Atualizador não instala o exportador PDF após o runtime principal.');
+has(updater,"window.addEventListener('team-bulls-runtime-ready',()=>schedulePdfExporter(0))",'Exportador PDF não possui recuperação após o runtime ficar pronto.');
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2",`${name} regrediu a integridade do cadastro.`);
   has(text,"./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2",`${name} não prepara a Central/Pagamentos.`);
   has(text,"./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2",`${name} não prepara a correção móvel de fotos.`);
   has(text,"./modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1",`${name} não prepara o módulo HEIC.`);
   has(text,"./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker2",`${name} não prepara o worker HEIC corrigido.`);
+  has(text,"./modules/pdf-export-v10_10_12.js?v=10.10.12-pdf1",`${name} não prepara o exportador PDF para uso móvel/offline.`);
   has(text,"worker-src 'self' blob:",`${name} CSP bloqueia workers locais necessários ao app.`);
   has(text,"type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION",`${name} não anuncia o build ativado.`);
   has(text,"if(relativePath==='/version.json')",`${name} deixou de tratar version.json como mutável.`);
@@ -80,6 +84,23 @@ has(heicWorker,"typeof libheif!=='undefined'",'Worker HEIC não verifica o globa
 has(heicWorker,"typeof candidate.HeifDecoder==='function'",'Worker HEIC não valida o construtor HeifDecoder.');
 has(heicWorker,'new HEIF.HeifDecoder()','Worker HEIC não usa o decoder libheif resolvido.');
 has(heicWorker,'self.postMessage({id,ok:true,width,height,rgba:data.buffer},[data.buffer])','Worker HEIC não devolve pixels por transferência eficiente.');
+
+has(pdf,"const VERSION='10.10.12-pdf1'",'Exportador PDF não está na revisão esperada.');
+has(pdf,"new Blob([bytes],{type:'application/pdf'})",'PDF não é produzido como arquivo application/pdf nativo.');
+has(pdf,"a.download=safeFile(name)+'.pdf'",'Exportador PDF não dispara download direto compatível com PWA/mobile.');
+lacks(pdf,"window.open(",'Exportador PDF voltou a depender de pop-up, incompatível com parte dos celulares/PWA.');
+lacks(pdf,'.print()','Exportador PDF voltou a depender do diálogo de impressão do navegador.');
+has(pdf,"window.exportWorkoutPdf=exportWorkout",'Exportador novo não substitui o fluxo antigo de treino.');
+has(pdf,"window.exportCurrentDietPdf=()=>exportDiet",'Aluno não possui exportação da dieta atual.');
+has(pdf,"window.exportTrainerDietPdf=()=>exportDiet",'Treinador não possui exportação da dieta do aluno.');
+has(pdf,"['screen-diet-detail','exportCurrentDietPdf'",'Tela de dieta do aluno não recebe botão PDF.');
+has(pdf,"['screen-ts-diet-detail','exportTrainerDietPdf'",'Tela de dieta do treinador não recebe botão PDF.');
+has(pdf,"'TEAM BULLS // DOCUMENTO DO ALUNO'",'PDF perdeu a identidade visual Team Bulls.');
+has(pdf,"'// SURVIVAL FITNESS SYSTEM'",'PDF perdeu a assinatura visual do aplicativo.');
+has(pdf,'for(let week=1;week<=8;week++)','PDF do treino não inclui as oito semanas da prescrição.');
+has(pdf,'const variants=Array.isArray(plan?.variants)','PDF da dieta não preserva as divisões semanais.');
+has(pdf,"const defs=typeof DIET_SECTION_DEFS!=='undefined'",'PDF da dieta não inclui tabelas de apoio/suplementação.');
+
 has(invites,'suspendAuthListenerForRegistration','Cadastro canônico perdeu a pausa do listener de autenticação.');
 has(invites,'cred.user.getIdTokenResult(true)','Cadastro canônico perdeu a renovação de token/claims.');
 has(invites,'await ensureRegistrationAppCheck()','Cadastro canônico perdeu o preflight de App Check.');
@@ -89,4 +110,4 @@ lacks(integrity,'doRegister=secured','registration-integrity voltou a sobrescrev
 has(integrity,"const VERSION='10.10.9-registration2'",'Camada passiva de integridade não está na revisão esperada.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'sw_47.js divergiu do Service Worker principal.');
 if(fail.length){console.error('FALHA — mobile startup consistency\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — build ${version.build}, cadastro, Central/Pagamentos, 6 fotos + HEIC worker, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);
+console.log(`APROVADO — build ${version.build}, cadastro, Central/Pagamentos, 6 fotos + HEIC, PDF nativo de treino/dieta, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);

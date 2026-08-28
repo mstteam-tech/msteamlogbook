@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082705,
-  "revision": "mobile-report-heic-global-2",
-  "publishedAt": "2026-08-27T16:25:00Z",
+  "build": 2026082801,
+  "revision": "native-styled-pdf-export-1",
+  "publishedAt": "2026-08-28T14:33:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Corrige a detecção do decoder libheif dentro do Web Worker em Android/WebView e força nova revisão do worker HEIC sem alterar o fluxo das 6 fotos."
+  "message": "Corrige a geração de PDF de treinos e dietas no celular/PWA com exportação nativa, sem pop-ups, e aplica o layout visual Team Bulls aos documentos."
 }
