@@ -7,11 +7,13 @@
   const COLLECTION='trainerSupplementCatalog';
   const FIELD='dietPortionItems';
   const FLAG='__tbPersistentCustomFood';
+  const PDF_MODULE='./modules/pdf-export-v10_10_12.js?v=10.10.12-pdf1';
   let cached=[];
   let cachedTrainer='';
   let loading=null;
   let observer=null;
   let refreshFrame=0;
+  let pdfLoading=null;
 
   const n=value=>{const parsed=Number(String(value??'').trim().replace(',','.'));return Number.isFinite(parsed)&&parsed>=0?parsed:0;};
   const key=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
@@ -87,6 +89,25 @@
     const action=String(button.getAttribute?.('onclick')||'');
     if(section&&action.includes('TeamBullsDietPersonalization.addCustom'))syncNow();
   }
+  function loadPdfExporter(){
+    if(window.TeamBullsPdfExport)return Promise.resolve(true);
+    if(pdfLoading)return pdfLoading;
+    pdfLoading=new Promise(resolve=>{
+      const finish=ok=>{if(!ok)pdfLoading=null;resolve(!!ok);};
+      const existing=[...document.scripts].find(script=>{try{return new URL(script.src,location.href).pathname.endsWith('/modules/pdf-export-v10_10_12.js');}catch(error){return false;}});
+      if(existing){
+        if(window.TeamBullsPdfExport){finish(true);return;}
+        let settled=false;const done=ok=>{if(settled)return;settled=true;clearTimeout(timer);finish(ok);};
+        const timer=setTimeout(()=>done(!!window.TeamBullsPdfExport),7000);
+        existing.addEventListener('load',()=>done(!!window.TeamBullsPdfExport),{once:true});
+        existing.addEventListener('error',()=>done(false),{once:true});return;
+      }
+      const script=document.createElement('script');script.src=PDF_MODULE;script.async=false;script.dataset.teamBullsPdf='1';
+      script.onload=()=>finish(!!window.TeamBullsPdfExport);script.onerror=()=>finish(false);document.head.appendChild(script);
+    });
+    return pdfLoading;
+  }
+  function preparePdf(){loadPdfExporter().then(ok=>{if(!ok&&navigator.onLine!==false)setTimeout(()=>loadPdfExporter(),1800);}).catch(()=>{});}
   function install(){
     if(!document.body)return false;
     if(!observer){observer=new MutationObserver(mutations=>{if(mutations.some(relevant))schedule();});observer.observe(document.body,{childList:true,subtree:true,characterData:true});}
@@ -96,11 +117,12 @@
       document.addEventListener('change',beforeMealInput,true);
       document.addEventListener('click',beforeCustomAddClick,true);
     }
-    load().catch(()=>0);return true;
+    load().catch(()=>0);preparePdf();return true;
   }
 
-  window.TeamBullsCustomFoodCalories=Object.freeze({version:VERSION,load,apply:syncNow,refresh:()=>schedule({reload:true})});
+  window.TeamBullsCustomFoodCalories=Object.freeze({version:VERSION,load,apply:syncNow,refresh:()=>schedule({reload:true}),loadPdfExporter});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  window.addEventListener('team-bulls-runtime-ready',()=>load(true).catch(()=>0));
-  window.addEventListener('pageshow',()=>{install();load(true).catch(()=>0);},{passive:true});
+  window.addEventListener('team-bulls-runtime-ready',()=>{load(true).catch(()=>0);preparePdf();});
+  window.addEventListener('online',preparePdf);
+  window.addEventListener('pageshow',()=>{install();load(true).catch(()=>0);preparePdf();},{passive:true});
 })();
