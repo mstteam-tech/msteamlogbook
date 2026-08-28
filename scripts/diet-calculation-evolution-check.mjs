@@ -41,7 +41,8 @@ assert.match(config,/diet-calculation-math-v10_10_9\.js\?v=10\.10\.10-dietmath1/
 assert.match(config,/diet-calculation-evolution-v10_10_9\.js\?v=10\.10\.10-dietcalc1/,'módulo visual não está carregado');
 assert.equal(activeRules,'firebase/firestore_28_compacto.rules','release atual deve validar dietCalculations sob Rules 28');
 assert.match(rules,/match \/dietCalculations\/\{uid\}/,'regras privadas de dietCalculations ausentes');
-assert.match(rules,/allow read: if trainerOwns\(uid\)/,'leitura dos cálculos não está restrita ao treinador vinculado');
+assert.match(rules,/match \/dietCalculations\/\{uid\} \{\s*allow read: if trainerOwns\(uid\);/,'primeira leitura do cálculo deve depender apenas do vínculo do treinador, inclusive quando o documento ainda não existe');
+assert.doesNotMatch(rules,/match \/dietCalculations\/\{uid\} \{\s*allow read:[^;]*resource\.data/s,'leitura inicial não pode depender de resource.data de um documento inexistente');
 assert.doesNotMatch(rules,/match \/dietCalculations[\s\S]*activeOwner\(uid\)/,'aluno não pode receber acesso aos cálculos privados');
 
-console.log(`APROVADO — fórmulas masculina/feminina, macros, privacidade do cálculo e evolução validadas sob ${activeRules}.`);
+console.log(`APROVADO — fórmulas masculina/feminina, macros, primeira leitura privada e evolução validadas sob ${activeRules}.`);
