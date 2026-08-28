@@ -197,7 +197,6 @@ service cloud.firestore {
         && request.resource.data.read == true;
       allow delete: if false;
     }
-
     match /questionnaires/{id} {
       allow read: if trainerOwns(resource.data.studentId) || activeOwner(resource.data.studentId);
       allow create: if trainerOwns(request.resource.data.studentId)
@@ -511,9 +510,7 @@ service cloud.firestore {
     // Cálculos internos da dieta: somente o treinador vinculado pode ler ou alterar.
     // Nenhum valor desta coleção é exposto ao aluno; a dieta prescrita continua em mealPlans.
     match /dietCalculations/{uid} {
-      allow read: if trainerOwns(uid)
-        && resource.data.studentId == uid
-        && resource.data.trainerId == request.auth.uid;
+      allow read: if trainerOwns(uid);
       allow create: if trainerOwns(uid)
         && request.resource.data.keys().hasOnly([
           'schemaVersion','studentId','trainerId','sex','actualWeightKg','heightCm','ageYears',
