@@ -3,7 +3,7 @@
   if(window.__TEAM_BULLS_CUSTOM_FOOD_CALORIE_BRIDGE_1__)return;
   window.__TEAM_BULLS_CUSTOM_FOOD_CALORIE_BRIDGE_1__=true;
 
-  const VERSION='10.10.12-customfood2';
+  const VERSION='10.10.12-customfood3';
   const COLLECTION='trainerSupplementCatalog';
   const FIELD='dietPortionItems';
   const FLAG='__tbPersistentCustomFood';
@@ -78,8 +78,14 @@
   }
   function beforeMealInput(event){
     if(event.target?.id!=='input-meal-items')return;
-    // Executa na captura, antes do listener do workspace calcular o total da refeição.
+    // Captura antes do listener do workspace, garantindo que a linha recém-adicionada já tenha macros conhecidos.
     syncNow();
+  }
+  function beforeCustomAddClick(event){
+    const button=event.target?.closest?.('button');if(!button)return;
+    const section=button.closest?.('[data-custom-food-mode="add"]');
+    const action=String(button.getAttribute?.('onclick')||'');
+    if(section&&action.includes('TeamBullsDietPersonalization.addCustom'))syncNow();
   }
   function install(){
     if(!document.body)return false;
@@ -88,6 +94,7 @@
       document.documentElement.dataset.tbCustomFoodCapture='1';
       document.addEventListener('input',beforeMealInput,true);
       document.addEventListener('change',beforeMealInput,true);
+      document.addEventListener('click',beforeCustomAddClick,true);
     }
     load().catch(()=>0);return true;
   }
