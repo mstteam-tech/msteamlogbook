@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
   "build": 2026082802,
-  "revision": "superset-weekly-integrity-1",
+  "revision": "trainer-mobile-integrity-bundle-1",
   "publishedAt": "2026-08-28T21:35:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Corrige seleção, pareamento e integridade do Super Set por semana, incluindo visibilidade do segundo exercício e prevenção de vínculos conflitantes."
+  "message": "Corrige Super Set por semana, calorias de alimentos personalizados, decodificação HEIC/HEIF no celular e exportação nativa de treino/dieta em PDF."
 }
