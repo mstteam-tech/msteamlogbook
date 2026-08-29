@@ -44,6 +44,12 @@ service firebase.storage {
         && request.resource.size <= maxBytes
         && request.resource.contentType.matches('image/(jpeg|png|webp|heic|heif)');
     }
+    function validStudentProfileJson() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024
+        && request.resource.contentType == 'application/json';
+    }
 
     match /progressPhotos/{uid}/{photoId}.jpg {
       allow read: if trainerOwns(uid) || activeOwner(uid);
@@ -60,6 +66,21 @@ service firebase.storage {
       allow create, update: if activeOwner(uid) && validOriginalProgressPhoto(25 * 1024 * 1024);
       allow delete: if activeOwner(uid);
     }
+
+    // Perfil visual do aluno: preferências ficam isoladas do documento principal
+    // de autenticação. O aluno ativo edita o próprio perfil; somente o treinador
+    // vinculado pode ler/moderar. Outros alunos não têm acesso.
+    match /studentProfiles/{uid}/profile.json {
+      allow read: if trainerOwns(uid) || activeOwner(uid);
+      allow create, update: if (activeOwner(uid) || trainerOwns(uid)) && validStudentProfileJson();
+      allow delete: if activeOwner(uid) || trainerOwns(uid);
+    }
+    match /studentProfiles/{uid}/avatar.jpg {
+      allow read: if trainerOwns(uid) || activeOwner(uid);
+      allow create, update: if activeOwner(uid) && validOptimizedJpegUpload(800 * 1024);
+      allow delete: if activeOwner(uid) || trainerOwns(uid);
+    }
+
     match /reportGuides/{trainerUid}/photo-guide.pdf {
       allow read: if (isTrainer() && request.auth.uid == trainerUid) || activeStudentOf(trainerUid);
       allow create, update: if isTrainer() && request.auth.uid == trainerUid
