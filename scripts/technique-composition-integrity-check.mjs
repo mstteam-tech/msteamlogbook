@@ -3,6 +3,10 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const source=fs.readFileSync('modules/technique-composition-integrity-v10_10_12.js','utf8');
+const updater=fs.readFileSync('update_v10_10_9.js','utf8');
+const sw=fs.readFileSync('sw.js','utf8');
+const bridge=fs.readFileSync('sw_47.js','utf8');
+const version=JSON.parse(fs.readFileSync('version.json','utf8'));
 const document={
   readyState:'complete',
   addEventListener(){},
@@ -104,4 +108,18 @@ assert.match(source,/repairWeeklyEditorDraft/,'reparo de SS unilateral semanal a
 assert.match(source,/wrapPickerPreparation/,'editor base não reconhece vínculo reverso');
 assert.match(source,/wrapSaveExercise/,'salvamento base não reconcilia o par');
 assert.doesNotMatch(source,/eval\(/,'módulo não pode depender de eval sob CSP');
-console.log('APROVADO — Super Set permanece estável com técnicas combinadas, vínculos reversos, troca de parceiro e semanas materializadas.');
+
+const moduleUrl='./modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1';
+assert.ok(updater.includes(moduleUrl),'Atualizador não carrega a proteção de composição de técnicas.');
+assert.match(updater,/loadTechniqueCompositionIntegrity/,'Atualizador não possui carregamento resiliente da proteção.');
+assert.ok(sw.includes(moduleUrl)&&bridge.includes(moduleUrl),'Service Workers não preparam a proteção para uso offline.');
+assert.match(sw,/const CACHE_HOTFIX='techcombo1'/,'Cache principal não foi rotacionado para o hotfix.');
+assert.match(bridge,/const CACHE_HOTFIX='techcombo1'/,'Cache legado não foi rotacionado para o hotfix.');
+const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
+const swBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
+const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
+assert.equal(updaterBuild,version.build,'Build do atualizador não coincide com version.json.');
+assert.equal(swBuild,version.build,'Build do Service Worker não coincide com version.json.');
+assert.equal(bridgeBuild,version.build,'Build do Service Worker legado não coincide com version.json.');
+
+console.log('APROVADO — Super Set permanece estável com técnicas combinadas, vínculos reversos, troca de parceiro, semanas materializadas e PWA coerente.');
