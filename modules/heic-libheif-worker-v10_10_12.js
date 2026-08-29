@@ -5,12 +5,29 @@ const LIBHEIF_URL='https://cdn.jsdelivr.net/npm/libheif-js@1.19.8/libheif/libhei
 const MAX_PIXELS=32000000;
 let ready=false;
 let initError='';
+let HEIF=null;
 
 function fail(message){initError=String(message||'Falha ao inicializar o decoder HEIC.');}
+function resolveLibheif(){
+  const candidates=[];
+  try{if(typeof libheif!=='undefined')candidates.push(libheif);}catch(error){}
+  try{if(self.libheif)candidates.push(self.libheif);}catch(error){}
+  try{if(self.module?.exports)candidates.push(self.module.exports);}catch(error){}
+  try{if(self.exports)candidates.push(self.exports);}catch(error){}
+  for(const candidate of candidates){
+    if(candidate&&typeof candidate.HeifDecoder==='function')return candidate;
+    if(candidate?.default&&typeof candidate.default.HeifDecoder==='function')return candidate.default;
+  }
+  return null;
+}
 
 try{
   importScripts(LIBHEIF_URL);
-  ready=!!(self.libheif&&typeof self.libheif.HeifDecoder==='function');
+  HEIF=resolveLibheif();
+  if(HEIF&&(!self.libheif||typeof self.libheif.HeifDecoder!=='function')){
+    try{self.libheif=HEIF;}catch(error){}
+  }
+  ready=!!(HEIF&&typeof HEIF.HeifDecoder==='function');
   if(!ready)fail('A biblioteca libheif foi carregada, mas o decoder não ficou disponível.');
 }catch(error){
   fail(error?.message||'Não foi possível carregar o decoder HEIC.');
@@ -21,11 +38,12 @@ self.postMessage({type:'ready',ok:ready,error:initError});
 self.addEventListener('message',event=>{
   const id=String(event.data?.id||'');
   if(!id)return;
-  if(!ready){self.postMessage({id,ok:false,error:initError||'Decoder HEIC indisponível.'});return;}
+  if(!ready||!HEIF){self.postMessage({id,ok:false,error:initError||'Decoder HEIC indisponível.'});return;}
   try{
     const buffer=event.data?.buffer;
     if(!(buffer instanceof ArrayBuffer)||!buffer.byteLength)throw new Error('Arquivo HEIC vazio ou inválido.');
-    const decoder=new self.libheif.HeifDecoder();
+    // Mantém a referência global compatível com instalações/testes antigos, mas usa o objeto efetivamente resolvido.
+    const decoder=(self.libheif&&typeof self.libheif.HeifDecoder==='function')?new self.libheif.HeifDecoder():new HEIF.HeifDecoder();
     const images=decoder.decode(new Uint8Array(buffer));
     const image=Array.isArray(images)?images[0]:null;
     if(!image)throw new Error('O arquivo HEIC não contém uma imagem decodificável.');

@@ -1,0 +1,22 @@
+name: Super Set integrity
+on:
+  pull_request:
+    paths:
+      - 'app_v10_10_9_core.js'
+      - 'modules/release-coherence-v10_10_10.js'
+      - 'scripts/superset-integrity-check.mjs'
+      - '.github/workflows/superset-integrity.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Super Set integrity
+        run: |
+          node --check modules/release-coherence-v10_10_10.js
+          node scripts/superset-integrity-check.mjs

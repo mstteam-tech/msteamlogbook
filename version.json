@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082704,
-  "revision": "mobile-report-heic-worker-1",
-  "publishedAt": "2026-08-27T16:05:00Z",
+  "build": 2026082802,
+  "revision": "trainer-mobile-integrity-bundle-1",
+  "publishedAt": "2026-08-28T21:35:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Corrige a conversão HEIC/HEIF em Android usando um worker same-origin, preservando o fluxo das 6 fotos e evitando bloqueio pela CSP da página."
+  "message": "Corrige Super Set por semana, calorias de alimentos personalizados, decodificação HEIC/HEIF no celular e exportação nativa de treino/dieta em PDF."
 }

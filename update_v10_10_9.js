@@ -2,7 +2,7 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026082704;
+  const CURRENT_BUILD=2026082802;
   const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
@@ -12,7 +12,7 @@
   const BACKGROUND_CHECK_DELAY_MS=1800;
   const CRITICAL_REFRESH_CONCURRENCY=4;
   const CRITICAL_ASSETS=[
-    './index.html','./manifest.json?v=10.10.9','./version.json','./viewport_v10_10_9.js?v=10.10.9','./boot_v10.js?v=10.10.9','./config_v10_7.js?v=10.10.9','./update_v10_10_9.js?v=10.10.9','./app_v10_10_9_core.js?v=10.10.9','./modules/v107-core.js?v=10.10.9','./modules/v107-invites.js?v=10.10.9','./modules/v107-operations.js?v=10.10.9','./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2','./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2','./modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2','./interaction_v10_10_9.js?v=10.10.9','./styles_v10_10_9.css?v=10.10.9'
+    './index.html','./manifest.json?v=10.10.9','./version.json','./viewport_v10_10_9.js?v=10.10.9','./boot_v10.js?v=10.10.9','./config_v10_7.js?v=10.10.9','./update_v10_10_9.js?v=10.10.9','./app_v10_10_9_core.js?v=10.10.9','./modules/v107-core.js?v=10.10.9','./modules/v107-invites.js?v=10.10.9','./modules/v107-operations.js?v=10.10.9','./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2','./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2','./modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2','./modules/release-coherence-v10_10_10.js?v=10.10.12-release6','./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2','./interaction_v10_10_9.js?v=10.10.9','./styles_v10_10_9.css?v=10.10.9'
   ];
   let registration=null,latestInfo=null,checking=null,applying=false,banner=null,scheduledCheckTimer=null;
   function numericParts(value){return String(value||'').split('.').map(part=>Number.parseInt(part,10)||0);}
