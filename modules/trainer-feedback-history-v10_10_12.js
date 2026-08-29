@@ -8,9 +8,10 @@
   let records=[];
   let activeStudentUid='';
   let loading=false;
+  let loadError='';
   let observer=null;
 
-  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
   const trainer=()=>typeof CURRENT_USER!=='undefined'&&CURRENT_USER?.role==='trainer'?CURRENT_USER:null;
   const uidOf=value=>String(value?.uid||value?.id||'').trim();
   const viewedStudent=()=>typeof VIEW_STUDENT!=='undefined'?VIEW_STUDENT:null;
@@ -78,6 +79,7 @@
     const list=filteredRecords();
     if(summary)summary.textContent=`${records.length} enviado${records.length===1?'':'s'}`;
     if(loading){host.innerHTML='<div class="tb-feedback-history-empty">Carregando histórico...</div>';return;}
+    if(loadError){host.innerHTML=`<div class="tb-feedback-history-empty tb-feedback-history-error">${esc(loadError)}</div>`;return;}
     if(!records.length){host.innerHTML='<div class="tb-feedback-history-empty">Nenhum feedback enviado por você para este aluno até o momento.</div>';return;}
     if(!list.length){host.innerHTML='<div class="tb-feedback-history-empty">Nenhum feedback corresponde ao filtro atual.</div>';return;}
     host.innerHTML=list.map((item,index)=>`<article class="tb-feedback-history-card ${item.read?'read':'pending'}"><div class="tb-feedback-history-meta"><span class="tb-feedback-history-type">${esc(typeLabel(item.feedbackType))}</span><span class="tb-feedback-history-date">${esc(formatDate(item.createdAt))}</span></div><h3>${esc(item.title||defaultTitle(item))}</h3><div class="tb-feedback-history-message">${esc(item.message||'')}</div><div class="tb-feedback-history-foot"><span class="tb-feedback-history-status">${item.read?'LIDO PELO ALUNO':'AGUARDANDO LEITURA'}</span><button class="tb-feedback-history-copy" type="button" data-feedback-copy="${index}">COPIAR</button></div></article>`).join('');
@@ -86,7 +88,7 @@
 
   async function loadHistory(uid){
     const user=trainer();if(!user||!uid||typeof db==='undefined'||!db)return[];
-    loading=true;render();
+    loading=true;loadError='';render();
     try{
       const snap=typeof cloudGet==='function'
         ?await cloudGet(db.collection('feedback').where('studentId','==',uid),'histórico de feedbacks enviados')
@@ -100,8 +102,7 @@
     }catch(error){
       console.warn('[Team Bulls] histórico de feedbacks',error);
       records=[];
-      const host=document.getElementById('tb-feedback-history-list');
-      if(host)host.innerHTML='<div class="tb-feedback-history-empty tb-feedback-history-error">Não foi possível carregar o histórico agora. Verifique a conexão e tente novamente.</div>';
+      loadError='Não foi possível carregar o histórico agora. Verifique a conexão e tente novamente.';
       return records;
     }finally{loading=false;}
   }
@@ -112,7 +113,7 @@
     ensureStyles();ensureModal();
     const label=document.getElementById('tb-feedback-history-student');if(label)label.textContent=String(studentRecord?.name||'Aluno');
     const search=document.getElementById('tb-feedback-history-search'),type=document.getElementById('tb-feedback-history-type');if(search)search.value='';if(type)type.value='all';
-    records=[];activeStudentUid=uid;loading=true;render();
+    records=[];loadError='';activeStudentUid=uid;loading=true;render();
     if(typeof openModal==='function')openModal('tb-feedback-history-modal');else document.getElementById('tb-feedback-history-modal')?.classList.add('open');
     await loadHistory(uid);render();
   }
