@@ -13,8 +13,11 @@ const mod=read(modulePath),config=read('config_v10_7.js'),updater=read('update_v
 
 has(mod,"const PROFILE_PREFIX='studentProfiles'",'Perfil do aluno não possui namespace próprio no Storage.');
 has(mod,"db.collection('notifications').where('studentId','==',user.uid)",'Central não lê os avisos enviados pelo treinador.');
+has(mod,"db.collection('feedback').where('studentId','==',user.uid)",'Central não incorpora mensagens da central.');
 has(mod,"db.collection('questionnaires').where('studentId','==',user.uid)",'Central não incorpora relatórios pendentes.');
+has(mod,"db.collection('checkinSchedules').doc(user.uid)",'Central não incorpora o relatório semanal.');
 has(mod,"protocolReviewSchedules",'Central não incorpora o cronograma de protocolos.');
+has(mod,"title=\"Notificações\">🔔",'Header não usa o símbolo de notificação esperado.');
 has(mod,"#feedback-banner,#screen-home.tb-home-v2 #quest-banner",'Banners antigos continuam ocupando a home.');
 has(mod,'Protocolos de treino','Resumo não mostra protocolos de treino.');
 has(mod,'Protocolos de dieta','Resumo não mostra protocolos de dieta.');
@@ -25,11 +28,12 @@ has(mod,'REMOVER FOTO','Treinador não consegue moderar a foto.');
 has(mod,'REMOVER APELIDO','Treinador não consegue moderar o apelido.');
 has(mod,"'image/jpeg',0.9",'Avatar não é normalizado/comprimido para JPEG.');
 has(mod,'file.size>12*1024*1024','Upload de avatar perdeu limite de entrada.');
+has(mod,"typeof createImageBitmap==='function'",'Avatar perdeu fallback compatível para navegadores sem createImageBitmap.');
 
 has(storage,'match /studentProfiles/{uid}/profile.json','Storage Rules não protegem o apelido do aluno.');
 has(storage,'match /studentProfiles/{uid}/avatar.jpg','Storage Rules não protegem o avatar.');
 has(storage,'trainerOwns(uid) || activeOwner(uid)','Perfil visual não está isolado entre aluno e treinador vinculado.');
-has(storage,'request.resource.size <= 800 * 1024','Avatar não possui limite de armazenamento.');
+has(storage,'validOptimizedJpegUpload(800 * 1024)','Avatar não possui limite de armazenamento de 800 KB.');
 has(storage,"request.resource.contentType == 'application/json'",'Perfil JSON não valida Content-Type.');
 
 const asset='./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1';
