@@ -4,7 +4,10 @@ on:
     paths:
       - 'app_v10_10_9_core.js'
       - 'modules/release-coherence-v10_10_10.js'
+      - 'modules/technique-composition-integrity-v10_10_12.js'
+      - 'update_v10_10_9.js'
       - 'scripts/superset-integrity-check.mjs'
+      - 'scripts/technique-composition-integrity-check.mjs'
       - '.github/workflows/superset-integrity.yml'
 permissions:
   contents: read
@@ -19,4 +22,6 @@ jobs:
       - name: Validate Super Set integrity
         run: |
           node --check modules/release-coherence-v10_10_10.js
+          node --check modules/technique-composition-integrity-v10_10_12.js
           node scripts/superset-integrity-check.mjs
+          node scripts/technique-composition-integrity-check.mjs
