@@ -14,10 +14,10 @@ for(const file of [modulePath,'modules/usability-checkup-v10_10_9.js']){
 const mod=read(modulePath),usability=read('modules/usability-checkup-v10_10_9.js'),config=read('config_v10_7.js'),updater=read('update_v10_10_9.js'),sw=read('sw.js'),sw47=read('sw_47.js'),storage=read('firebase/storage_6.rules'),version=JSON.parse(read('version.json'));
 
 has(mod,"const PROFILE_PREFIX='studentProfiles'",'Perfil do aluno não possui namespace próprio no Storage.');
-has(mod,"db.collection('notifications').where('studentId','==',user.uid)",'Central não lê os avisos enviados pelo treinador.');
-has(mod,"db.collection('feedback').where('studentId','==',user.uid)",'Central não incorpora mensagens da central.');
-has(mod,"db.collection('questionnaires').where('studentId','==',user.uid)",'Central não incorpora relatórios pendentes.');
-has(mod,"db.collection('checkinSchedules').doc(user.uid)",'Central não incorpora o relatório semanal.');
+has(mod,"db.collection('notifications').where('studentId','==',uid)",'Central não lê os avisos enviados pelo treinador.');
+has(mod,"db.collection('feedback').where('studentId','==',uid)",'Central não incorpora mensagens da central.');
+has(mod,"db.collection('questionnaires').where('studentId','==',uid)",'Central não incorpora relatórios pendentes.');
+has(mod,"db.collection('checkinSchedules').doc(uid)",'Central não incorpora o relatório semanal.');
 has(mod,"protocolReviewSchedules",'Central não incorpora o cronograma de protocolos.');
 has(mod,"title=\"Notificações\">🔔",'Header não usa o símbolo de notificação esperado.');
 has(mod,"#feedback-banner,#screen-home.tb-home-v2 #quest-banner",'Banners antigos continuam ocupando a home.');
