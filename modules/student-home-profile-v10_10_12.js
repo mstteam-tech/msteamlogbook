@@ -4,7 +4,7 @@
   if(window.__TEAM_BULLS_STUDENT_HOME_PROFILE_1__)return;
   window.__TEAM_BULLS_STUDENT_HOME_PROFILE_1__=true;
 
-  const VERSION='10.10.12-studenthome1';
+  const VERSION='10.10.12-studenthome2';
   const PROFILE_PREFIX='studentProfiles';
   const NICK_MAX=24;
   let notifications=[];
@@ -14,6 +14,7 @@
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const student=()=>CURRENT_USER?.role==='student'?CURRENT_USER:null;
   const uidOf=value=>String(value?.uid||value?.id||'');
+  const studentUid=()=>uidOf(student());
   const storageRoot=()=>{try{return typeof storage!=='undefined'&&storage?storage:firebase.storage();}catch(error){return null;}};
   const profileRef=uid=>storageRoot()?.ref(`${PROFILE_PREFIX}/${uid}/profile.json`);
   const avatarRef=uid=>storageRoot()?.ref(`${PROFILE_PREFIX}/${uid}/avatar.jpg`);
@@ -22,6 +23,25 @@
   const fmt=value=>{const ms=timestamp(value);return ms?new Date(ms).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'';};
   const todayIso=()=>new Date().toLocaleDateString('sv-SE');
 
+  function profileError(error,action='atualizar o perfil'){
+    const code=String(error?.code||'').toLowerCase(),message=String(error?.message||'');
+    if(code.includes('unauthorized'))return new Error(`Não foi possível ${action}: sua sessão não tem permissão para gravar este perfil. Atualize o app e entre novamente.`);
+    if(code.includes('unauthenticated'))return new Error(`Não foi possível ${action}: sua sessão expirou. Entre novamente no app.`);
+    if(code.includes('retry-limit-exceeded')||code.includes('unknown'))return new Error(`Não foi possível ${action}: falha temporária no armazenamento. Tente novamente.`);
+    return new Error(message||`Não foi possível ${action}.`);
+  }
+
+  async function ensureProfileIdentity(uid){
+    if(!uid)throw new Error('Identificação do aluno indisponível. Entre novamente no app.');
+    try{
+      const authUser=firebase?.auth?.().currentUser;
+      if(authUser&&String(authUser.uid)!==String(uid))throw new Error('A sessão autenticada não corresponde ao perfil aberto. Entre novamente no app.');
+      if(authUser?.getIdToken)await authUser.getIdToken();
+    }catch(error){
+      if(/não corresponde|indisponível/i.test(String(error?.message||'')))throw error;
+    }
+  }
+
   async function readProfile(uid,{fresh=false}={}){
     if(!uid)return{nickname:'',avatarUrl:''};
     if(!fresh&&profileCache.has(uid))return profileCache.get(uid);
@@ -29,11 +49,10 @@
     const root=storageRoot();
     if(!root){profileCache.set(uid,result);return result;}
     try{
-      const url=await profileRef(uid).getDownloadURL();
-      const response=await fetch(url,{cache:'no-store'});
-      if(response.ok){const data=await response.json();result.nickname=cleanNickname(data?.nickname||'');}
+      const ref=profileRef(uid),url=ref?await ref.getDownloadURL():'';
+      if(url){const response=await fetch(url,{cache:'no-store'});if(response.ok){const data=await response.json();result.nickname=cleanNickname(data?.nickname||'');}}
     }catch(error){}
-    try{result.avatarUrl=await avatarRef(uid).getDownloadURL();}catch(error){}
+    try{const ref=avatarRef(uid);if(ref)result.avatarUrl=await ref.getDownloadURL();}catch(error){}
     profileCache.set(uid,result);
     return result;
   }
@@ -41,8 +60,11 @@
   async function writeNickname(uid,nickname){
     const root=storageRoot();
     if(!root)throw new Error('Armazenamento indisponível.');
+    await ensureProfileIdentity(uid);
+    const ref=profileRef(uid);if(!ref)throw new Error('Perfil do aluno indisponível.');
     const body=JSON.stringify({nickname:cleanNickname(nickname)});
-    await profileRef(uid).put(new Blob([body],{type:'application/json'}),{contentType:'application/json',cacheControl:'no-store'});
+    try{await ref.put(new Blob([body],{type:'application/json'}),{contentType:'application/json',cacheControl:'no-store'});}
+    catch(error){throw profileError(error,'alterar o nome de exibição');}
     profileCache.delete(uid);
     return readProfile(uid,{fresh:true});
   }
@@ -74,16 +96,19 @@
   }
 
   async function uploadAvatar(file){
-    const user=student();
-    if(!user)throw new Error('Perfil do aluno indisponível.');
+    const user=student(),uid=uidOf(user);
+    if(!user||!uid)throw new Error('Perfil do aluno indisponível. Entre novamente no app.');
+    await ensureProfileIdentity(uid);
+    const ref=avatarRef(uid);if(!ref)throw new Error('Armazenamento da foto indisponível.');
     const blob=await squareAvatar(file);
-    await avatarRef(user.uid).put(blob,{contentType:'image/jpeg',cacheControl:'public,max-age=3600'});
-    profileCache.delete(user.uid);
+    try{await ref.put(blob,{contentType:'image/jpeg',cacheControl:'public,max-age=3600'});}
+    catch(error){throw profileError(error,'atualizar a foto');}
+    profileCache.delete(uid);
     await refreshStudentHeader(true);
   }
 
   async function removeAvatar(uid){
-    try{await avatarRef(uid).delete();}
+    try{const ref=avatarRef(uid);if(!ref)throw new Error('Armazenamento indisponível.');await ref.delete();}
     catch(error){if(!/object-not-found/i.test(String(error?.code||error?.message||'')))throw error;}
     profileCache.delete(uid);
   }
@@ -95,6 +120,7 @@
     style.textContent=`
       #screen-home.tb-home-v2 .header{min-height:92px;align-items:center;padding:12px 16px;gap:10px;border-bottom:1px solid rgba(225,29,72,.28)}
       #screen-home.tb-home-v2 .settings-gear-btn,#screen-home.tb-home-v2 #user-chip{display:none!important}
+      #screen-home.tb-home-v2 .home-hero::after{content:none!important;display:none!important}
       .tb-home-actions{margin-left:auto;display:flex;align-items:center;gap:12px}
       .tb-notice-button{position:relative;width:44px;height:44px;border:1px solid #342629;background:#100d0e;border-radius:50%;color:#eee;font-size:19px;display:grid;place-items:center}
       .tb-notice-badge{position:absolute;right:-3px;top:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:12px;background:#e11d48;color:white;font:700 10px/18px 'DM Mono',monospace;text-align:center;border:2px solid #090909}
@@ -133,8 +159,8 @@
   }
 
   async function refreshStudentHeader(fresh=false){
-    ensureHomeHeader();const user=student();if(!user)return;
-    const profile=await readProfile(user.uid,{fresh}),display=profile.nickname||user.name||'Aluno',button=document.getElementById('tb-avatar-button'),name=document.getElementById('tb-profile-name');
+    ensureHomeHeader();const user=student(),uid=uidOf(user);if(!user||!uid)return;
+    const profile=await readProfile(uid,{fresh}),display=profile.nickname||user.name||'Aluno',button=document.getElementById('tb-avatar-button'),name=document.getElementById('tb-profile-name');
     if(name)name.textContent=display;
     if(button)button.innerHTML=profile.avatarUrl?`<img alt="Foto de ${esc(display)}" src="${esc(profile.avatarUrl)}">`:`<span>${esc((display.match(/\p{L}/u)?.[0]||'A').toUpperCase())}</span>`;
     await refreshNoticeBadge();
@@ -144,11 +170,11 @@
   function closeProfileMenu(){const menu=document.getElementById('tb-profile-menu');if(menu)menu.hidden=true;}
   function pickAvatar(){closeProfileMenu();document.getElementById('tb-avatar-input')?.click();}
   async function changeNickname(){
-    closeProfileMenu();const user=student();if(!user)return;
-    const current=(await readProfile(user.uid)).nickname||'',raw=prompt(`Nome/apelido exibido no app (até ${NICK_MAX} caracteres):`,current);if(raw===null)return;
+    closeProfileMenu();const user=student(),uid=uidOf(user);if(!user||!uid)return alert('Perfil do aluno indisponível. Entre novamente no app.');
+    const current=(await readProfile(uid)).nickname||'',raw=prompt(`Nome/apelido exibido no app (até ${NICK_MAX} caracteres):`,current);if(raw===null)return;
     const nick=cleanNickname(raw);
-    try{await writeNickname(user.uid,nick);await refreshStudentHeader(true);showToast?.(nick?'✓ Nome de exibição atualizado':'✓ Nome de exibição restaurado');}
-    catch(error){alert('Não foi possível alterar o nome de exibição. '+(error?.message||''));}
+    try{await writeNickname(uid,nick);await refreshStudentHeader(true);showToast?.(nick?'✓ Nome de exibição atualizado':'✓ Nome de exibição restaurado');}
+    catch(error){alert(error?.message||'Não foi possível alterar o nome de exibição.');}
   }
 
   function ensureNotificationScreen(){
@@ -159,26 +185,26 @@
   }
 
   async function loadNotifications(){
-    const user=student();if(!user||MODE!=='cloud'||!db)return[];
+    const user=student(),uid=uidOf(user);if(!user||!uid||MODE!=='cloud'||!db)return[];
     const items=[];
     try{
-      const snap=await cloudGet(db.collection('notifications').where('studentId','==',user.uid).limit(120),'notificações do aluno');
+      const snap=await cloudGet(db.collection('notifications').where('studentId','==',uid).limit(120),'notificações do aluno');
       snap.docs.forEach(doc=>{const data=doc.data();items.push({id:doc.id,source:'notification',title:data.title||'Aviso',body:data.body||'',createdAt:data.createdAt,read:!!data.readAt,type:data.type||'aviso'});});
     }catch(error){console.warn('[Team Bulls] notificações',error);}
     try{
-      const snap=await cloudGet(db.collection('feedback').where('studentId','==',user.uid).limit(80),'mensagens da central');
+      const snap=await cloudGet(db.collection('feedback').where('studentId','==',uid).limit(80),'mensagens da central');
       snap.docs.forEach(doc=>{const data=doc.data();items.push({id:doc.id,source:'feedback',title:data.title||'Mensagem da central',body:data.message||'',createdAt:data.createdAt,read:!!data.read,type:data.feedbackType||'central'});});
     }catch(error){}
     try{
-      const snap=await cloudGet(db.collection('questionnaires').where('studentId','==',user.uid).limit(80),'relatórios pendentes');
+      const snap=await cloudGet(db.collection('questionnaires').where('studentId','==',uid).limit(80),'relatórios pendentes');
       snap.docs.forEach(doc=>{const data=doc.data();if(data.answered)return;items.push({id:doc.id,source:'questionnaire',title:'Relatório pendente',body:'Seu treinador solicitou um novo relatório.',createdAt:data.createdAt,read:false,type:'relatório',action:'questionnaire'});});
     }catch(error){}
     try{
-      const doc=await cloudGet(db.collection('checkinSchedules').doc(user.uid),'relatório semanal');
+      const doc=await cloudGet(db.collection('checkinSchedules').doc(uid),'relatório semanal');
       if(doc.exists){const data=doc.data(),extra=String(data.extraRequestId||''),due=String(data.nextDueDate||'');if(extra||(due&&due<=todayIso()))items.push({id:'weekly-checkin',source:'virtual',title:extra?'Relatório extra solicitado':'Relatório semanal pendente',body:extra?'Seu treinador solicitou um relatório extra com as fotos obrigatórias.':`Seu relatório semanal de ${due} está pendente.`,createdAt:data.updatedAt||data.extraRequestedAt||0,read:false,type:'relatório semanal',action:'weekly'});}
     }catch(error){}
     try{
-      const doc=await cloudGet(db.collection('protocolReviewSchedules').doc(user.uid),'cronograma de protocolos');
+      const doc=await cloudGet(db.collection('protocolReviewSchedules').doc(uid),'cronograma de protocolos');
       if(doc.exists){const data=doc.data();items.push({id:'protocol-review',source:'virtual',title:'Cronograma dos protocolos',body:`Próxima atualização programada: ${data.nextReviewDate||data.startDate||'consulte o cronograma'}.`,createdAt:data.updatedAt||data.createdAt||0,read:true,type:'protocolo',action:'protocol'});}
     }catch(error){}
     notifications=items.sort((a,b)=>timestamp(b.createdAt)-timestamp(a.createdAt));
@@ -192,7 +218,7 @@
   }
 
   async function refreshNoticeBadge(){
-    const user=student();if(!user)return;
+    const uid=studentUid();if(!uid)return;
     await loadNotifications();const count=notifications.filter(item=>!item.read).length,badge=document.getElementById('tb-home-notice-count');if(badge)badge.textContent=count?String(Math.min(count,99)):'';
   }
   async function openNotifications(){ensureNotificationScreen();closeProfileMenu();showScreen('screen-student-notifications');await loadNotifications();renderNotifications();}
@@ -213,16 +239,35 @@
     await markRead(index);
   }
 
+  function ensureStatsShell(stats){
+    const cells=Array.from(stats.querySelectorAll(':scope > .stat-cell'));
+    const labels=cells.map(cell=>String(cell.querySelector('.lbl')?.textContent||'').trim().toLowerCase());
+    if(cells.length===2&&labels[0]==='protocolos de treino'&&labels[1]==='protocolos de dieta')return cells;
+    stats.innerHTML='<div class="stat-cell"><div class="num">—</div><div class="lbl">Protocolos de treino</div></div><div class="stat-cell"><div class="num">—</div><div class="lbl">Protocolos de dieta</div></div>';
+    return Array.from(stats.querySelectorAll(':scope > .stat-cell'));
+  }
+
+  function setStatCount(cell,value){
+    const num=cell?.querySelector('.num'),count=Number(value);
+    if(!num||!Number.isFinite(count)||count<0)return;
+    const next=String(Math.trunc(count));
+    if(num.textContent!==next)num.textContent=next;
+  }
+
   async function refreshStats(){
-    const user=student(),stats=document.getElementById('home-stats');if(!user||!stats)return;
-    const workouts=Array.isArray(CLOUD_WORKOUTS)?CLOUD_WORKOUTS:[],workoutCount=workouts.length;
-    let dietCount=Array.isArray(DIET_DOCUMENT?.plans)?DIET_DOCUMENT.plans.length:0;
-    if(MODE==='cloud'&&db){try{const doc=await cloudGet(db.collection('mealPlans').doc(user.uid),'contar protocolos de dieta');if(doc.exists)dietCount=Array.isArray(doc.data()?.plans)?doc.data().plans.length:0;}catch(error){}}
-    stats.innerHTML=`<div class="stat-cell"><div class="num">${workoutCount}</div><div class="lbl">Protocolos de treino</div></div><div class="stat-cell"><div class="num">${dietCount}</div><div class="lbl">Protocolos de dieta</div></div>`;
+    const user=student(),uid=uidOf(user),stats=document.getElementById('home-stats');if(!user||!uid||!stats)return;
+    const cells=ensureStatsShell(stats),workouts=Array.isArray(CLOUD_WORKOUTS)?CLOUD_WORKOUTS:[];
+    setStatCount(cells[0],workouts.length);
+    if(Array.isArray(DIET_DOCUMENT?.plans))setStatCount(cells[1],DIET_DOCUMENT.plans.length);
+    if(MODE==='cloud'&&db){
+      try{const doc=await cloudGet(db.collection('mealPlans').doc(uid),'contar protocolos de dieta');if(doc.exists)setStatCount(cells[1],Array.isArray(doc.data()?.plans)?doc.data().plans.length:0);}catch(error){}
+    }
   }
 
   function fixConfidential(){
     const eyebrow=document.getElementById('hero-eyebrow');if(!eyebrow)return;
+    const status=eyebrow.querySelector('.tb-hero-status');
+    if(status&&status.querySelector('.tb-confidential-badge'))return;
     const text=String(eyebrow.textContent||'').replace(/\s*confidencial\s*/ig,'').trim();
     eyebrow.innerHTML=`<span class="tb-hero-status">${esc(text)}<span class="tb-confidential-badge">CONFIDENCIAL</span></span>`;
   }
