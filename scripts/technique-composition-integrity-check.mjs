@@ -113,8 +113,11 @@ const moduleUrl='./modules/technique-composition-integrity-v10_10_12.js?v=10.10.
 assert.ok(updater.includes(moduleUrl),'Atualizador não carrega a proteção de composição de técnicas.');
 assert.match(updater,/loadTechniqueCompositionIntegrity/,'Atualizador não possui carregamento resiliente da proteção.');
 assert.ok(sw.includes(moduleUrl)&&bridge.includes(moduleUrl),'Service Workers não preparam a proteção para uso offline.');
-assert.match(sw,/const CACHE_HOTFIX='techcombo1'/,'Cache principal não foi rotacionado para o hotfix.');
-assert.match(bridge,/const CACHE_HOTFIX='techcombo1'/,'Cache legado não foi rotacionado para o hotfix.');
+// O cache global pode ser rotacionado por qualquer hotfix posterior. Este teste é dono
+// apenas da presença/entrega da camada de técnicas, não do nome da revisão global do PWA.
+const swHotfix=sw.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
+const bridgeHotfix=bridge.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
+assert.ok(swHotfix&&swHotfix===bridgeHotfix,'Service Workers usam revisões globais de cache diferentes.');
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
 const swBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
