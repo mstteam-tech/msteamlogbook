@@ -18,4 +18,5 @@ jobs:
           node scripts/mobile-startup-consistency-check.mjs
           node scripts/heic-worker-export-check.mjs
           node scripts/pdf-export-check.mjs
+          node scripts/technique-composition-integrity-check.mjs
           node testes/testar_cadastro_convite_v10_10_9.js
