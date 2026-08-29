@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082802,
-  "revision": "trainer-mobile-integrity-bundle-1",
-  "publishedAt": "2026-08-28T21:35:00Z",
+  "build": 2026082901,
+  "revision": "technique-composition-integrity-1",
+  "publishedAt": "2026-08-29T19:00:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Corrige Super Set por semana, calorias de alimentos personalizados, decodificação HEIC/HEIF no celular e exportação nativa de treino/dieta em PDF."
+  "message": "Estabiliza a combinação de técnicas com Super Set, preserva o pareamento bilateral e corrige semanas materializadas sem exigir apagar exercícios."
 }
