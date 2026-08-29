@@ -4,9 +4,10 @@
   if(window.__TEAM_BULLS_USABILITY_CHECKUP_V10109__)return;
   window.__TEAM_BULLS_USABILITY_CHECKUP_V10109__=true;
 
-  const VERSION='10.10.9-usability1';
+  const VERSION='10.10.9-usability2';
   const scrollByHistoryKey=new Map();
   let scrollFrame=0;
+  let profileMenuObserver=null;
 
   function appScroller(){return document.getElementById('app');}
   function historyKey(state=history.state){return state?.teamBulls&&state?.key?String(state.key):'';}
@@ -120,6 +121,33 @@
     }catch(error){}
   }
 
+  function ensureStudentProfileLogout(){
+    const menu=document.getElementById('tb-profile-menu');
+    if(!menu||menu.querySelector('[data-tb-profile-logout="1"]'))return false;
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='tb-profile-logout';
+    button.dataset.tbProfileLogout='1';
+    button.textContent='SAIR';
+    button.addEventListener('click',()=>{
+      menu.hidden=true;
+      if(typeof confirmLogout==='function'){confirmLogout();return;}
+      if(typeof handleChipTap==='function'){handleChipTap();return;}
+      alert('Não foi possível abrir a saída da conta. Atualize o aplicativo e tente novamente.');
+    });
+    menu.appendChild(button);
+    return true;
+  }
+
+  function installStudentProfileLogout(){
+    ensureStudentProfileLogout();
+    if(profileMenuObserver||typeof MutationObserver!=='function')return;
+    profileMenuObserver=new MutationObserver(()=>ensureStudentProfileLogout());
+    profileMenuObserver.observe(document.documentElement,{childList:true,subtree:true});
+    window.addEventListener('team-bulls-runtime-ready',ensureStudentProfileLogout);
+    window.addEventListener('pageshow',ensureStudentProfileLogout,{passive:true});
+  }
+
   function installStyles(){
     if(document.getElementById('tb-usability-checkup-v10-10-9-style'))return;
     const style=document.createElement('style');
@@ -131,6 +159,8 @@
       }
       :where(input,textarea,select){scroll-margin-block:88px 170px}
       .tb-action-busy{cursor:progress!important;opacity:.72!important}
+      .tb-profile-menu .tb-profile-logout{margin-top:6px!important;border-top:1px solid #4b2028!important;color:#ff9aa8!important;background:rgba(225,29,72,.06)!important}
+      .tb-profile-menu .tb-profile-logout:hover,.tb-profile-menu .tb-profile-logout:focus-visible{background:rgba(225,29,72,.16)!important;color:#fff!important}
 
       @media (max-width:899px),(pointer:coarse){
         :where(.btn-icon,.order-btn,.btn-rm-set,.desktop-nav-toggle,.trainer-day-quick-chip){
@@ -155,13 +185,15 @@
     installHistoryScroll();
     wrapShowScreen();
     wrapActionFeedback();
+    installStudentProfileLogout();
     window.addEventListener('pagehide',releaseMediaUrls,{passive:true});
-    window.addEventListener('pageshow',()=>{installHistoryScroll();wrapShowScreen();wrapActionFeedback();},{passive:true});
+    window.addEventListener('pageshow',()=>{installHistoryScroll();wrapShowScreen();wrapActionFeedback();installStudentProfileLogout();},{passive:true});
     window.TeamBullsUsability=Object.freeze({
       version:VERSION,
       rememberScroll,
       restoreScroll:()=>restoreScrollForState(history.state),
-      revealActiveWeek:()=>scrollActiveWeekIntoView()
+      revealActiveWeek:()=>scrollActiveWeekIntoView(),
+      ensureStudentProfileLogout
     });
   }
 
