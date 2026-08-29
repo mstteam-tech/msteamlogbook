@@ -7,9 +7,11 @@ const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const has=(text,needle,message)=>assert(text.includes(needle),message);
 
 const modulePath='modules/student-home-profile-v10_10_12.js';
-const syntax=spawnSync(process.execPath,['--check',modulePath],{encoding:'utf8'});
-assert(syntax.status===0,`Módulo da home possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
-const mod=read(modulePath),config=read('config_v10_7.js'),updater=read('update_v10_10_9.js'),sw=read('sw.js'),sw47=read('sw_47.js'),storage=read('firebase/storage_6.rules'),version=JSON.parse(read('version.json'));
+for(const file of [modulePath,'modules/usability-checkup-v10_10_9.js']){
+  const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+  assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
+}
+const mod=read(modulePath),usability=read('modules/usability-checkup-v10_10_9.js'),config=read('config_v10_7.js'),updater=read('update_v10_10_9.js'),sw=read('sw.js'),sw47=read('sw_47.js'),storage=read('firebase/storage_6.rules'),version=JSON.parse(read('version.json'));
 
 has(mod,"const PROFILE_PREFIX='studentProfiles'",'Perfil do aluno não possui namespace próprio no Storage.');
 has(mod,"db.collection('notifications').where('studentId','==',user.uid)",'Central não lê os avisos enviados pelo treinador.');
@@ -30,6 +32,11 @@ has(mod,"'image/jpeg',0.9",'Avatar não é normalizado/comprimido para JPEG.');
 has(mod,'file.size>12*1024*1024','Upload de avatar perdeu limite de entrada.');
 has(mod,"typeof createImageBitmap==='function'",'Avatar perdeu fallback compatível para navegadores sem createImageBitmap.');
 
+has(usability,"button.textContent='SAIR'",'Menu móvel do perfil não possui a opção SAIR.');
+has(usability,"typeof confirmLogout==='function'",'Opção SAIR não reutiliza o fluxo seguro de logout existente.');
+has(usability,"data-tb-profile-logout=\"1\"",'Logout do perfil não possui proteção contra duplicação.');
+has(usability,'MutationObserver','Logout não acompanha a criação tardia do menu de perfil.');
+
 has(storage,'match /studentProfiles/{uid}/profile.json','Storage Rules não protegem o apelido do aluno.');
 has(storage,'match /studentProfiles/{uid}/avatar.jpg','Storage Rules não protegem o avatar.');
 has(storage,'trainerOwns(uid) || activeOwner(uid)','Perfil visual não está isolado entre aluno e treinador vinculado.');
@@ -45,8 +52,8 @@ assert(version.version==='10.10.9','Versão pública foi alterada.');
 assert(version.build===2026082902,'Build da revisão da home está incorreto.');
 assert(/const CURRENT_BUILD=2026082902/.test(updater),'Updater não usa o build da home.');
 assert(/const BUILD_REVISION=2026082902/.test(sw)&&/const BUILD_REVISION=2026082902/.test(sw47),'Service Workers não usam o build da home.');
-assert(/const CACHE_HOTFIX='studenthome1'/.test(sw)&&/const CACHE_HOTFIX='studenthome1'/.test(sw47),'Cache da home não foi rotacionado.');
+assert(/const CACHE_HOTFIX='studentlogout1'/.test(sw)&&/const CACHE_HOTFIX='studentlogout1'/.test(sw47),'Cache do hotfix de logout não foi rotacionado.');
 assert(sw===sw47,'sw.js e sw_47.js divergiram.');
 
 if(fail.length){console.error('FALHA — student home/profile\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — home do aluno: notificações, avatar/apelido moderáveis, 2 protocolos e selo confidencial validados.');
+console.log('APROVADO — home do aluno: notificações, avatar/apelido moderáveis, logout móvel, 2 protocolos e selo confidencial validados.');
