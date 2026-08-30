@@ -52,7 +52,7 @@ has(source,'syncCalculatorMacroInputs(divisionResult())','Salvar cálculo não s
 lacks(source,'db.collection(','Cálculo automático não deve criar leitura/gravação Firestore.');
 lacks(source,'cloudWrite(','Cálculo automático deve ser derivado localmente, sem gravação extra.');
 
-has(customBridge,"const VERSION='10.10.12-customfood2'",'Ponte de alimentos personalizados não possui revisão própria compatível.');
+has(customBridge,"const VERSION='10.10.12-customfood3'",'Ponte de alimentos personalizados não possui a revisão que corrige presets congelados.');
 has(customBridge,"const COLLECTION='trainerSupplementCatalog'",'Ponte não usa o catálogo canônico do treinador.');
 has(customBridge,"const FIELD='dietPortionItems'",'Ponte não lê os itens persistidos do catálogo.');
 has(customBridge,"CURRENT_USER?.role==='trainer'",'Leitura do catálogo personalizado não está restrita ao treinador.');
@@ -60,10 +60,17 @@ has(customBridge,"db.collection(COLLECTION).doc(uid)",'Ponte não carrega o cat�
 has(customBridge,'protein:n(raw.protein)','Proteína personalizada não entra nos presets.');
 has(customBridge,'carbs:n(raw.carbs)','Carboidrato personalizado não entra nos presets.');
 has(customBridge,'fat:n(raw.fat)','Gordura personalizada não entra nos presets.');
-has(customBridge,'presets.splice(0,presets.length,...base,...clean)','Presets personalizados não são aplicados de forma determinística.');
+has(customBridge,'function ensureMutablePortionApi()','Ponte não prepara uma cópia mutável da tabela congelada.');
+has(customBridge,'const originalPresets=Array.from(api.presets)','Ponte ainda tenta alterar diretamente o array Object.freeze da tabela base.');
+has(customBridge,'presets:mutable','API de porções não recebe a cópia mutável usada pelo cálculo ao vivo.');
+has(customBridge,"Object.defineProperty(wrapped,'__tbCustomFoodMutable'",'Ponte não protege a preparação da API contra instalação duplicada.');
+has(customBridge,'presets.splice(0,presets.length,...base,...clean)','Alimentos personalizados não são aplicados de forma determinística à cópia mutável.');
+has(customBridge,"'tomato-120':'120g de Vegetais'",'Tabela não troca a referência de tomate por vegetais.');
+has(customBridge,'patchVegetableTableLabels','Tabela visível não recebe a nomenclatura Vegetais.');
+has(customBridge,'__tbVegetableLegacyAlias','Dietas antigas com texto Tomate deixariam de ser reconhecidas.');
 has(customBridge,'window.TeamBullsDietLiveCalories?.refresh?.()','Totais não são recalculados após restaurar alimentos personalizados.');
 has(customBridge,'new MutationObserver','Mudanças no catálogo/refeição não restauram os presets personalizados.');
-has(customBridge,"target?.closest?.('[data-custom-food-list],#tb-meal-portion-body')",'Ponte não acompanha alterações relevantes do workspace.');
+has(customBridge,"target?.closest?.('[data-custom-food-list],#tb-meal-portion-body,#tb-portion-reference-modal')",'Ponte não acompanha alterações relevantes do workspace/tabela.');
 lacks(customBridge,'cloudWrite(','Ponte de macros não deve gravar dados paralelos no Firestore.');
 
 has(workspace,"const VERSION='10.10.11-dietworkspace1'",'Workspace do treinador não possui revisão própria.');
@@ -120,7 +127,9 @@ if(source){
     TeamBullsDietPortions:{presets:[
       {id:'carb-10',group:'carbo',label:'1 Porção de Carbo',protein:3,carbs:28,fat:0.2},
       {id:'protein-10',group:'proteina',label:'1 Porção de Proteína',protein:15.7,carbs:0,fat:1.6},
-      {id:'fat-10',group:'gordura',label:'1 Porção de Gordura',protein:0,carbs:0,fat:8}
+      {id:'fat-10',group:'gordura',label:'1 Porção de Gordura',protein:0,carbs:0,fat:8},
+      {id:'tomato-120',group:'vegetais',label:'120g de Vegetais',protein:0,carbs:3.3,fat:0},
+      {id:'custom-milk',group:'custom',label:'200ml de Leite integral',protein:6.2,carbs:0,fat:9.2}
     ]}
   };
   const context={window,document,console,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame(){},setTimeout,clearTimeout,Intl,Map,Set,Object,Array,String,Number,Math};
@@ -138,6 +147,9 @@ if(source){
       assert(repeated.kcal===154&&close(repeated.protein,31.4)&&close(repeated.fat,3.2),'Porções repetidas não são somadas corretamente.');
       const fat=api.analyze('1 Porção de Gordura');
       assert(fat.kcal===72&&close(fat.fat,8),'Porção de gordura não respeita 9 kcal/g.');
+      const custom=api.analyze('200ml de Leite integral\n120g de Vegetais');
+      assert(custom.matched===2&&custom.unknown===0,'Alimento personalizado e vegetais deveriam ser reconhecidos pelo cálculo ao vivo.');
+      assert(custom.kcal===121&&close(custom.protein,6.2)&&close(custom.carbs,3.3)&&close(custom.fat,9.2),'Macros/kcal de alimento personalizado + vegetais estão incorretos.');
       const legacy=api.legacyMacroPayload(result);
       assert(close(legacy.animalProtein,18.7)&&legacy.plantProtein===0&&close(legacy.carbs,28)&&close(legacy.fat,1.8),'Compatibilidade interna não recebe os macros derivados da dieta.');
     }
@@ -145,4 +157,4 @@ if(source){
 }
 
 if(fail.length){console.error('FALHA — diet live calories/workspace\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — macros em tempo real, alimentos personalizados persistidos, g/kg corporal, workspace contínuo do treinador e coerência da release PWA validados.');
+console.log('APROVADO — macros em tempo real, alimentos personalizados persistidos, vegetais, g/kg corporal, workspace contínuo do treinador e coerência da release PWA validados.');
