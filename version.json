@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026082902,
-  "revision": "student-home-profile-notifications-1",
-  "publishedAt": "2026-08-29T21:35:00Z",
+  "build": 2026083001,
+  "revision": "diet-canonical-foods-live-deficit-1",
+  "publishedAt": "2026-08-30T00:45:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Reorganiza a home do aluno com central de notificações, avatar e apelido moderáveis, resumo apenas de protocolos de treino/dieta e ajuste visual do selo confidencial."
+  "message": "Corrige a fonte canônica da tabela de alimentos, integra alimentos personalizados ao cálculo de kcal/macros e exibe déficit ao vivo por divisão da dieta."
 }

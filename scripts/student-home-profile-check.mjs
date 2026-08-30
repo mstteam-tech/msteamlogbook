@@ -5,6 +5,7 @@ const fail=[];
 const read=path=>fs.readFileSync(path,'utf8');
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const has=(text,needle,message)=>assert(text.includes(needle),message);
+const numberMatch=(text,re)=>Number(text.match(re)?.[1]||0);
 
 const modulePath='modules/student-home-profile-v10_10_12.js';
 for(const file of [modulePath,'modules/usability-checkup-v10_10_9.js']){
@@ -18,9 +19,9 @@ has(mod,"db.collection('notifications').where('studentId','==',uid)",'Central n�
 has(mod,"db.collection('feedback').where('studentId','==',uid)",'Central não incorpora mensagens da central.');
 has(mod,"db.collection('questionnaires').where('studentId','==',uid)",'Central não incorpora relatórios pendentes.');
 has(mod,"db.collection('checkinSchedules').doc(uid)",'Central não incorpora o relatório semanal.');
-has(mod,"protocolReviewSchedules",'Central não incorpora o cronograma de protocolos.');
-has(mod,"title=\"Notificações\">🔔",'Header não usa o símbolo de notificação esperado.');
-has(mod,"#feedback-banner,#screen-home.tb-home-v2 #quest-banner",'Banners antigos continuam ocupando a home.');
+has(mod,'protocolReviewSchedules','Central não incorpora o cronograma de protocolos.');
+has(mod,'title="Notificações">🔔','Header não usa o símbolo de notificação esperado.');
+has(mod,'#feedback-banner,#screen-home.tb-home-v2 #quest-banner','Banners antigos continuam ocupando a home.');
 has(mod,'Protocolos de treino','Resumo não mostra protocolos de treino.');
 has(mod,'Protocolos de dieta','Resumo não mostra protocolos de dieta.');
 has(mod,'tb-confidential-badge','Selo CONFIDENCIAL não possui correção própria de layout.');
@@ -34,7 +35,7 @@ has(mod,"typeof createImageBitmap==='function'",'Avatar perdeu fallback compatí
 
 has(usability,"button.textContent='SAIR'",'Menu móvel do perfil não possui a opção SAIR.');
 has(usability,"typeof confirmLogout==='function'",'Opção SAIR não reutiliza o fluxo seguro de logout existente.');
-has(usability,"data-tb-profile-logout=\"1\"",'Logout do perfil não possui proteção contra duplicação.');
+has(usability,'data-tb-profile-logout="1"','Logout do perfil não possui proteção contra duplicação.');
 has(usability,'MutationObserver','Logout não acompanha a criação tardia do menu de perfil.');
 
 has(storage,'match /studentProfiles/{uid}/profile.json','Storage Rules não protegem o apelido do aluno.');
@@ -49,11 +50,12 @@ has(updater,asset,'Atualizador não aquece a nova home.');
 has(sw,asset,'Service Worker não prepara a nova home.');
 has(sw47,asset,'Service Worker legado não prepara a nova home.');
 assert(version.version==='10.10.9','Versão pública foi alterada.');
-assert(version.build===2026082902,'Build da revisão da home está incorreto.');
-assert(/const CURRENT_BUILD=2026082902/.test(updater),'Updater não usa o build da home.');
-assert(/const BUILD_REVISION=2026082902/.test(sw)&&/const BUILD_REVISION=2026082902/.test(sw47),'Service Workers não usam o build da home.');
-assert(/const CACHE_HOTFIX='studentlogout1'/.test(sw)&&/const CACHE_HOTFIX='studentlogout1'/.test(sw47),'Cache do hotfix de logout não foi rotacionado.');
+const updaterBuild=numberMatch(updater,/const CURRENT_BUILD=(\d+)/),swBuild=numberMatch(sw,/const BUILD_REVISION=(\d+)/),sw47Build=numberMatch(sw47,/const BUILD_REVISION=(\d+)/);
+assert(Number(version.build)>0&&updaterBuild===Number(version.build),'Updater não acompanha o build público atual.');
+assert(swBuild===Number(version.build)&&sw47Build===Number(version.build),'Service Workers não acompanham o build público atual.');
+const hotfix=sw.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'',hotfix47=sw47.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
+assert(hotfix.length>0&&hotfix===hotfix47,'Service Workers não compartilham uma revisão de cache válida.');
 assert(sw===sw47,'sw.js e sw_47.js divergiram.');
 
 if(fail.length){console.error('FALHA — student home/profile\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — home do aluno: notificações, avatar/apelido moderáveis, logout móvel, 2 protocolos e selo confidencial validados.');
+console.log(`APROVADO — home do aluno preservada no build ${version.build}; notificações, avatar/apelido, logout, protocolos e cache coerentes.`);
