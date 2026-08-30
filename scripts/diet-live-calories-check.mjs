@@ -7,154 +7,84 @@ const read=path=>fs.readFileSync(path,'utf8');
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const has=(text,needle,message)=>assert(text.includes(needle),message);
 const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
-const close=(left,right)=>Math.abs(Number(left)-Number(right))<1e-9;
+const close=(a,b)=>Math.abs(Number(a)-Number(b))<1e-9;
 
-const modulePath='modules/diet-live-calories-v10_10_11.js';
-const customBridgePath='modules/custom-food-calorie-bridge-v10_10_12.js';
-const workspacePath='modules/trainer-diet-workspace-v10_10_11.js';
-for(const file of [modulePath,customBridgePath,workspacePath]){
-  assert(fs.existsSync(file),`Arquivo ausente: ${file}`);
-  if(fs.existsSync(file)){
-    const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
-    assert(syntax.status===0,`${file} possui JavaScript inválido: `+String(syntax.stderr||'').trim());
-  }
+const files={
+  portions:'modules/diet-portion-presets-v10_10_9.js',
+  calories:'modules/diet-live-calories-v10_10_11.js',
+  custom:'modules/custom-food-calorie-bridge-v10_10_12.js',
+  deficit:'modules/diet-live-deficit-v10_10_13.js',
+  workspace:'modules/trainer-diet-workspace-v10_10_11.js'
+};
+for(const path of Object.values(files)){
+  assert(fs.existsSync(path),`Arquivo ausente: ${path}`);
+  if(fs.existsSync(path)){const syntax=spawnSync(process.execPath,['--check',path],{encoding:'utf8'});assert(syntax.status===0,`${path} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);}
 }
+const portions=read(files.portions),calories=read(files.calories),custom=read(files.custom),deficit=read(files.deficit),workspace=read(files.workspace);
 
-const source=fs.existsSync(modulePath)?read(modulePath):'';
-const customBridge=fs.existsSync(customBridgePath)?read(customBridgePath):'';
-const workspace=fs.existsSync(workspacePath)?read(workspacePath):'';
-const config=read('config_v10_7.js');
-const sw=read('sw.js');
-const bridge=read('sw_47.js');
-const updater=read('update_v10_10_9.js');
-const version=JSON.parse(read('version.json'));
+has(portions,"const VERSION='10.10.13-portions2'",'Tabela canônica não está na revisão nova.');
+has(portions,"group:'vegetais',label:'120g Vegetais'",'120g Vegetais não é canônico na tabela-base.');
+has(portions,"label:'120g Tomate'",'Compatibilidade de leitura com dietas antigas de Tomate foi removida.');
+has(portions,'hidden:true','Alias legado de Tomate deve ser invisível na tabela de prescrição.');
+has(portions,'function setCustomItems(items)','Registro canônico não aceita alimentos personalizados.');
+has(portions,'get presets(){return presetSnapshot();}','Presets públicos devem ser snapshots, impedindo mutação externa da fonte canônica.');
+has(portions,'const PRESETS=[...BASE_PRESETS,...LEGACY_ALIASES]','Fonte canônica não separa base, aliases e personalizados.');
+lacks(portions,"group:'tomate',label:'120g Tomate'",'Tomate ainda está sendo usado como item canônico/visível.');
 
-has(source,"const VERSION='10.10.11-dietcalories2'",'Módulo não possui a revisão automática de macros.');
-has(source,'function analyze(text)','Analisador das porções da refeição ausente.');
-has(source,'Math.round(protein*4+carbs*4+fat*9)','Cálculo energético não usa a regra 4/4/9 da tabela.');
-has(source,"area.addEventListener('input',refreshMealCounter",'Total da refeição não atualiza em tempo real ao editar/adicionar porções.');
-has(source,'function divisionResult()','Soma automática da divisão da dieta ausente.');
-has(source,"querySelectorAll('.meal-card')",'Refeições salvas não recebem o total automático individual.');
-has(source,'linha(s) digitada(s) fora da tabela não entram no cálculo automático','Interface não avisa sobre linhas sem valor conhecido.');
-has(source,"replace(/porcao\\s+de\\s+carboidrato/gi,'porcao de carbo')",'Compatibilidade Carbo/Carboidrato ausente.');
-has(source,'function legacyMacroPayload(result=divisionResult())','Macros automáticos não são convertidos para o cálculo privado existente.');
-has(source,"macroGrid.hidden=true",'Campos manuais de macro não são ocultados quando a dieta passa a ser a fonte.');
-has(source,"title.textContent='MACRONUTRIENTES DA DIETA — AUTOMÁTICO'",'Calculadora não identifica a origem automática dos macros.');
-has(source,"calculatorMacroRow('Proteína total'",'Tabela da calculadora ainda separa proteína animal/vegetal em vez do total prescrito.');
-has(source,"function bodyWeightKg(body=calculatorBody())",'Cálculo não possui base explícita de peso corporal atual.');
-has(source,"headers[4].textContent='G/KG CORPORAL'",'Tabela não identifica que a razão é por kg corporal.');
-has(source,'gramsPerKg:weight>0?n(result.protein)/weight:0','Proteína total não calcula g/kg pelo peso corporal atual.');
-has(source,'bodyWeightMacroRow(m.carbs,result.carbs,weight)','Carboidratos não calculam g/kg pelo peso corporal atual.');
-has(source,'bodyWeightMacroRow(m.fat,result.fat,weight)','Gorduras não calculam g/kg pelo peso corporal atual.');
-has(source,'g/kg corporal usando o peso atual do aluno','Interface não explica a base corporal do cálculo.');
-has(source,'window.TeamBullsDietCalculator=Object.freeze(wrapped)','Integração não substitui com segurança a API pública da calculadora.');
-has(source,'syncCalculatorMacroInputs(divisionResult())','Salvar cálculo não sincroniza os macros efetivamente prescritos.');
-lacks(source,'db.collection(','Cálculo automático não deve criar leitura/gravação Firestore.');
-lacks(source,'cloudWrite(','Cálculo automático deve ser derivado localmente, sem gravação extra.');
+has(custom,"const VERSION='10.10.13-customfood4'",'Sincronização dos alimentos personalizados não está na revisão estrutural.');
+has(custom,"db.collection(COLLECTION).doc(uid)",'Catálogo persistido do treinador não é carregado.');
+has(custom,"typeof api?.setCustomItems!=='function'",'Sincronização não usa o registro canônico da tabela.');
+has(custom,'api.setCustomItems(cached)','Alimentos personalizados não são entregues ao registro canônico.');
+has(custom,'window.TeamBullsDietLiveCalories?.refresh?.()','Macros não recalculam após sincronizar o catálogo.');
+lacks(custom,'presets.splice(','Ponte ainda está tentando alterar presets diretamente.');
+lacks(custom,'ensureMutablePortionApi','Correção antiga por substituição superficial da API ainda está ativa.');
 
-has(customBridge,"const VERSION='10.10.12-customfood3'",'Ponte de alimentos personalizados não possui a revisão que corrige presets congelados.');
-has(customBridge,"const COLLECTION='trainerSupplementCatalog'",'Ponte não usa o catálogo canônico do treinador.');
-has(customBridge,"const FIELD='dietPortionItems'",'Ponte não lê os itens persistidos do catálogo.');
-has(customBridge,"CURRENT_USER?.role==='trainer'",'Leitura do catálogo personalizado não está restrita ao treinador.');
-has(customBridge,"db.collection(COLLECTION).doc(uid)",'Ponte não carrega o catálogo do treinador autenticado.');
-has(customBridge,'protein:n(raw.protein)','Proteína personalizada não entra nos presets.');
-has(customBridge,'carbs:n(raw.carbs)','Carboidrato personalizado não entra nos presets.');
-has(customBridge,'fat:n(raw.fat)','Gordura personalizada não entra nos presets.');
-has(customBridge,'function ensureMutablePortionApi()','Ponte não prepara uma cópia mutável da tabela congelada.');
-has(customBridge,'const originalPresets=Array.from(api.presets)','Ponte ainda tenta alterar diretamente o array Object.freeze da tabela base.');
-has(customBridge,'presets:mutable','API de porções não recebe a cópia mutável usada pelo cálculo ao vivo.');
-has(customBridge,"Object.defineProperty(wrapped,'__tbCustomFoodMutable'",'Ponte não protege a preparação da API contra instalação duplicada.');
-has(customBridge,'presets.splice(0,presets.length,...base,...clean)','Alimentos personalizados não são aplicados de forma determinística à cópia mutável.');
-has(customBridge,"'tomato-120':'120g de Vegetais'",'Tabela não troca a referência de tomate por vegetais.');
-has(customBridge,'patchVegetableTableLabels','Tabela visível não recebe a nomenclatura Vegetais.');
-has(customBridge,'__tbVegetableLegacyAlias','Dietas antigas com texto Tomate deixariam de ser reconhecidas.');
-has(customBridge,'window.TeamBullsDietLiveCalories?.refresh?.()','Totais não são recalculados após restaurar alimentos personalizados.');
-has(customBridge,'new MutationObserver','Mudanças no catálogo/refeição não restauram os presets personalizados.');
-has(customBridge,"target?.closest?.('[data-custom-food-list],#tb-meal-portion-body,#tb-portion-reference-modal')",'Ponte não acompanha alterações relevantes do workspace/tabela.');
-lacks(customBridge,'cloudWrite(','Ponte de macros não deve gravar dados paralelos no Firestore.');
+has(calories,'function analyze(text)','Analisador de kcal/macros foi removido.');
+has(calories,'Math.round(protein*4+carbs*4+fat*9)','Regra energética 4/4/9 foi alterada.');
+has(workspace,'dietTotalWithDraft()','Workspace não inclui a refeição em edição no total ao vivo.');
+has(deficit,"const VERSION='10.10.13-deficit1'",'Módulo de déficit ao vivo ausente.');
+has(deficit,'balanceKcal:e.get-total.kcal','Déficit não é calculado como GET menos kcal da divisão ativa.');
+has(deficit,"mode==='surplus'?'SUPERÁVIT'",'Interface não diferencia déficit e superávit.');
+has(deficit,'currentDietVariant','Déficit não acompanha a divisão ativa da dieta.');
+has(deficit,'trainingDayEnergy','Meta de dia de treino não é reconhecida.');
+has(deficit,'restDayEnergy','Meta de dia sem treino não é reconhecida.');
+has(deficit,"document.getElementById('input-meal-items')",'Déficit não acompanha a refeição ainda não salva.');
 
-has(workspace,"const VERSION='10.10.11-dietworkspace1'",'Workspace do treinador não possui revisão própria.');
-has(workspace,"CURRENT_USER?.role==='trainer'",'Workspace não está explicitamente restrito ao treinador.');
-has(workspace,"MEAL_CTX?.canEditContent===true",'Workspace pode abrir sem permissão real de edição da dieta.');
-has(workspace,"await persistMealPlan()",'Troca de refeição não reutiliza o salvamento oficial da dieta.');
-has(workspace,"openEditMealModal(meals[targetIndex].id)",'Navegação lateral não abre a refeição vizinha pelo fluxo oficial.');
-has(workspace,"openAddMealModal()",'Botão de nova refeição não reutiliza o fluxo oficial.');
-has(workspace,"data-workspace-prev",'Workspace não possui ação para refeição anterior.');
-has(workspace,"data-workspace-next",'Workspace não possui ação para próxima refeição.');
-has(workspace,"+ NOVA REFEIÇÃO",'Workspace não permite criar refeição sem fechar o modal.');
-has(workspace,"MACROS DA DIETA · AO VIVO",'Macros completos não ficam visíveis dentro do workspace.');
-has(workspace,"data-workspace-foods",'Tabela de alimentos não possui coluna lateral dedicada.');
-has(workspace,"foods.appendChild(tool)",'Tabela de porções não é movida para a lateral do treinador.');
-has(workspace,"body.hidden=false",'Tabela lateral não abre automaticamente no planejamento.');
-has(workspace,"touchstart",'Navegação por gesto lateral ausente.');
-has(workspace,"dx<0?navigate(1):navigate(-1)",'Gesto lateral não troca anterior/próxima refeição.');
-has(workspace,"dietTotalWithDraft()",'Resumo não inclui a refeição em edição antes de fechar/salvar.');
-has(workspace,"#modal-meal.tb-trainer-diet-workspace",'CSS não está isolado ao modal do treinador.');
-lacks(workspace,"db.collection(",'Workspace não deve criar nova leitura/gravação Firestore direta.');
-lacks(workspace,"cloudWrite(",'Workspace deve reutilizar persistMealPlan, sem nova escrita paralela.');
-
-const portionIndex=config.indexOf('diet-portion-presets-v10_10_9.js');
-const personalizationIndex=config.indexOf('diet-personalization-v10_10_11.js');
-const caloriesIndex=config.indexOf('diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2');
-const trainingIndex=config.indexOf('training-integrity-v10_10_11.js');
-const releaseIndex=config.indexOf('release-coherence-v10_10_10.js?v=10.10.12-release6');
-const customBridgeIndex=config.indexOf('custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2');
-const workspaceIndex=config.indexOf('trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1');
-const trainerHubIndex=config.indexOf('trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2');
-assert(portionIndex>=0&&personalizationIndex>portionIndex&&caloriesIndex>personalizationIndex&&trainingIndex>caloriesIndex&&releaseIndex>trainingIndex&&customBridgeIndex>releaseIndex&&workspaceIndex>customBridgeIndex&&trainerHubIndex>workspaceIndex,'Ordem do loader não garante tabela → personalização → calorias/macros → integridade → ponte persistente → workspace → Central/Pagamentos.');
-for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
-  has(text,"./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2",`${name} não prepara a revisão automática de macros para uso offline.`);
-  has(text,"./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2",`${name} não prepara alimentos personalizados para uso offline.`);
-  has(text,"./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1",`${name} não prepara o workspace do treinador para uso offline.`);
-}
-has(updater,"./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2",'Atualizador não renova a ponte de alimentos personalizados.');
-
-const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
-const swBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
-const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
-assert(version.version==='10.10.9'&&Number.isInteger(version.build)&&version.build>0,'Release pública da dieta está inválida em version.json.');
-assert(updaterBuild===version.build&&swBuild===version.build&&bridgeBuild===version.build,'Build ativo não está coerente entre version.json, atualizador e Service Workers.');
-
-if(source){
-  const head={appendChild(){}};
+// Segunda revisão: executa a tabela canônica e o analisador juntos, sem depender do DOM visual.
+try{
+  const noop=()=>{};
   const document={
-    head,
-    getElementById(){return null;},
-    createElement(){return{dataset:{},className:'',id:'',textContent:'',appendChild(){},remove(){},insertAdjacentElement(){}};},
-    querySelectorAll(){return[];}
+    head:{appendChild(){}},body:{appendChild(){},querySelector(){return null;}},
+    getElementById(){return null;},querySelectorAll(){return[];},addEventListener(){},
+    createElement(){return{style:{},dataset:{},appendChild(){},remove(){},insertAdjacentElement(){},querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){}};}
   };
-  const window={
-    TeamBullsDietPortions:{presets:[
-      {id:'carb-10',group:'carbo',label:'1 Porção de Carbo',protein:3,carbs:28,fat:0.2},
-      {id:'protein-10',group:'proteina',label:'1 Porção de Proteína',protein:15.7,carbs:0,fat:1.6},
-      {id:'fat-10',group:'gordura',label:'1 Porção de Gordura',protein:0,carbs:0,fat:8},
-      {id:'tomato-120',group:'vegetais',label:'120g de Vegetais',protein:0,carbs:3.3,fat:0},
-      {id:'custom-milk',group:'custom',label:'200ml de Leite integral',protein:6.2,carbs:0,fat:9.2}
-    ]}
-  };
-  const context={window,document,console,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame(){},setTimeout,clearTimeout,Intl,Map,Set,Object,Array,String,Number,Math};
-  window.window=window;
-  try{
-    vm.runInNewContext(source,context,{filename:modulePath});
-    const api=window.TeamBullsDietLiveCalories;
-    assert(api&&typeof api.analyze==='function','API pública do cálculo automático não foi exposta.');
-    if(api){
-      const result=api.analyze('1 Porção de Carboidrato\n1 Porção de Proteína\n100g alimento digitado livremente');
-      assert(result.kcal===203,'1 carbo + 1 proteína deveria totalizar 203 kcal pela tabela.');
-      assert(close(result.protein,18.7)&&close(result.carbs,28)&&close(result.fat,1.8),'Macronutrientes da soma carbo + proteína estão incorretos.');
-      assert(result.matched===2&&result.unknown===1&&result.totalLines===3,'Contagem de porções reconhecidas/desconhecidas está incorreta.');
-      const repeated=api.analyze('1 Porção de Proteína\n1 Porção de Proteína');
-      assert(repeated.kcal===154&&close(repeated.protein,31.4)&&close(repeated.fat,3.2),'Porções repetidas não são somadas corretamente.');
-      const fat=api.analyze('1 Porção de Gordura');
-      assert(fat.kcal===72&&close(fat.fat,8),'Porção de gordura não respeita 9 kcal/g.');
-      const custom=api.analyze('200ml de Leite integral\n120g de Vegetais');
-      assert(custom.matched===2&&custom.unknown===0,'Alimento personalizado e vegetais deveriam ser reconhecidos pelo cálculo ao vivo.');
-      assert(custom.kcal===121&&close(custom.protein,6.2)&&close(custom.carbs,3.3)&&close(custom.fat,9.2),'Macros/kcal de alimento personalizado + vegetais estão incorretos.');
-      const legacy=api.legacyMacroPayload(result);
-      assert(close(legacy.animalProtein,18.7)&&legacy.plantProtein===0&&close(legacy.carbs,28)&&close(legacy.fat,1.8),'Compatibilidade interna não recebe os macros derivados da dieta.');
-    }
-  }catch(error){fail.push('Falha ao executar o analisador em ambiente isolado: '+error.message);}
-}
+  const window={};window.window=window;
+  const context={window,document,console,Intl,Map,Set,Object,Array,String,Number,Math,Promise,Event:function(){},navigator:{},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame:noop,setTimeout,clearTimeout,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]}};
+  vm.runInNewContext(portions,context,{filename:files.portions});
+  const registry=window.TeamBullsDietPortions;
+  assert(registry&&typeof registry.setCustomItems==='function','API canônica TeamBullsDietPortions não foi criada.');
+  registry.setCustomItems([
+    {id:'milk',label:'200ml de Leite integral',protein:6.2,carbs:0,fat:9.2},
+    {id:'veg-custom',label:'90g de Vegetais personalizados',protein:0,carbs:2.5,fat:0}
+  ]);
+  const snapA=registry.presets,snapB=registry.presets;
+  assert(snapA!==snapB,'presets deve devolver snapshots independentes para bloquear mutações externas.');
+  snapA.splice(0,snapA.length);
+  assert(registry.presets.length>0,'Mutação externa de presets corrompeu o registro canônico.');
+  assert(registry.presets.some(item=>item.label==='200ml de Leite integral'),'Alimento personalizado não entrou no registro canônico.');
+  assert(registry.presets.some(item=>item.label==='120g Vegetais'),'Vegetais canônicos ausentes.');
+  assert(registry.presets.some(item=>item.label==='120g Tomate'&&item.hidden===true),'Alias antigo de Tomate ausente.');
 
-if(fail.length){console.error('FALHA — diet live calories/workspace\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — macros em tempo real, alimentos personalizados persistidos, vegetais, g/kg corporal, workspace contínuo do treinador e coerência da release PWA validados.');
+  vm.runInNewContext(calories,context,{filename:files.calories});
+  const live=window.TeamBullsDietLiveCalories;assert(live&&typeof live.analyze==='function','API de cálculo ao vivo não foi criada.');
+  if(live){
+    const current=live.analyze('200ml de Leite integral\n120g Vegetais');
+    assert(current.matched===2&&current.unknown===0,'Leite personalizado + Vegetais não foram reconhecidos juntos.');
+    assert(current.kcal===121&&close(current.protein,6.2)&&close(current.carbs,3.3)&&close(current.fat,9.2),'Leite personalizado + 120g Vegetais não totaliza 121 kcal / P6,2 C3,3 G9,2.');
+    const old=live.analyze('120g Tomate');
+    assert(old.matched===1&&old.unknown===0&&old.kcal===13,'Dieta antiga com 120g Tomate deixou de calcular.');
+  }
+}catch(error){fail.push('Falha no teste integrado tabela → alimento personalizado → kcal/macros: '+error.stack);}
+
+if(fail.length){console.error('FALHA — integridade profunda da dieta\n- '+fail.join('\n- '));process.exit(1);}
+console.log('APROVADO — tabela canônica Vegetais, aliases antigos, alimentos personalizados, kcal/macros e déficit por divisão validados em duas camadas.');
