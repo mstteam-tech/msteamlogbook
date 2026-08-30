@@ -63,14 +63,16 @@
     const promise=new Promise(resolve=>{const done=ok=>resolve(!!ok),script=document.createElement('script');script.src=path;script.async=false;script.onload=()=>done(check());script.onerror=()=>done(false);document.head.appendChild(script);});
     if(cacheName==='pdf')pdfLoading=promise.finally(()=>{if(!check())pdfLoading=null;});else deficitLoading=promise.finally(()=>{if(!check())deficitLoading=null;});return cacheName==='pdf'?pdfLoading:deficitLoading;
   }
-  function prepareOptional(){loadOptional(PDF_MODULE,()=>!!window.TeamBullsPdfExport,'pdf').catch(()=>{});loadOptional(DEFICIT_MODULE,()=>!!window.TeamBullsDietLiveDeficit,'deficit').catch(()=>{});}
+  function loadPdfExporter(){return loadOptional(PDF_MODULE,()=>!!window.TeamBullsPdfExport,'pdf');}
+  function loadDeficit(){return loadOptional(DEFICIT_MODULE,()=>!!window.TeamBullsDietLiveDeficit,'deficit');}
+  function prepareOptional(){loadPdfExporter().catch(()=>{});loadDeficit().catch(()=>{});}
   function install(){
     if(!document.body)return false;
     if(!observer){observer=new MutationObserver(mutations=>{if(mutations.some(relevant))schedule();});observer.observe(document.body,{childList:true,subtree:true,characterData:true});}
     load().catch(()=>0);prepareOptional();return true;
   }
 
-  window.TeamBullsCustomFoodCalories=Object.freeze({version:VERSION,load,apply:syncFromUi,refresh:()=>schedule({reload:true}),items:()=>cached.slice(),loadPdfExporter:()=>loadOptional(PDF_MODULE,()=>!!window.TeamBullsPdfExport,'pdf')});
+  window.TeamBullsCustomFoodCalories=Object.freeze({version:VERSION,load,apply:syncFromUi,refresh:()=>schedule({reload:true}),items:()=>cached.slice(),loadPdfExporter});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
   window.addEventListener('team-bulls-runtime-ready',()=>{load(true).catch(()=>0);prepareOptional();});
   window.addEventListener('online',()=>{load(true).catch(()=>0);prepareOptional();});
