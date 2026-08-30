@@ -50,16 +50,18 @@ has(deficit,'trainingDayEnergy','Meta de dia de treino não é reconhecida.');
 has(deficit,'restDayEnergy','Meta de dia sem treino não é reconhecida.');
 has(deficit,"document.getElementById('input-meal-items')",'Déficit não acompanha a refeição ainda não salva.');
 
-// Segunda revisão: executa a tabela canônica e o analisador juntos, sem depender do DOM visual.
+// Segunda revisão: executa tabela canônica + macros + déficit em runtime simulado.
 try{
   const noop=()=>{};
+  const nodes=new Map();
+  const bodyNode={querySelector(){return null;},appendChild(){}};
   const document={
-    head:{appendChild(){}},body:{appendChild(){},querySelector(){return null;}},
-    getElementById(){return null;},querySelectorAll(){return[];},addEventListener(){},
-    createElement(){return{style:{},dataset:{},appendChild(){},remove(){},insertAdjacentElement(){},querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){}};}
+    readyState:'complete',head:{appendChild(){}},body:bodyNode,
+    getElementById(id){return nodes.get(id)||null;},querySelectorAll(){return[];},addEventListener(){},
+    createElement(){return{style:{},dataset:{},appendChild(){},remove(){},insertAdjacentElement(){},querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){},setAttribute(){}};}
   };
-  const window={};window.window=window;
-  const context={window,document,console,Intl,Map,Set,Object,Array,String,Number,Math,Promise,Event:function(){},navigator:{},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame:noop,setTimeout,clearTimeout,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]}};
+  const window={addEventListener(){},dispatchEvent(){}};window.window=window;
+  const context={window,document,console,Intl,Map,Set,Object,Array,String,Number,Math,Promise,Event:function(){},MutationObserver:function(){this.observe=noop;},navigator:{},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame:noop,setTimeout,clearTimeout,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]}};
   vm.runInNewContext(portions,context,{filename:files.portions});
   const registry=window.TeamBullsDietPortions;
   assert(registry&&typeof registry.setCustomItems==='function','API canônica TeamBullsDietPortions não foi criada.');
@@ -84,7 +86,25 @@ try{
     const old=live.analyze('120g Tomate');
     assert(old.matched===1&&old.unknown===0&&old.kcal===13,'Dieta antiga com 120g Tomate deixou de calcular.');
   }
-}catch(error){fail.push('Falha no teste integrado tabela → alimento personalizado → kcal/macros: '+error.stack);}
+
+  const plan={id:'diet-a',name:'Dieta A',energySummary:{totalExpenditure:2500,trainingDayEnergy:2200,restDayEnergy:2000},variants:[{id:'train',name:'Dia de treino'},{id:'rest',name:'Dia sem treino'}]};
+  context.CURRENT_USER={uid:'trainer-1',role:'trainer'};
+  context.DIET_DOCUMENT={plans:[plan]};context.CURRENT_DIET_ID='diet-a';context.CURRENT_DIET_VARIANT_ID='train';
+  context.currentDiet=()=>plan;context.currentDietVariant=()=>plan.variants.find(item=>item.id===context.CURRENT_DIET_VARIANT_ID);
+  context.MEAL_PLAN_CACHE={meals:[{id:'m1',items:'1 Porção de Gordura'}]};
+  vm.runInNewContext(deficit,context,{filename:files.deficit});
+  const deficitApi=window.TeamBullsDietLiveDeficit;assert(deficitApi&&typeof deficitApi.calculate==='function','API de déficit ao vivo não foi criada.');
+  if(deficitApi){
+    const training=deficitApi.calculate();
+    assert(training.variantName==='Dia de treino'&&training.target===2200,'Dia de treino não usa o VET de treino correspondente.');
+    assert(training.kcal===72&&training.get===2500&&training.balanceKcal===2428,'Déficit de treino não usa GET − kcal da divisão ativa.');
+    context.CURRENT_DIET_VARIANT_ID='rest';context.MEAL_PLAN_CACHE={meals:[{id:'m2',items:'2 Porção de Gordura'}]};
+    const rest=deficitApi.calculate();
+    assert(rest.variantName==='Dia sem treino'&&rest.target===2000,'Dia sem treino não usa o VET de descanso correspondente.');
+    assert(rest.kcal===144&&rest.get===2500&&rest.balanceKcal===2356,'Déficit de descanso não acompanha as calorias da dieta ativa.');
+    assert(rest.balanceKcal!==training.balanceKcal,'Déficit ficou estático ao trocar para outra divisão com calorias diferentes.');
+  }
+}catch(error){fail.push('Falha no teste integrado tabela → personalizado → kcal/macros → déficit: '+error.stack);}
 
 if(fail.length){console.error('FALHA — integridade profunda da dieta\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — tabela canônica Vegetais, aliases antigos, alimentos personalizados, kcal/macros e déficit por divisão validados em duas camadas.');
+console.log('APROVADO — duas revisões: Vegetais canônico, alimento personalizado, compatibilidade antiga e déficit treino/descanso executados em runtime.');
