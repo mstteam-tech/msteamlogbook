@@ -4,10 +4,12 @@
   if(window.__TEAM_BULLS_USABILITY_CHECKUP_V10109__)return;
   window.__TEAM_BULLS_USABILITY_CHECKUP_V10109__=true;
 
-  const VERSION='10.10.9-usability2';
+  const VERSION='10.10.9-usability3';
+  const FEEDBACK_HISTORY_MODULE='./modules/trainer-feedback-history-v10_10_12.js?v=10.10.12-feedbackhistory1';
   const scrollByHistoryKey=new Map();
   let scrollFrame=0;
   let profileMenuObserver=null;
+  let feedbackHistoryLoading=null;
 
   function appScroller(){return document.getElementById('app');}
   function historyKey(state=history.state){return state?.teamBulls&&state?.key?String(state.key):'';}
@@ -148,6 +150,26 @@
     window.addEventListener('pageshow',ensureStudentProfileLogout,{passive:true});
   }
 
+  function loadTrainerFeedbackHistory(){
+    if(window.TeamBullsTrainerFeedbackHistory)return Promise.resolve(true);
+    if(feedbackHistoryLoading)return feedbackHistoryLoading;
+    feedbackHistoryLoading=new Promise(resolve=>{
+      const existing=[...document.scripts].find(script=>{try{return new URL(script.src,location.href).pathname.endsWith('/modules/trainer-feedback-history-v10_10_12.js');}catch(error){return false;}});
+      const finish=ok=>{if(!ok)feedbackHistoryLoading=null;resolve(!!ok);};
+      if(existing){
+        if(window.TeamBullsTrainerFeedbackHistory){finish(true);return;}
+        let settled=false;const done=ok=>{if(settled)return;settled=true;clearTimeout(timer);finish(ok);};
+        const timer=setTimeout(()=>done(!!window.TeamBullsTrainerFeedbackHistory),6500);
+        existing.addEventListener('load',()=>done(!!window.TeamBullsTrainerFeedbackHistory),{once:true});
+        existing.addEventListener('error',()=>done(false),{once:true});
+        return;
+      }
+      const script=document.createElement('script');script.src=FEEDBACK_HISTORY_MODULE;script.async=false;script.dataset.teamBullsFeedbackHistory='1';
+      script.onload=()=>finish(!!window.TeamBullsTrainerFeedbackHistory);script.onerror=()=>finish(false);document.head.appendChild(script);
+    });
+    return feedbackHistoryLoading;
+  }
+
   function installStyles(){
     if(document.getElementById('tb-usability-checkup-v10-10-9-style'))return;
     const style=document.createElement('style');
@@ -186,14 +208,16 @@
     wrapShowScreen();
     wrapActionFeedback();
     installStudentProfileLogout();
+    loadTrainerFeedbackHistory().catch(()=>{});
     window.addEventListener('pagehide',releaseMediaUrls,{passive:true});
-    window.addEventListener('pageshow',()=>{installHistoryScroll();wrapShowScreen();wrapActionFeedback();installStudentProfileLogout();},{passive:true});
+    window.addEventListener('pageshow',()=>{installHistoryScroll();wrapShowScreen();wrapActionFeedback();installStudentProfileLogout();loadTrainerFeedbackHistory().catch(()=>{});},{passive:true});
     window.TeamBullsUsability=Object.freeze({
       version:VERSION,
       rememberScroll,
       restoreScroll:()=>restoreScrollForState(history.state),
       revealActiveWeek:()=>scrollActiveWeekIntoView(),
-      ensureStudentProfileLogout
+      ensureStudentProfileLogout,
+      loadTrainerFeedbackHistory
     });
   }
 
