@@ -53,8 +53,16 @@ need(rules.includes('match /studentInvites/{id}'),'As Rules ativas precisam cont
 need(rules.includes('allow get: if true;'),'O preflight público deve continuar restrito a get de um convite hash, nunca listagem pública.');
 need(rules.includes("getAfter(/databases/$(database)/documents/studentInvites/$(request.resource.data.inviteId)).data.usedBy == uid"),'A criação do aluno deve continuar dependente do convite consumido atomicamente.');
 need(rules.includes("getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.inviteId == id"),'O consumo do convite deve continuar vinculado ao perfil do mesmo UID.');
-need(updaterBuild===version.build&&workerBuild===version.build&&bridgeBuild===version.build,'Build do cadastro precisa ser idêntico no endpoint, atualizador e dois Service Workers.');
+// Cadastro depende do runtime, não do feed de anúncios. Durante manual-rescue o feed
+// pode ficar deliberadamente abaixo para neutralizar clientes antigos, mas updater e
+// os dois workers continuam obrigatoriamente no mesmo build real.
+need(updaterBuild>0&&updaterBuild===workerBuild&&workerBuild===bridgeBuild,'Build do cadastro precisa ser idêntico no atualizador e nos dois Service Workers.');
+if(version.updateMode==='manual-rescue'){
+  need(Number(version.build)>0&&Number(version.build)<=updaterBuild,'Feed manual-rescue não pode anunciar build acima do runtime do cadastro.');
+  need(String(version.revision||'').includes('update-loop-kill-switch'),'Feed de resgate não identifica a contenção do atualizador.');
+  need(updater.includes('const AUTO_APPLY_SAME_VERSION_HOTFIX=false;'),'Auto-update precisa permanecer suspenso durante o resgate.');
+}else need(updaterBuild===version.build,'Build do cadastro precisa coincidir com version.json fora do modo de resgate.');
 need(updater.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Atualizador deve renovar explicitamente a integridade do cadastro.');
 need(workerCache&&workerCache===bridgeCache,'A release precisa manter os caches coerentes nos dois Service Workers.');
 need(sw.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2")&&bridge.includes("./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2"),'Service Workers não podem preparar a revisão registration1 antiga.');
-console.log(`APROVADO: cadastro por convite, fallback autenticado, retry único, App Check, atomicidade e build ${version.build} seguem coerentes sob ${activeRules}.`);
+console.log(`APROVADO: cadastro por convite, fallback autenticado, retry único, App Check, atomicidade e runtime ${updaterBuild} seguem coerentes sob ${activeRules}; feed ${version.build}.`);
