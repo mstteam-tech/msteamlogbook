@@ -56,5 +56,27 @@ assert(sw===sw47,'sw.js e sw_47.js divergiram.');
 assert(version.version==='10.10.9','Versão pública foi alterada indevidamente.');
 assert(version.build===2026083101,'version.json não corresponde ao build de manutenção.');
 
+const checkout='actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09';
+const setup='actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444';
+const workflows=[
+  '.github/workflows/photo-quality.yml',
+  '.github/workflows/prescription-technique-overflow.yml',
+  '.github/workflows/quality.yml',
+  '.github/workflows/security.yml',
+  '.github/workflows/superset-integrity.yml',
+  '.github/workflows/team-bulls-validate.yml'
+];
+for(const path of workflows){
+  assert(fs.existsSync(path),`Workflow ausente: ${path}`);if(!fs.existsSync(path))continue;
+  const text=read(path);has(text,checkout,`${path} não fixa checkout por SHA.`);has(text,setup,`${path} não fixa setup-node por SHA.`);lacks(text,'actions/checkout@v',`${path} voltou a usar tag móvel do checkout.`);lacks(text,'actions/setup-node@v',`${path} voltou a usar tag móvel do setup-node.`);
+}
+const security=read('.github/workflows/security.yml');has(security,"node-version: '22'",'Workflow de segurança não usa Node 22.');has(security,'maintenance-integrity-check.mjs','Workflow de segurança não executa a auditoria de manutenção.');
+const quality=read('.github/workflows/quality.yml');has(quality,'maintenance-integrity-check.mjs','Workflow de qualidade não executa a auditoria de manutenção.');
+const validation=read('.github/workflows/team-bulls-validate.yml');has(validation,'maintenance-integrity-check.mjs','Validação principal não executa a auditoria de manutenção.');
+assert(fs.existsSync('.github/workflows/codeql.yml'),'Workflow CodeQL ausente.');
+if(fs.existsSync('.github/workflows/codeql.yml')){const codeql=read('.github/workflows/codeql.yml');has(codeql,checkout,'CodeQL não fixa checkout por SHA.');has(codeql,'github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938','CodeQL init não está fixado por SHA.');has(codeql,'github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938','CodeQL analyze não está fixado por SHA.');}
+assert(fs.existsSync('.github/dependabot.yml'),'Dependabot para GitHub Actions ausente.');
+if(fs.existsSync('.github/dependabot.yml'))has(read('.github/dependabot.yml'),'package-ecosystem: github-actions','Dependabot não acompanha GitHub Actions.');
+
 if(fail.length){console.error('FALHA — manutenção/segurança\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — cache, logout, histórico, alimentos personalizados e observadores DOM revisados sem alterar a versão pública.');
+console.log('APROVADO — cache, logout, histórico, alimentos personalizados, observadores DOM e supply chain do CI revisados sem alterar a versão pública.');
