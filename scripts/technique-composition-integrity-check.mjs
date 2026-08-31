@@ -121,8 +121,17 @@ assert.ok(swHotfix&&swHotfix===bridgeHotfix,'Service Workers usam revisões glob
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0);
 const swBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
-assert.equal(updaterBuild,version.build,'Build do atualizador não coincide com version.json.');
-assert.equal(swBuild,version.build,'Build do Service Worker não coincide com version.json.');
-assert.equal(bridgeBuild,version.build,'Build do Service Worker legado não coincide com version.json.');
+// O runtime e os dois workers precisam permanecer byte/build-coerentes. Durante o
+// incidente de atualização, o version.json pode deliberadamente anunciar um build
+// anterior em `manual-rescue` para neutralizar clientes antigos sem rebaixar o runtime.
+assert.equal(updaterBuild,swBuild,'Build do atualizador não coincide com o Service Worker.');
+assert.equal(swBuild,bridgeBuild,'Service Workers usam builds diferentes.');
+if(version.updateMode==='manual-rescue'){
+  assert.ok(version.build<=updaterBuild,'Feed manual-rescue não pode anunciar build acima do runtime.');
+  assert.match(String(version.revision||''),/update-loop-kill-switch/,'Feed manual-rescue não identifica a contenção do loop.');
+  assert.match(updater,/const AUTO_APPLY_SAME_VERSION_HOTFIX=false;/,'Auto-update não está desabilitado no resgate.');
+}else{
+  assert.equal(updaterBuild,version.build,'Build do atualizador não coincide com version.json fora do resgate.');
+}
 
 console.log('APROVADO — Super Set permanece estável com técnicas combinadas, vínculos reversos, troca de parceiro, semanas materializadas e PWA coerente.');
