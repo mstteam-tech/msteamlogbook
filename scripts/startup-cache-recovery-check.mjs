@@ -13,7 +13,7 @@ for(const file of ['sw.js','sw_47.js']){
 }
 
 assert(sw===bridge,'sw.js e sw_47.js divergiram durante o resgate de inicialização.');
-assert(sw.includes("const CACHE_HOTFIX='startup-rescue3';"),'Cache de resgate não foi rotacionado.');
+assert(sw.includes("const CACHE_HOTFIX='startup-rescue4';"),'Cache de resgate não foi rotacionado.');
 assert(sw.includes('const SHELL_ITEM_TIMEOUT_MS=3000;'),'Pré-cache continua sem timeout explícito.');
 assert(sw.includes('const ACTIVATION_SHELL=['),'Shell mínimo de ativação está ausente.');
 assert(sw.includes('async function prepareActivationShell'),'Ativação rápida não prepara o shell mínimo.');
@@ -37,10 +37,11 @@ assert(sw.includes('const stale=keys.filter'),'Ativação não identifica caches
 assert(sw.includes('await Promise.all(stale.map(key=>caches.delete(key)))'),'Ativação não remove caches antigos.');
 assert(sw.includes('await self.clients.claim()'),'Novo Service Worker não assume imediatamente os clientes abertos.');
 assert(sw.includes("'./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Layout novo deixou de ser preparado pelo PWA.');
+assert(sw.includes("'./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1'"),'Ponte resiliente do layout não está no shell PWA.');
 assert(sw.includes("'./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1'"),'Cabeçalho atual do aluno deixou de ser preparado pelo PWA.');
 
 if(fail.length){
   console.error('FALHA — startup/cache recovery\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('Startup/cache recovery check OK — ativação limitada, recuperação única e layout preservado.');
+console.log('Startup/cache recovery check OK — ativação limitada, recuperação única e ponte do layout preservada.');
