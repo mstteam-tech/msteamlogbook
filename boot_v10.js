@@ -1,6 +1,81 @@
 window.__fbLoadErrors=0;
 window.__teamBullsBootErrors=[];
 try{if(window.top!==window.self)window.top.location=window.self.location.href;}catch(error){document.documentElement.style.display='none';}
+
+/*
+ * Compatibilidade de emergência para builds antigos que ainda podem criar um
+ * diálogo de atualização em tela cheia. A atualização nunca deve impedir o
+ * usuário de usar o app. O guard é específico para o texto legado e não fecha
+ * modais normais do Team Bulls.
+ */
+(function(){
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+  const LEGACY_ACTION='LIMPAR CACHE E REINICIAR';
+  const LEGACY_TITLE='ATUALIZACAO DO APLICATIVO';
+  let released=0;
+  let scanTimer=0;
+
+  function legacyControl(){
+    const controls=document.querySelectorAll('button,a,[role="button"]');
+    for(const control of controls){
+      if(normalize(control.textContent).includes(LEGACY_ACTION))return control;
+    }
+    return null;
+  }
+  function blockerRoot(control){
+    if(!control)return null;
+    const direct=control.closest('.modal-backdrop,[role="dialog"],.modal,.overlay,.dialog-backdrop');
+    if(direct)return direct;
+    let node=control;
+    while(node?.parentElement&&node.parentElement!==document.body)node=node.parentElement;
+    return node&&node!==document.body?node:null;
+  }
+  function releaseInteraction(){
+    const app=document.getElementById('app');
+    if(app){app.removeAttribute('inert');if(app.getAttribute('aria-hidden')==='true')app.removeAttribute('aria-hidden');app.style.removeProperty('pointer-events');}
+    for(const root of [document.documentElement,document.body]){
+      if(!root)continue;
+      root.classList.remove('modal-open','no-scroll','scroll-locked','update-blocked','app-update-blocked');
+      root.style.removeProperty('overflow');
+      root.style.removeProperty('pointer-events');
+    }
+  }
+  function scan(){
+    const control=legacyControl();
+    if(!control)return false;
+    const root=blockerRoot(control);
+    const text=normalize(root?.textContent||control.parentElement?.textContent||'');
+    if(!text.includes(LEGACY_TITLE)||!text.includes(LEGACY_ACTION))return false;
+    if(root){
+      root.dataset.tbLegacyUpdateBlocked='1';
+      root.hidden=true;
+      root.setAttribute('aria-hidden','true');
+      try{root.inert=true;}catch(error){}
+      root.style.setProperty('display','none','important');
+      root.style.setProperty('pointer-events','none','important');
+    }
+    releaseInteraction();
+    released++;
+    window.__TEAM_BULLS_LEGACY_UPDATE_BLOCKER_RELEASED__=released;
+    return true;
+  }
+  function install(){
+    if(document.getElementById('tb-update-failopen-style'))return;
+    const style=document.createElement('style');
+    style.id='tb-update-failopen-style';
+    style.textContent='[data-tb-legacy-update-blocked="1"]{display:none!important;pointer-events:none!important;visibility:hidden!important}';
+    document.head.appendChild(style);
+    const schedule=[0,120,450,1200,2600,5000,9000,15000,30000,60000];
+    schedule.forEach(delay=>setTimeout(scan,delay));
+    window.addEventListener('pageshow',scan,{passive:true});
+    window.addEventListener('team-bulls-runtime-ready',scan);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scan();},{passive:true});
+    clearTimeout(scanTimer);scanTimer=setTimeout(()=>releaseInteraction(),65000);
+  }
+  window.TeamBullsUpdateFailOpen=Object.freeze({scan,releaseInteraction});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+
 (function(){
   let revealTimer=null;
   function loadingActive(){return !!document.getElementById('screen-loading')?.classList.contains('active');}
