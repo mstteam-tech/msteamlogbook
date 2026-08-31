@@ -4,7 +4,7 @@
 const APP_VERSION='10.10.9';
 const BUILD_REVISION=2026083104;
 const CACHE_REVISION='guidance2';
-const CACHE_HOTFIX='startup-rescue2';
+const CACHE_HOTFIX='startup-rescue3';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
@@ -14,19 +14,28 @@ const NETWORK_TIMEOUT_MS=4500;
 const MUTABLE_NETWORK_TIMEOUT_MS=3500;
 const NAVIGATION_REFRESH_TIMEOUT_MS=4500;
 const AUDIO_NETWORK_TIMEOUT_MS=2500;
+const SHELL_ITEM_TIMEOUT_MS=3000;
 const SHELL_FETCH_CONCURRENCY=4;
 const OPTIONAL_FETCH_CONCURRENCY=2;
 const AUDIO_NAME_PATTERN=/^team-bulls-music-[a-z0-9-]+\.mp3$/i;
 
 /*
- * Mantém o shell offline canônico do app. A diferença desta revisão é que uma
- * falha transitória de um item não aborta a instalação inteira do Service Worker.
+ * Mantém o catálogo offline canônico do app. Ele continua sendo usado para
+ * reaquecimento do shell, mas NÃO bloqueia mais a ativação de uma correção.
  */
 const REQUIRED_SHELL=[
   './index.html','./manifest.json','./version.json','./viewport_v10_10_9.js?v=10.10.9','./boot_v10.js?v=10.10.9','./config_v10_7.js?v=10.10.9','./update_v10_10_9.js?v=10.10.9','./app_v10_10_9_core.js?v=10.10.9','./modules/v107-core.js?v=10.10.9','./modules/v107-invites.js?v=10.10.9','./modules/v107-operations.js?v=10.10.9','./modules/stability_v10_10_9.js?v=10.10.9','./modules/app-update-v10_10_9.js?v=10.10.9','./modules/diet-scroll-fix-v10_10_9.js?v=10.10.9','./modules/modal-form-guard-v10_10_9.js?v=10.10.9','./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3','./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1','./modules/global-performance-v10_10_9.js?v=10.10.9-perf2','./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1','./modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1','./modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1','./modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2','./modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1','./modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1','./modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2','./modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','./modules/security-hardening-v10_10_9.js?v=10.10.10-security8','./modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2','./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2','./modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','./modules/workflow-controls-v10_10_10.js?v=10.10.10-workflow1','./modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1','./modules/usability-audit-v10_10_10.js?v=10.10.10-audit1','./modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1','./modules/release-coherence-v10_10_10.js?v=10.10.12-release6','./modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1','./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1','./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2','./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2','./interaction_v10_10_9.js?v=10.10.9','./styles_v10_10_9.css?v=10.10.9','./recuperar.html','./recovery_v10.js?v=10.10.9','./recovery_v10.css?v=10.10.9','./icon-192-v9-8.png','./icon-512-v9-8.png','./icon-maskable-192-v9-8.png','./icon-maskable-512-v9-8.png','./apple-touch-icon-v9-8.png'
 ];
 const OPTIONAL_SHELL=[
   './team-bulls-auth-bg-v9-8-2.webp','./team-bulls-desktop-menu-v10-5-6.webp','./modules/photo-guide-v10_10_9.js?v=10.10.9','./modules/diet-personalization-v10_10_11.js?v=10.10.11-dietpersonal1','./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2','./modules/diet-live-deficit-v10_10_13.js?v=10.10.13-deficit1','./modules/training-integrity-v10_10_11.js?v=10.10.11-training1','./modules/report-schedule-consistency-v10_10_11.js?v=10.10.11-reportschedule1','./modules/cardio-finish-alert-v10_10_11.js?v=10.10.11-cardioalert1','./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1','./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2','./assets/photo-guide/page-1.png?v=10.10.9','./assets/photo-guide/page-2.png?v=10.10.9','./assets/photo-guide/page-3.png?v=10.10.9','./assets/photo-guide/page-4.png?v=10.10.9','./assets/photo-guide/page-5.png?v=10.10.9'
+];
+/*
+ * Apenas estes poucos arquivos são preparados antes do skipWaiting. Cada fetch
+ * tem timeout próprio; nenhum recurso opcional pode deixar o novo worker preso
+ * indefinidamente no estado "installing".
+ */
+const ACTIVATION_SHELL=[
+  './index.html','./version.json','./boot_v10.js?v=10.10.9','./styles_v10_10_9.css?v=10.10.9'
 ];
 
 const VERSIONED_PATH_PATTERN=/(?:v\d+(?:[._-]\d+)+|_v\d+(?:_\d+)+)\.(?:js|css|json|png|webp)$/i;
@@ -61,39 +70,45 @@ function secureResponse(response,{html=false}={}){
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }
 function fetchWithTimeout(request,timeoutMs=NETWORK_TIMEOUT_MS,init={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);return fetch(request,{...init,signal:controller.signal}).finally(()=>clearTimeout(timer));}
-async function fetchFresh(input){const request=typeof input==='string'?new Request(scopedUrl(input),{cache:'reload'}):input;return fetch(request,{cache:'reload'});}
-async function cacheOne(cache,path){try{const response=await fetchFresh(path);if(!response.ok)throw new Error(`HTTP ${response.status}: ${path}`);await cache.put(scopedUrl(path),response.clone());return true;}catch(error){console.warn('[Team Bulls] Não foi possível preparar',path,error);return false;}}
-async function cachePathsWithLimit(cache,paths,limit=4){const queue=Array.from(paths||[]);if(!queue.length)return true;let next=0;const worker=async()=>{while(true){const index=next++;if(index>=queue.length)return;await cacheOne(cache,queue[index]);}};await Promise.all(Array.from({length:Math.min(Math.max(1,limit),queue.length)},worker));return true;}
-async function prepareShell(){const cache=await caches.open(SHELL_CACHE);await cachePathsWithLimit(cache,REQUIRED_SHELL,SHELL_FETCH_CONCURRENCY);cachePathsWithLimit(cache,OPTIONAL_SHELL,OPTIONAL_FETCH_CONCURRENCY).catch(()=>{});return true;}
+async function fetchFresh(input,timeoutMs=SHELL_ITEM_TIMEOUT_MS){const request=typeof input==='string'?new Request(scopedUrl(input)):input;return fetchWithTimeout(request,timeoutMs,{cache:'reload'});}
+async function cacheOne(cache,path,timeoutMs=SHELL_ITEM_TIMEOUT_MS){try{const response=await fetchFresh(path,timeoutMs);if(!response.ok)throw new Error(`HTTP ${response.status}: ${path}`);await cache.put(scopedUrl(path),response.clone());return true;}catch(error){console.warn('[Team Bulls] Não foi possível preparar',path,error);return false;}}
+async function cachePathsWithLimit(cache,paths,limit=4,timeoutMs=SHELL_ITEM_TIMEOUT_MS){const queue=Array.from(paths||[]);if(!queue.length)return true;let next=0;const worker=async()=>{while(true){const index=next++;if(index>=queue.length)return;await cacheOne(cache,queue[index],timeoutMs);}};await Promise.all(Array.from({length:Math.min(Math.max(1,limit),queue.length)},worker));return true;}
+async function prepareActivationShell(){const cache=await caches.open(SHELL_CACHE);await cachePathsWithLimit(cache,ACTIVATION_SHELL,SHELL_FETCH_CONCURRENCY,SHELL_ITEM_TIMEOUT_MS);return true;}
+async function prepareShell(){const cache=await caches.open(SHELL_CACHE);await cachePathsWithLimit(cache,REQUIRED_SHELL,SHELL_FETCH_CONCURRENCY,SHELL_ITEM_TIMEOUT_MS);cachePathsWithLimit(cache,OPTIONAL_SHELL,OPTIONAL_FETCH_CONCURRENCY,SHELL_ITEM_TIMEOUT_MS).catch(()=>{});return true;}
 async function broadcast(message){const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});clients.forEach(client=>client.postMessage(message));}
 async function forceRecoveredNavigation(){
   const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   await Promise.allSettled(clients.map(client=>{
     if(typeof client.navigate!=='function')return Promise.resolve();
+    const current=new URL(client.url);
+    if(current.searchParams.get('cache-rescue')===CACHE_HOTFIX)return Promise.resolve();
     const target=new URL('./index.html',self.registration.scope);
-    target.searchParams.set('cache-rescue',String(BUILD_REVISION));
+    target.searchParams.set('cache-rescue',CACHE_HOTFIX);
+    target.searchParams.set('build',String(BUILD_REVISION));
     target.searchParams.set('t',String(Date.now()));
     return client.navigate(target.href);
   }));
 }
 
-self.addEventListener('install',event=>{event.waitUntil((async()=>{await prepareShell().catch(()=>false);await self.skipWaiting();})());});
+self.addEventListener('install',event=>{event.waitUntil((async()=>{await prepareActivationShell().catch(()=>false);await self.skipWaiting();})());});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{
   const keys=await caches.keys();
   const stale=keys.filter(key=>key.startsWith(CACHE_PREFIX)&&![SHELL_CACHE,RUNTIME_CACHE,AUDIO_CACHE_NAME].includes(key));
   await Promise.all(stale.map(key=>caches.delete(key)));
   if(self.registration.navigationPreload)await self.registration.navigationPreload.enable().catch(()=>{});
   await self.clients.claim();
-  await broadcast({type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION});
-  if(stale.length)await forceRecoveredNavigation();
+  await broadcast({type:'TEAM_BULLS_SW_ACTIVATED',version:APP_VERSION,build:BUILD_REVISION,hotfix:CACHE_HOTFIX});
+  /* Esta revisão é um resgate de produção: cada cliente é recarregado uma única vez. */
+  await forceRecoveredNavigation();
+  prepareShell().catch(()=>{});
 })());});
 
 self.addEventListener('message',event=>{
   const type=event.data?.type;
   if(type==='SKIP_WAITING'){event.waitUntil(self.skipWaiting());return;}
-  if(type==='GET_VERSION'){event.source?.postMessage?.({type:'TEAM_BULLS_VERSION',version:APP_VERSION,build:BUILD_REVISION});return;}
-  if(type==='REFRESH_APP_SHELL'){event.waitUntil((async()=>{const ok=await prepareShell().then(()=>true).catch(()=>false);event.source?.postMessage?.({type:'TEAM_BULLS_REFRESHED',ok,version:APP_VERSION,build:BUILD_REVISION});})());return;}
-  if(type==='CLEAR_APP_CACHES'){event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==AUDIO_CACHE_NAME).map(key=>caches.delete(key)));await prepareShell().catch(()=>false);event.source?.postMessage?.({type:'TEAM_BULLS_CACHES_CLEARED',version:APP_VERSION,build:BUILD_REVISION});})());return;}
+  if(type==='GET_VERSION'){event.source?.postMessage?.({type:'TEAM_BULLS_VERSION',version:APP_VERSION,build:BUILD_REVISION,hotfix:CACHE_HOTFIX});return;}
+  if(type==='REFRESH_APP_SHELL'){event.waitUntil((async()=>{const ok=await prepareShell().then(()=>true).catch(()=>false);event.source?.postMessage?.({type:'TEAM_BULLS_REFRESHED',ok,version:APP_VERSION,build:BUILD_REVISION,hotfix:CACHE_HOTFIX});})());return;}
+  if(type==='CLEAR_APP_CACHES'){event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==AUDIO_CACHE_NAME).map(key=>caches.delete(key)));await prepareActivationShell().catch(()=>false);event.source?.postMessage?.({type:'TEAM_BULLS_CACHES_CLEARED',version:APP_VERSION,build:BUILD_REVISION,hotfix:CACHE_HOTFIX});})());return;}
   if(type!=='CACHE_AUDIO')return;
   const raw=String(event.data?.url||'');let url;
   try{url=new URL(raw,self.location.href);}catch(error){return;}
