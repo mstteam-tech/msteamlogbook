@@ -41,25 +41,30 @@ assert(!boot.includes('student-home-layout-v10_10_15'),'Layout do aluno não pod
 assert(!boot.includes('student-survivor-home-v10_10_14'),'Loader antigo da PR #76 reapareceu no boot crítico.');
 
 assert(runtime.includes("const LAYOUT_SRC='./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Ponte não aponta para o layout oficial.');
-assert(runtime.includes("body.student-desktop .student-desktop-nav{display:none!important}"),'Sidebar antiga do aluno continua ativa no desktop.');
-assert(runtime.includes(".tb-hotbar-shell{display:block!important"),'Hotbar não é forçada no desktop do aluno.');
-assert(runtime.includes("body.student-desktop #app{margin-left:0!important;width:100%!important"),'Área do aluno não retorna à largura total ao remover sidebar.');
-assert(runtime.includes('window.TeamBullsStudentHomeLayout?.syncHotbar?.()'),'Ponte não sincroniza a hotbar após carregar o layout.');
+assert(runtime.includes("body.student-desktop .student-desktop-nav{display:none!important}"),'Ponte perdeu o fallback de sidebar do aluno.');
+assert(runtime.includes('window.TeamBullsStudentHomeLayout?.syncHotbar?.()'),'Ponte não sincroniza o layout canônico após carregar.');
 
+assert(home.includes("const VERSION='10.10.17-home1'"),'Layout canônico não contém a revisão contextual v10.10.17.');
+assert(home.includes("document.body.classList.contains('student-desktop')"),'Home não usa o mesmo contexto visual de aluno que o core.');
+assert(home.includes("coreMode()==='local'||access==='offline-registered'||access==='local-inactive'"),'Home não reconhece os modos locais/offline aceitos pelo core.');
+assert(home.includes("currentUser()?.role==='trainer'||document.body.classList.contains('trainer-desktop')"),'Home não bloqueia explicitamente o contexto de treinador.');
+assert(home.includes("window.firebase?.auth?.().currentUser?.uid"),'Home não possui fallback seguro de UID para sessão autenticada.');
+assert(home.includes("body.student-desktop .student-desktop-nav{display:none!important}"),'Sidebar antiga do aluno não é removida no desktop.');
+assert(home.includes("body.student-desktop #app{margin-left:0!important;width:100%!important"),'Área do aluno não recupera a largura ao remover a sidebar.');
+assert(home.includes("#screen-home.tb-home-v17-screen .quick-nav{display:none!important}"),'Grade antiga da Home do aluno não é escondida.');
 assert(home.includes("['home','INÍCIO'"),'Hotbar não contém Início.');
 assert(home.includes("['workout','TREINO'"),'Hotbar não contém Treino.');
 assert(home.includes("['meals','SUPRIMENTOS'"),'Hotbar não contém Suprimentos.');
 assert(home.includes("['instructions','INSTRUÇÕES'"),'Hotbar não contém Instruções.');
 assert(home.includes("['reports','RELATÓRIOS'"),'Hotbar não contém Relatórios.');
-assert(home.includes("#screen-home.tb-survivor-home .quick-nav{display:none!important}"),'Grade antiga da Home do aluno não é escondida.');
-assert(home.includes("'openFoodOptions','openTechniques','openExerciseOptions','openPhotos'"),'Atalhos removidos do aluno não estão protegidos.');
 assert(home.includes("loadProtocolReviewSchedule(uid,true)"),'Data da próxima atualização não reutiliza o cronograma oficial.');
 assert(home.includes("db.collection('feedback').where('studentId','==',uid)"),'Feedbacks não são filtrados pelo aluno autenticado.');
-assert(home.includes("db.collection('progressPhotos').where('userId','==',uid)"),'Peso não é filtrado pelo aluno autenticado.');
+assert(home.includes("db.collection('weeklyCheckins').where('studentId','==',uid)"),'Gráfico não usa o histórico leve de weeklyCheckins do próprio aluno.');
+assert(!home.includes("db.collection('progressPhotos').where('userId','==',uid)"),'Home voltou a baixar progressPhotos para montar o gráfico de peso.');
 assert(!home.includes('.limit('),'Home não deve limitar antes de ordenar os registros mais recentes.');
-assert(home.includes('byDate=new Map()'),'Gráfico não deduplica as seis fotos do relatório por data.');
 assert(home.includes("body.textContent=String(item.message||'')"),'Feedback não usa textContent seguro.');
 assert(!home.includes('innerHTML=String(item.message'),'Feedback do treinador não pode ser injetado como HTML.');
+assert(home.includes("db.collection('feedback').doc(item.id).update({read:true})"),'Abrir feedback na Home não sincroniza o estado de leitura.');
 
 if(fail.length){console.error('\nStudent home/PWA rescue regression failed:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Student home/PWA rescue regression OK');
+console.log('Student home/PWA rescue regression OK — contexto real do aluno, desktop e dados leves verificados.');
