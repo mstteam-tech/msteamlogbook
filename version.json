@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026083104,
-  "revision": "student-home-layout-cache-rescue-1",
-  "publishedAt": "2026-08-31T20:55:00Z",
+  "build": 2026083001,
+  "revision": "emergency-update-loop-kill-switch-1",
+  "publishedAt": "2026-08-31T22:30:00Z",
   "minimumCompatibleVersion": "10.10.5",
-  "updateMode": "in-app",
-  "message": "Corrige a atualização de arquivos presos em cache após a alteração da Home e entrega a nova tela inicial do aluno com datas de protocolo, feedbacks compactos, evolução de peso e hotbar survivor horror."
+  "updateMode": "manual-rescue",
+  "message": "Contenção temporária do atualizador para interromper ciclos de recarga em clientes antigos. O runtime atual permanece preservado; atualizações automáticas ficam suspensas até validação em aparelho real."
 }
