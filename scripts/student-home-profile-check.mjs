@@ -46,16 +46,23 @@ has(storage,"request.resource.contentType == 'application/json'",'Perfil JSON n�
 
 const asset='./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1';
 has(config,asset,'Loader não entrega a nova home.');
-has(updater,asset,'Atualizador não aquece a nova home.');
+has(updater,asset,'Atualizador não preserva a nova home no catálogo.');
 has(sw,asset,'Service Worker não prepara a nova home.');
 has(sw47,asset,'Service Worker legado não prepara a nova home.');
 assert(version.version==='10.10.9','Versão pública foi alterada.');
 const updaterBuild=numberMatch(updater,/const CURRENT_BUILD=(\d+)/),swBuild=numberMatch(sw,/const BUILD_REVISION=(\d+)/),sw47Build=numberMatch(sw47,/const BUILD_REVISION=(\d+)/);
-assert(Number(version.build)>0&&updaterBuild===Number(version.build),'Updater não acompanha o build público atual.');
-assert(swBuild===Number(version.build)&&sw47Build===Number(version.build),'Service Workers não acompanham o build público atual.');
+assert(updaterBuild>0&&updaterBuild===swBuild&&swBuild===sw47Build,'Updater e Service Workers não compartilham o mesmo build de runtime.');
+if(version.updateMode==='manual-rescue'){
+  assert(Number(version.build)>0&&Number(version.build)<=updaterBuild,'Feed manual-rescue não pode anunciar build acima do runtime.');
+  assert(String(version.revision||'').includes('update-loop-kill-switch'),'Feed de resgate não identifica a contenção do atualizador.');
+  has(updater,'const AUTO_APPLY_SAME_VERSION_HOTFIX=false;','Atualização automática não está suspensa durante o resgate.');
+}else{
+  assert(Number(version.build)>0&&updaterBuild===Number(version.build),'Updater não acompanha o build público atual.');
+  assert(swBuild===Number(version.build)&&sw47Build===Number(version.build),'Service Workers não acompanham o build público atual.');
+}
 const hotfix=sw.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'',hotfix47=sw47.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
 assert(hotfix.length>0&&hotfix===hotfix47,'Service Workers não compartilham uma revisão de cache válida.');
 assert(sw===sw47,'sw.js e sw_47.js divergiram.');
 
 if(fail.length){console.error('FALHA — student home/profile\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — home do aluno preservada no build ${version.build}; notificações, avatar/apelido, logout, protocolos e cache coerentes.`);
+console.log(`APROVADO — home do aluno preservada; runtime ${updaterBuild}, feed ${version.build}, notificações, avatar/apelido, logout, protocolos e cache coerentes.`);
