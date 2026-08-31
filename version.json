@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026083001,
-  "revision": "diet-canonical-foods-live-deficit-1",
-  "publishedAt": "2026-08-30T00:45:00Z",
+  "build": 2026083101,
+  "revision": "maintenance-hardening-cleanup-1",
+  "publishedAt": "2026-08-31T09:15:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Corrige a fonte canônica da tabela de alimentos, integra alimentos personalizados ao cálculo de kcal/macros e exibe déficit ao vivo por divisão da dieta."
+  "message": "Revisão de manutenção: cache coerente, histórico de feedbacks, sincronização segura de alimentos personalizados e melhorias de segurança/CI."
 }
