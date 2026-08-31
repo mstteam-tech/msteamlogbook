@@ -3,7 +3,8 @@ import fs from 'node:fs';
 const fail=[];
 const assert=(condition,message)=>{if(!condition)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026083104;
+const RUNTIME_BUILD=2026083104;
+const RESCUE_FEED_BUILD=2026083001;
 
 const modulePath='modules/student-home-layout-v10_10_15.js';
 const runtimePath='modules/student-home-layout-runtime-v10_10_16.js';
@@ -24,15 +25,17 @@ for(const [name,source] of [['Home',home],['Ponte da Home',runtime],['Config',co
 }
 
 assert(version.version==='10.10.9','Hotfix deve manter a versão compatível 10.10.9.');
-assert(Number(version.build)===BUILD,'version.json não está no build de resgate.');
-assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador não está no mesmo build de resgate.');
-assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker não está no mesmo build de resgate.');
-assert(sw47.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado não está no mesmo build de resgate.');
+assert(version.updateMode==='manual-rescue','Feed de atualização deve permanecer em contenção manual durante o incidente.');
+assert(Number(version.build)===RESCUE_FEED_BUILD,'version.json não está no build de contenção esperado.');
+assert(update.includes(`const CURRENT_BUILD=${RUNTIME_BUILD};`),'Atualizador não preserva o build real do runtime.');
+assert(update.includes('const AUTO_APPLY_SAME_VERSION_HOTFIX=false;'),'Atualizador voltou a aplicar hotfix automaticamente.');
+assert(sw.includes(`const BUILD_REVISION=${RUNTIME_BUILD};`),'Service Worker não preserva o build real do runtime.');
+assert(sw47.includes(`const BUILD_REVISION=${RUNTIME_BUILD};`),'Service Worker legado não preserva o build real do runtime.');
 assert(sw===sw47,'sw.js e sw_47.js devem permanecer idênticos.');
 assert(sw.includes("const CACHE_HOTFIX='startup-rescue4';"),'Service Worker não rotaciona o cache antigo.');
 assert(update.includes("STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Atualizador não conhece a Home nova.');
 assert(update.includes('loadStudentHomeModules'),'Home não é carregada pelo caminho opcional pós-boot.');
-assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home não estão no refresh crítico.');
+assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home deixaram o catálogo de coerência.');
 assert(config.includes("'./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1'"),'Ponte da Home não está no loader resiliente principal.');
 assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2"),'Home nova não está no shell PWA.');
 assert(sw.includes("./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1"),'Ponte da Home não está no shell PWA.');
@@ -67,4 +70,4 @@ assert(!home.includes('innerHTML=String(item.message'),'Feedback do treinador n�
 assert(home.includes("db.collection('feedback').doc(item.id).update({read:true})"),'Abrir feedback na Home não sincroniza o estado de leitura.');
 
 if(fail.length){console.error('\nStudent home/PWA rescue regression failed:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Student home/PWA rescue regression OK — contexto real do aluno, desktop e dados leves verificados.');
+console.log('Student home/PWA rescue regression OK — Home preservada e feed de update em contenção manual.');
