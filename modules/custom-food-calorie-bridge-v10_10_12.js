@@ -33,11 +33,7 @@
     if(cachedTrainer&&cachedTrainer!==String(user.uid))return 0;
     cached=normalize(items);cachedTrainer=String(user.uid);const count=api.setCustomItems(cached);refreshConsumers();return count;
   }
-  function clear(){
-    cached=[];cachedTrainer='';loading=null;
-    try{registry()?.setCustomItems?.([]);}catch(error){}
-    refreshConsumers();return true;
-  }
+  function clear(){cached=[];cachedTrainer='';loading=null;try{registry()?.setCustomItems?.([]);}catch(error){}refreshConsumers();return true;}
   async function load(force=false){
     const user=trainer();if(!user||typeof db==='undefined'||!db){clear();return 0;}const uid=String(user.uid);
     if(!force&&cachedTrainer===uid)return apply(cached);if(loading)return loading;
@@ -48,6 +44,18 @@
       }catch(error){console.warn('[Team Bulls] Não foi possível carregar alimentos personalizados para kcal/macros',error);if(cachedTrainer===uid)return apply(cached);return 0;}
       finally{loading=null;}
     })();return loading;
+  }
+  function visibleTableItems(){
+    const rows=[...document.querySelectorAll('[data-custom-food-list] .tb-custom-table tbody tr')];if(!rows.length)return null;
+    return normalize(rows.map((row,index)=>{const cells=row.querySelectorAll('td');return{id:`dom-${index}`,label:cells[0]?.textContent,protein:cells[1]?.textContent,carbs:cells[2]?.textContent,fat:cells[3]?.textContent};}));
+  }
+  function syncVisibleTable(){
+    const user=trainer(),items=visibleTableItems();if(!user||!items)return false;cachedTrainer=String(user.uid);cached=items;apply(items);return true;
+  }
+  function installInputSync(){
+    if(document.documentElement.dataset.tbCustomFoodInputSync==='1')return;
+    document.documentElement.dataset.tbCustomFoodInputSync='1';
+    document.addEventListener('input',event=>{if(event.target?.id==='input-meal-items')syncVisibleTable();},true);
   }
 
   function loadOptional(path,check,cacheName){
@@ -60,13 +68,13 @@
   function prepareOptional(){loadPdfExporter().catch(()=>{});loadDeficit().catch(()=>{});}
   function installLogoutHook(){
     if(typeof confirmLogout!=='function'||confirmLogout.__tbCustomFoodCacheClear)return false;
-    const base=confirmLogout;const wrapped=function(){clear();return base.apply(this,arguments);};wrapped.__tbCustomFoodCacheClear=true;wrapped.__tbBase=base;confirmLogout=wrapped;return true;
+    const base=confirmLogout,wrapped=function(){clear();return base.apply(this,arguments);};wrapped.__tbCustomFoodCacheClear=true;wrapped.__tbBase=base;confirmLogout=wrapped;return true;
   }
-  function install(){if(!document.body)return false;installLogoutHook();load().catch(()=>0);prepareOptional();return true;}
+  function install(){if(!document.body)return false;installInputSync();installLogoutHook();load().catch(()=>0);prepareOptional();return true;}
 
-  window.TeamBullsCustomFoodCalories=Object.freeze({version:VERSION,load,apply:()=>apply(cached),refresh:()=>load(true),clear,items:()=>cached.slice(),loadPdfExporter});
+  window.TeamBullsCustomFoodCalories=Object.freeze({version:VERSION,load,apply:()=>apply(cached),refresh:()=>load(true),clear,syncVisibleTable,items:()=>cached.slice(),loadPdfExporter});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  window.addEventListener('team-bulls-runtime-ready',()=>{installLogoutHook();load(true).catch(()=>0);prepareOptional();});
+  window.addEventListener('team-bulls-runtime-ready',()=>{installInputSync();installLogoutHook();load(true).catch(()=>0);prepareOptional();});
   window.addEventListener('online',()=>{load(true).catch(()=>0);prepareOptional();});
   window.addEventListener('pageshow',()=>{install();load(true).catch(()=>0);prepareOptional();},{passive:true});
 })();
