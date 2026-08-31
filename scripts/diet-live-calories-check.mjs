@@ -31,11 +31,15 @@ has(portions,'get presets(){return presetSnapshot();}','Presets públicos devem 
 has(portions,'const PRESETS=[...BASE_PRESETS,...LEGACY_ALIASES]','Fonte canônica não separa base, aliases e personalizados.');
 lacks(portions,"group:'tomate',label:'120g Tomate'",'Tomate ainda está sendo usado como item canônico/visível.');
 
-has(custom,"const VERSION='10.10.13-customfood4'",'Sincronização dos alimentos personalizados não está na revisão estrutural.');
+has(custom,"const VERSION='10.10.13-customfood5'",'Sincronização dos alimentos personalizados não está na revisão de manutenção.');
 has(custom,"db.collection(COLLECTION).doc(uid)",'Catálogo persistido do treinador não é carregado.');
 has(custom,"typeof api?.setCustomItems!=='function'",'Sincronização não usa o registro canônico da tabela.');
 has(custom,'api.setCustomItems(cached)','Alimentos personalizados não são entregues ao registro canônico.');
 has(custom,'window.TeamBullsDietLiveCalories?.refresh?.()','Macros não recalculam após sincronizar o catálogo.');
+has(custom,"document.addEventListener('input',event=>{if(event.target?.id==='input-meal-items')syncVisibleTable();},true)",'Alimento personalizado não é sincronizado antes do recálculo disparado pelo input.');
+has(custom,"registry()?.setCustomItems?.([])",'Logout não limpa os alimentos privados do registro nutricional.');
+has(custom,'__tbCustomFoodCacheClear','Limpeza do catálogo privado não está vinculada ao logout canônico.');
+lacks(custom,'new MutationObserver','Ponte nutricional voltou a observar toda a árvore DOM continuamente.');
 lacks(custom,'presets.splice(','Ponte ainda está tentando alterar presets diretamente.');
 lacks(custom,'ensureMutablePortionApi','Correção antiga por substituição superficial da API ainda está ativa.');
 
@@ -56,12 +60,12 @@ try{
   const nodes=new Map();
   const bodyNode={querySelector(){return null;},appendChild(){}};
   const document={
-    readyState:'complete',head:{appendChild(){}},body:bodyNode,
+    readyState:'complete',head:{appendChild(){}},body:bodyNode,documentElement:{dataset:{}},
     getElementById(id){return nodes.get(id)||null;},querySelectorAll(){return[];},addEventListener(){},
     createElement(){return{style:{},dataset:{},appendChild(){},remove(){},insertAdjacentElement(){},querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){},setAttribute(){}};}
   };
   const window={addEventListener(){},dispatchEvent(){}};window.window=window;
-  const context={window,document,console,Intl,Map,Set,Object,Array,String,Number,Math,Promise,Event:function(){},MutationObserver:function(){this.observe=noop;},navigator:{},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame:noop,setTimeout,clearTimeout,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]}};
+  const context={window,document,console,Intl,Map,Set,Object,Array,String,Number,Math,Promise,Event:function(){},navigator:{},requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame:noop,setTimeout,clearTimeout,MEAL_CTX:{canEditContent:false},MEAL_PLAN_CACHE:{meals:[]}};
   vm.runInNewContext(portions,context,{filename:files.portions});
   const registry=window.TeamBullsDietPortions;
   assert(registry&&typeof registry.setCustomItems==='function','API canônica TeamBullsDietPortions não foi criada.');
@@ -107,4 +111,4 @@ try{
 }catch(error){fail.push('Falha no teste integrado tabela → personalizado → kcal/macros → déficit: '+error.stack);}
 
 if(fail.length){console.error('FALHA — integridade profunda da dieta\n- '+fail.join('\n- '));process.exit(1);}
-console.log('APROVADO — duas revisões: Vegetais canônico, alimento personalizado, compatibilidade antiga e déficit treino/descanso executados em runtime.');
+console.log('APROVADO — duas revisões: Vegetais canônico, alimento personalizado, compatibilidade antiga, limpeza de sessão e déficit treino/descanso executados em runtime.');
