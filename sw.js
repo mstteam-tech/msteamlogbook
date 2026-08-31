@@ -19,90 +19,22 @@ const OPTIONAL_FETCH_CONCURRENCY=2;
 const AUDIO_NAME_PATTERN=/^team-bulls-music-[a-z0-9-]+\.mp3$/i;
 
 /*
- * O shell mínimo precisa ser pequeno e confiável. A instalação do SW não pode
- * falhar porque um módulo opcional está temporariamente indisponível.
+ * Mantém o shell offline canônico do app. A diferença desta revisão é que uma
+ * falha transitória de um item não aborta a instalação inteira do Service Worker.
  */
 const REQUIRED_SHELL=[
-  './index.html',
-  './manifest.json',
-  './version.json',
-  './viewport_v10_10_9.js?v=10.10.9',
-  './boot_v10.js?v=10.10.9',
-  './config_v10_7.js?v=10.10.9',
-  './update_v10_10_9.js?v=10.10.9',
-  './app_v10_10_9_core.js?v=10.10.9',
-  './modules/v107-core.js?v=10.10.9',
-  './modules/v107-invites.js?v=10.10.9',
-  './modules/v107-operations.js?v=10.10.9',
-  './interaction_v10_10_9.js?v=10.10.9',
-  './styles_v10_10_9.css?v=10.10.9',
-  './recuperar.html',
-  './recovery_v10.js?v=10.10.9',
-  './recovery_v10.css?v=10.10.9'
+  './index.html','./manifest.json','./version.json','./viewport_v10_10_9.js?v=10.10.9','./boot_v10.js?v=10.10.9','./config_v10_7.js?v=10.10.9','./update_v10_10_9.js?v=10.10.9','./app_v10_10_9_core.js?v=10.10.9','./modules/v107-core.js?v=10.10.9','./modules/v107-invites.js?v=10.10.9','./modules/v107-operations.js?v=10.10.9','./modules/stability_v10_10_9.js?v=10.10.9','./modules/app-update-v10_10_9.js?v=10.10.9','./modules/diet-scroll-fix-v10_10_9.js?v=10.10.9','./modules/modal-form-guard-v10_10_9.js?v=10.10.9','./modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3','./modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1','./modules/global-performance-v10_10_9.js?v=10.10.9-perf2','./modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1','./modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1','./modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1','./modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2','./modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1','./modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1','./modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2','./modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2','./modules/security-hardening-v10_10_9.js?v=10.10.10-security8','./modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6','./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2','./modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2','./modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','./modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','./modules/workflow-controls-v10_10_10.js?v=10.10.10-workflow1','./modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1','./modules/usability-audit-v10_10_10.js?v=10.10.10-audit1','./modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1','./modules/release-coherence-v10_10_10.js?v=10.10.12-release6','./modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1','./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1','./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2','./modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2','./interaction_v10_10_9.js?v=10.10.9','./styles_v10_10_9.css?v=10.10.9','./recuperar.html','./recovery_v10.js?v=10.10.9','./recovery_v10.css?v=10.10.9','./icon-192-v9-8.png','./icon-512-v9-8.png','./icon-maskable-192-v9-8.png','./icon-maskable-512-v9-8.png','./apple-touch-icon-v9-8.png'
 ];
-
-/* Recursos que melhoram o modo offline, mas nunca podem impedir o SW de ativar. */
 const OPTIONAL_SHELL=[
-  './modules/stability_v10_10_9.js?v=10.10.9',
-  './modules/app-update-v10_10_9.js?v=10.10.9',
-  './modules/diet-scroll-fix-v10_10_9.js?v=10.10.9',
-  './modules/modal-form-guard-v10_10_9.js?v=10.10.9',
-  './modules/trainer-workspace-v10_10_9.js?v=10.10.9-workspace3',
-  './modules/cardio-timer-fix-v10_10_9.js?v=10.10.9-cardio1',
-  './modules/global-performance-v10_10_9.js?v=10.10.9-perf2',
-  './modules/workout-ux-fix-v10_10_9.js?v=10.10.9-workout1',
-  './modules/desktop-performance-v10_10_9.js?v=10.10.9-desktop1',
-  './modules/ger-bulk-v10_10_9.js?v=10.10.9-ger1',
-  './modules/prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
-  './modules/prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
-  './modules/diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
-  './modules/student-guidance-v10_10_9-v2.js?v=10.10.9-guidance2',
-  './modules/remove-stretch-planilha-v10_10_9.js?v=10.10.9-stretchremove2',
-  './modules/security-hardening-v10_10_9.js?v=10.10.10-security8',
-  './modules/legacy-student-link-repair-v10_10_10.js?v=10.10.10-legacy-links6',
-  './modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2',
-  './modules/photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2',
-  './modules/heic-report-conversion-v10_10_12.js?v=10.10.12-heic1',
-  './modules/heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1',
-  './modules/workflow-controls-v10_10_10.js?v=10.10.10-workflow1',
-  './modules/report-photo-ux-v10_10_10.js?v=10.10.10-reportphotos1',
-  './modules/usability-audit-v10_10_10.js?v=10.10.10-audit1',
-  './modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=freeze1',
-  './modules/release-coherence-v10_10_10.js?v=10.10.12-release6',
-  './modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1',
-  './modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1',
-  './modules/student-home-layout-v10_10_15.js?v=10.10.15-home2',
-  './modules/custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2',
-  './modules/diet-live-deficit-v10_10_13.js?v=10.10.13-deficit1',
-  './modules/photo-guide-v10_10_9.js?v=10.10.9',
-  './modules/diet-personalization-v10_10_11.js?v=10.10.11-dietpersonal1',
-  './modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2',
-  './modules/training-integrity-v10_10_11.js?v=10.10.11-training1',
-  './modules/report-schedule-consistency-v10_10_11.js?v=10.10.11-reportschedule1',
-  './modules/cardio-finish-alert-v10_10_11.js?v=10.10.11-cardioalert1',
-  './modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1',
-  './modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2',
-  './team-bulls-auth-bg-v9-8-2.webp',
-  './team-bulls-desktop-menu-v10-5-6.webp',
-  './assets/photo-guide/page-1.png?v=10.10.9',
-  './assets/photo-guide/page-2.png?v=10.10.9',
-  './assets/photo-guide/page-3.png?v=10.10.9',
-  './assets/photo-guide/page-4.png?v=10.10.9',
-  './assets/photo-guide/page-5.png?v=10.10.9',
-  './icon-192-v9-8.png',
-  './icon-512-v9-8.png',
-  './icon-maskable-192-v9-8.png',
-  './icon-maskable-512-v9-8.png',
-  './apple-touch-icon-v9-8.png'
+  './team-bulls-auth-bg-v9-8-2.webp','./team-bulls-desktop-menu-v10-5-6.webp','./modules/photo-guide-v10_10_9.js?v=10.10.9','./modules/diet-personalization-v10_10_11.js?v=10.10.11-dietpersonal1','./modules/diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2','./modules/diet-live-deficit-v10_10_13.js?v=10.10.13-deficit1','./modules/training-integrity-v10_10_11.js?v=10.10.11-training1','./modules/report-schedule-consistency-v10_10_11.js?v=10.10.11-reportschedule1','./modules/cardio-finish-alert-v10_10_11.js?v=10.10.11-cardioalert1','./modules/trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1','./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2','./assets/photo-guide/page-1.png?v=10.10.9','./assets/photo-guide/page-2.png?v=10.10.9','./assets/photo-guide/page-3.png?v=10.10.9','./assets/photo-guide/page-4.png?v=10.10.9','./assets/photo-guide/page-5.png?v=10.10.9'
 ];
 
 const VERSIONED_PATH_PATTERN=/(?:v\d+(?:[._-]\d+)+|_v\d+(?:_\d+)+)\.(?:js|css|json|png|webp)$/i;
 
 /*
- * IMPORTANTE: estes arquivos mudam sem que o nome físico necessariamente mude.
- * Eles DEVEM ser avaliados antes da regra genérica de ?v=. Na revisão anterior,
- * a ordem inversa tornava esta lista praticamente inútil e podia prender o app
- * em uma combinação antiga de boot/update/core.
+ * Estes arquivos podem mudar mantendo o mesmo nome físico. Eles precisam ser
+ * tratados ANTES da regra genérica de ?v=; caso contrário o cache-first captura
+ * boot/update/core e uma instalação pode ficar presa em uma mistura de builds.
  */
 const MUTABLE_PATHS=new Set([
   '/index.html','/recuperar.html','/manifest.json','/version.json',
@@ -130,8 +62,8 @@ function secureResponse(response,{html=false}={}){
 }
 function fetchWithTimeout(request,timeoutMs=NETWORK_TIMEOUT_MS,init={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);return fetch(request,{...init,signal:controller.signal}).finally(()=>clearTimeout(timer));}
 async function fetchFresh(input){const request=typeof input==='string'?new Request(scopedUrl(input),{cache:'reload'}):input;return fetch(request,{cache:'reload'});}
-async function cacheOne(cache,path){try{const response=await fetchFresh(path);if(!response.ok)throw new Error(`HTTP ${response.status}: ${path}`);await cache.put(scopedUrl(path),response.clone());return true;}catch(error){console.warn('[Team Bulls] Cache opcional indisponível:',path,error);return false;}}
-async function cachePathsWithLimit(cache,paths,limit=4){const queue=Array.from(paths||[]);let next=0;const worker=async()=>{while(true){const index=next++;if(index>=queue.length)return;await cacheOne(cache,queue[index]);}};await Promise.all(Array.from({length:Math.min(Math.max(1,limit),Math.max(1,queue.length))},worker));}
+async function cacheOne(cache,path){try{const response=await fetchFresh(path);if(!response.ok)throw new Error(`HTTP ${response.status}: ${path}`);await cache.put(scopedUrl(path),response.clone());return true;}catch(error){console.warn('[Team Bulls] Não foi possível preparar',path,error);return false;}}
+async function cachePathsWithLimit(cache,paths,limit=4){const queue=Array.from(paths||[]);if(!queue.length)return true;let next=0;const worker=async()=>{while(true){const index=next++;if(index>=queue.length)return;await cacheOne(cache,queue[index]);}};await Promise.all(Array.from({length:Math.min(Math.max(1,limit),queue.length)},worker));return true;}
 async function prepareShell(){const cache=await caches.open(SHELL_CACHE);await cachePathsWithLimit(cache,REQUIRED_SHELL,SHELL_FETCH_CONCURRENCY);cachePathsWithLimit(cache,OPTIONAL_SHELL,OPTIONAL_FETCH_CONCURRENCY).catch(()=>{});return true;}
 async function broadcast(message){const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});clients.forEach(client=>client.postMessage(message));}
 async function forceRecoveredNavigation(){
