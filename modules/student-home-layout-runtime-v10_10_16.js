@@ -45,7 +45,8 @@
     if(loading)return loading;
     loading=new Promise(resolve=>{
       let settled=false;
-      const done=ok=>{if(settled)return;settled=true;clearTimeout(timer);if(!ok)loading=null;if(ok)activate();resolve(!!ok);};
+      let timer=null;
+      const done=ok=>{if(settled)return;settled=true;if(timer)clearTimeout(timer);if(!ok)loading=null;if(ok)activate();resolve(!!ok);};
       const existing=[...document.scripts].find(script=>{try{return new URL(script.src,location.href).pathname.endsWith('/modules/student-home-layout-v10_10_15.js');}catch(error){return false;}});
       if(existing){
         if(window.TeamBullsStudentHomeLayout){done(true);return;}
@@ -60,7 +61,7 @@
         script.onerror=()=>done(false);
         document.head.appendChild(script);
       }
-      const timer=setTimeout(()=>done(!!window.TeamBullsStudentHomeLayout),7000);
+      timer=setTimeout(()=>done(!!window.TeamBullsStudentHomeLayout),7000);
     });
     return loading;
   }
