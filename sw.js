@@ -115,7 +115,7 @@ self.addEventListener('message',event=>{
   const name=url.pathname.split('/').pop()||'';
   if(url.origin!==self.location.origin||!AUDIO_NAME_PATTERN.test(name))return;
   const asset=scopedUrl('./'+name);
-  event.waitUntil((async()=>{const cache=await caches.open(AUDIO_CACHE_NAME);if(await cache.match(asset))return;try{const response=await fetch(asset,{cache:'no-cache'});if(response.ok)await cache.put(url.href,response.clone());}catch(error){}})());
+  event.waitUntil((async()=>{const cache=await caches.open(AUDIO_CACHE_NAME);if(await cache.match(asset))return;try{const response=await fetch(asset,{cache:'no-cache'});if(response.ok)await cache.put(asset,response.clone());}catch(error){}})());
 });
 
 async function cacheHtml(response,cacheKey){if(!response?.ok)return response;const type=(response.headers.get('Content-Type')||'').toLowerCase();if(!type.includes('text/html'))return response;const cache=await caches.open(SHELL_CACHE);await cache.put(cacheKey,response.clone());return response;}
