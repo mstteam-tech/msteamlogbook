@@ -11,6 +11,7 @@ assert(fs.existsSync(modulePath),'Módulo da Home resiliente está ausente.');
 const home=fs.existsSync(modulePath)?read(modulePath):'';
 const update=read('update_v10_10_9.js');
 const sw=read('sw.js');
+const sw47=read('sw_47.js');
 const boot=read('boot_v10.js');
 const version=JSON.parse(read('version.json'));
 
@@ -22,12 +23,14 @@ assert(version.version==='10.10.9','Hotfix deve manter a versão compatível 10.
 assert(Number(version.build)===BUILD,'version.json não está no build de resgate.');
 assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador não está no mesmo build de resgate.');
 assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker não está no mesmo build de resgate.');
+assert(sw47.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado não está no mesmo build de resgate.');
+assert(sw===sw47,'sw.js e sw_47.js devem permanecer idênticos.');
 assert(sw.includes("const CACHE_HOTFIX='homecache-rescue1';"),'Service Worker não rotaciona o cache antigo.');
 assert(update.includes("STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Atualizador não conhece a Home nova.');
 assert(update.includes('loadStudentHomeModules'),'Home não é carregada pelo caminho opcional pós-boot.');
 assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home não estão no refresh crítico.');
 assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2"),'Home nova não está no shell PWA.');
-assert(sw.includes("./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome2-rescue1"),'Cabeçalho atual do aluno não está fixado no shell PWA de resgate.');
+assert(sw.includes("./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1"),'Cabeçalho atual do aluno não está preservado no shell PWA.');
 assert(!boot.includes('student-home-layout-v10_10_15'),'Layout do aluno não pode entrar no boot crítico.');
 assert(!boot.includes('student-survivor-home-v10_10_14'),'Loader antigo da PR #76 reapareceu no boot crítico.');
 
