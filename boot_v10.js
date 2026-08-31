@@ -60,20 +60,3 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     if(loadingActive())reveal('O servidor demorou para responder. Seus registros locais foram preservados.');
   });
 })();
-
-// Camada visual isolada da Home do aluno. Carrega depois dos scripts deferidos,
-// preservando o boot crítico, a autenticação e as regras de negócio existentes.
-(function(){
-  const MODULE_ID='tb-student-survivor-home-loader';
-  const MODULE_SRC='./modules/student-survivor-home-v10_10_14.js?v=10.10.14-home1';
-  function loadStudentSurvivorHome(){
-    if(document.getElementById(MODULE_ID)||window.__TEAM_BULLS_STUDENT_SURVIVOR_HOME_1__)return;
-    const script=document.createElement('script');
-    script.id=MODULE_ID;
-    script.src=MODULE_SRC;
-    script.async=false;
-    script.onerror=()=>console.warn('[Team Bulls] A camada visual da Home do aluno não pôde ser carregada.');
-    document.head.appendChild(script);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadStudentSurvivorHome,{once:true});else loadStudentSurvivorHome();
-})();
