@@ -2,7 +2,7 @@
 'use strict';
 (function(){
   const TB=window.TeamBulls107;if(!TB)return;
-  const REGISTRATION_DIAGNOSTIC_REVISION='preflight1';
+  const REGISTRATION_DIAGNOSTIC_REVISION='preflight2';
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   function randomCode(){
     const bytes=new Uint8Array(15);crypto.getRandomValues(bytes);
@@ -80,9 +80,10 @@
       setRegistrationDiagnostic('app-check',error.code,'invalid');throw error;
     }
   }
+  function isPermissionDenied(error){return String(error?.code||'').toLowerCase()==='permission-denied';}
   function registrationPermissionMessage(stage){
-    if(stage==='invite-precheck')return'Não foi possível validar o convite com o servidor [REG-INV-403]. A proteção do aparelho foi validada; se isso persistir, as regras do Firestore publicadas precisam ser conferidas.';
-    if(stage==='transaction')return'O servidor recusou a criação do perfil [REG-FS-403]. Não use outro convite ainda. O aplicativo já validou conexão, App Check, convite e autenticação; confira as regras Firestore publicadas.';
+    if(stage==='invite-precheck')return'Não foi possível validar o convite com o servidor [REG-INV-403]. A proteção do aparelho foi validada; o app tentará novamente após autenticar a conta sem consumir o convite.';
+    if(stage==='transaction')return'O servidor recusou a criação do perfil [REG-FS-403]. Não use outro convite ainda. O aplicativo renovou autenticação e App Check e repetiu a operação uma única vez; confira as regras Firestore publicadas.';
     return'O servidor recusou esta etapa do cadastro [REG-403]. Não repita o cadastro até a configuração do Firebase ser conferida.';
   }
   async function registrationState(uid,inviteId,trainerId){
@@ -117,10 +118,26 @@
     try{AUTH_HANDLED=false;AUTH_PROCESSING_UID='';if(typeof startAuthListener==='function')startAuthListener();}
     catch(error){console.error('Não foi possível restaurar o observador de autenticação:',error);}
   }
+  async function validateInviteSnapshot(snapshot){
+    if(!snapshot.exists||!inviteValid(snapshot.data())){const error=new Error('Convite inválido, expirado ou já utilizado.');error.code='team-bulls/invalid-invite';throw error;}
+    const trainerId=String(snapshot.data().trainerId||'');
+    if(!trainerId){const error=new Error('O convite não possui treinador válido.');error.code='team-bulls/invalid-invite';throw error;}
+    return trainerId;
+  }
+  async function commitRegistration(inviteRef,cred,userData){
+    return db.runTransaction(async transaction=>{
+      const fresh=await transaction.get(inviteRef);
+      if(!fresh.exists||!inviteValid(fresh.data())){const error=new Error('Este convite acabou de expirar ou já foi usado.');error.code='team-bulls/invalid-invite';throw error;}
+      if(String(fresh.data().trainerId||'')!==userData.trainerId){const error=new Error('Convite inconsistente.');error.code='team-bulls/invalid-invite';throw error;}
+      transaction.set(db.collection('users').doc(cred.user.uid),userData);
+      transaction.update(inviteRef,{active:false,usedBy:cred.user.uid,usedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    });
+  }
 
-  /* Cadastro seguro e diagnosticável. Antes de criar qualquer conta Auth, valida
-     Firebase, App Check e convite. Depois da criação usa o e-mail canônico do token
-     Auth para corresponder literalmente às regras e mantém perfil+convite atômicos. */
+  /* Cadastro seguro e diagnosticável. O convite é validado antes do Auth quando
+     as Rules publicadas permitem leitura pública. Se uma implantação antiga negar
+     somente esse preflight, o app cria a conta, pausa o listener global e repete a
+     validação já autenticado. A gravação continua atômica e nunca relaxa Rules. */
   doRegister=async function(){
     clearAuthError('reg-error');setRegistrationDiagnostic('form');
     const name=document.getElementById('reg-name').value.trim();
@@ -133,7 +150,7 @@
     if(!navigator.onLine){showAuthError('reg-error','O cadastro inicial exige conexão com a internet.');return;}
     const btn=document.getElementById('btn-register');if(btn.disabled)return;
     btn.disabled=true;
-    let cred=null,inviteId='',userData=null,authListenerSuspended=false,stage='firebase';
+    let cred=null,inviteId='',userData=null,authListenerSuspended=false,stage='firebase',trainerId='',precheckRequiresAuth=false;
     try{
       btn.textContent='VERIFICANDO CONEXÃO...';setRegistrationDiagnostic(stage);
       if(!await ensureFirebaseReady())throw new Error('Não foi possível carregar a conexão segura.');
@@ -143,29 +160,40 @@
 
       stage='invite-precheck';btn.textContent='VALIDANDO CONVITE...';setRegistrationDiagnostic(stage,'',registrationDiagnostic.appCheck);
       inviteId=await sha256(code);const inviteRef=db.collection('studentInvites').doc(inviteId);
-      const precheck=await cloudGet(inviteRef,'validar convite');
-      if(!precheck.exists||!inviteValid(precheck.data())){const error=new Error('Convite inválido, expirado ou já utilizado.');error.code='team-bulls/invalid-invite';throw error;}
-      const trainerId=String(precheck.data().trainerId||'');
-      if(!trainerId){const error=new Error('O convite não possui treinador válido.');error.code='team-bulls/invalid-invite';throw error;}
+      try{
+        trainerId=await validateInviteSnapshot(await cloudGet(inviteRef,'validar convite'));
+      }catch(error){
+        if(!isPermissionDenied(error))throw error;
+        precheckRequiresAuth=true;
+        setRegistrationDiagnostic('invite-precheck','permission-denied-auth-retry',registrationDiagnostic.appCheck);
+      }
 
       stage='auth-create';btn.textContent='CRIANDO CONTA...';setRegistrationDiagnostic(stage);AUTH_HANDLED=false;startBootWatchdog();
       authListenerSuspended=suspendAuthListenerForRegistration();
       cred=await withTimeout(auth.createUserWithEmailAndPassword(email,pass),12000,'criação da conta');
 
       stage='auth-token';btn.textContent='VALIDANDO CONTA...';setRegistrationDiagnostic(stage);
-      const tokenResult=await withTimeout(cred.user.getIdTokenResult(true),8000,'atualização da credencial de cadastro');
+      let tokenResult=await withTimeout(cred.user.getIdTokenResult(true),8000,'atualização da credencial de cadastro');
       const tokenEmail=String(tokenResult?.claims?.email||cred.user.email||'').trim().toLowerCase();
       if(!tokenEmail){const error=new Error('O Firebase não retornou um e-mail autenticado para esta conta.');error.code='team-bulls/auth-email-claim';throw error;}
+
+      if(precheckRequiresAuth){
+        stage='invite-auth-check';btn.textContent='REVALIDANDO CONVITE...';setRegistrationDiagnostic(stage);
+        trainerId=await validateInviteSnapshot(await cloudGet(inviteRef,'revalidar convite autenticado'));
+      }
       userData={name:name.slice(0,100),email:tokenEmail,role:'student',status:'active',trainerId,inviteId,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
 
       stage='transaction';btn.textContent='CRIANDO PERFIL...';setRegistrationDiagnostic(stage);
-      await db.runTransaction(async transaction=>{
-        const fresh=await transaction.get(inviteRef);
-        if(!fresh.exists||!inviteValid(fresh.data())){const error=new Error('Este convite acabou de expirar ou já foi usado.');error.code='team-bulls/invalid-invite';throw error;}
-        if(String(fresh.data().trainerId||'')!==userData.trainerId){const error=new Error('Convite inconsistente.');error.code='team-bulls/invalid-invite';throw error;}
-        transaction.set(db.collection('users').doc(cred.user.uid),userData);
-        transaction.update(inviteRef,{active:false,usedBy:cred.user.uid,usedAt:firebase.firestore.FieldValue.serverTimestamp()});
-      });
+      try{
+        await commitRegistration(inviteRef,cred,userData);
+      }catch(error){
+        if(!isPermissionDenied(error))throw error;
+        stage='transaction-refresh';btn.textContent='RENOVANDO SEGURANÇA...';setRegistrationDiagnostic(stage,'permission-denied-retry',registrationDiagnostic.appCheck);
+        tokenResult=await withTimeout(cred.user.getIdTokenResult(true),8000,'renovar credencial de cadastro');
+        await ensureRegistrationAppCheck();
+        stage='transaction';btn.textContent='CRIANDO PERFIL...';setRegistrationDiagnostic(stage,'retry',registrationDiagnostic.appCheck);
+        await commitRegistration(inviteRef,cred,userData);
+      }
       stage='committed';setRegistrationDiagnostic(stage,'ok');
       await finishRegisteredAccount(tokenEmail,pass,cred,userData);
     }catch(error){
@@ -188,7 +216,7 @@
         'team-bulls/auth-email-claim':'A autenticação foi criada sem a confirmação de e-mail exigida pelo perfil [REG-AUTH-EMAIL]. A tentativa foi cancelada com segurança.',
         'team-bulls/timeout':'O servidor demorou para concluir o cadastro. Tente entrar com a mesma conta antes de cadastrar novamente.'
       };
-      const message=error?.code==='permission-denied'?registrationPermissionMessage(stage):(messages[error?.code]||error?.message||'Não foi possível criar a conta.');
+      const message=isPermissionDenied(error)?registrationPermissionMessage(stage):(messages[error?.code]||error?.message||'Não foi possível criar a conta.');
       showAuthError('reg-error',message);
     }finally{
       resumeAuthListenerAfterRegistration(authListenerSuspended);
