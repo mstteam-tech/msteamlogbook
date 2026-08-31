@@ -3,6 +3,18 @@ window.__teamBullsBootErrors=[];
 try{if(window.top!==window.self)window.top.location=window.self.location.href;}catch(error){document.documentElement.style.display='none';}
 
 /*
+ * O bloco legado de interação móvel usa #app.scrollTop para decidir se o usuário
+ * está no topo. O app atual rola pelo documento, então esse valor pode continuar
+ * em zero mesmo no meio da Home e disparar o pull-to-refresh durante um gesto
+ * normal. Em dispositivos móveis/coarse desativamos apenas esse IIFE legado; a
+ * navegação do segundo bloco de interaction_v10_10_9.js continua carregando.
+ */
+try{
+  const mobileLike=window.matchMedia?.('(max-width: 899px), (pointer: coarse)')?.matches===true||window.innerWidth<900;
+  if(mobileLike)window.__TEAM_BULLS_INTERACTION_V10101__=true;
+}catch(error){}
+
+/*
  * Compatibilidade de emergência para builds antigos que ainda podem criar um
  * diálogo de atualização em tela cheia. A atualização nunca deve impedir o
  * usuário de usar o app. O guard é específico para o texto legado e não fecha
@@ -30,9 +42,20 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     return node&&node!==document.body?node:null;
   }
   function releaseInteraction(){
+    const html=document.documentElement;
     const app=document.getElementById('app');
+    const indicator=document.getElementById('pull-refresh-indicator');
     if(app){app.removeAttribute('inert');if(app.getAttribute('aria-hidden')==='true')app.removeAttribute('aria-hidden');app.style.removeProperty('pointer-events');}
-    for(const root of [document.documentElement,document.body]){
+    if(html)html.classList.remove('pull-refresh-running');
+    window.__TEAM_BULLS_REFRESHING__=false;
+    if(indicator){
+      indicator.classList.remove('refreshing','visible','armed');
+      indicator.style.removeProperty('--pull-distance');
+      indicator.style.removeProperty('--pull-progress');
+    }
+    const label=document.getElementById('pull-refresh-label');
+    if(label)label.textContent='Puxe para atualizar';
+    for(const root of [html,document.body]){
       if(!root)continue;
       root.classList.remove('modal-open','no-scroll','scroll-locked','update-blocked','app-update-blocked');
       root.style.removeProperty('overflow');
@@ -59,16 +82,18 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     return true;
   }
   function install(){
-    if(document.getElementById('tb-update-failopen-style'))return;
-    const style=document.createElement('style');
-    style.id='tb-update-failopen-style';
-    style.textContent='[data-tb-legacy-update-blocked="1"]{display:none!important;pointer-events:none!important;visibility:hidden!important}';
-    document.head.appendChild(style);
+    releaseInteraction();
+    if(!document.getElementById('tb-update-failopen-style')){
+      const style=document.createElement('style');
+      style.id='tb-update-failopen-style';
+      style.textContent='[data-tb-legacy-update-blocked="1"]{display:none!important;pointer-events:none!important;visibility:hidden!important}';
+      document.head.appendChild(style);
+    }
     const schedule=[0,120,450,1200,2600,5000,9000,15000,30000,60000];
     schedule.forEach(delay=>setTimeout(scan,delay));
-    window.addEventListener('pageshow',scan,{passive:true});
-    window.addEventListener('team-bulls-runtime-ready',scan);
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scan();},{passive:true});
+    window.addEventListener('pageshow',()=>{releaseInteraction();scan();},{passive:true});
+    window.addEventListener('team-bulls-runtime-ready',()=>{releaseInteraction();scan();});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){releaseInteraction();scan();}},{passive:true});
   }
   window.TeamBullsUpdateFailOpen=Object.freeze({scan,releaseInteraction});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
