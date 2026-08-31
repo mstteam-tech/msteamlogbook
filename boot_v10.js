@@ -13,7 +13,6 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
   const LEGACY_ACTION='LIMPAR CACHE E REINICIAR';
   const LEGACY_TITLE='ATUALIZACAO DO APLICATIVO';
   let released=0;
-  let scanTimer=0;
 
   function legacyControl(){
     const controls=document.querySelectorAll('button,a,[role="button"]');
@@ -70,7 +69,6 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     window.addEventListener('pageshow',scan,{passive:true});
     window.addEventListener('team-bulls-runtime-ready',scan);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scan();},{passive:true});
-    clearTimeout(scanTimer);scanTimer=setTimeout(()=>releaseInteraction(),65000);
   }
   window.TeamBullsUpdateFailOpen=Object.freeze({scan,releaseInteraction});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
