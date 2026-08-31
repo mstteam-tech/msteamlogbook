@@ -3,7 +3,7 @@ import fs from 'node:fs';
 const fail=[];
 const assert=(condition,message)=>{if(!condition)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026083104;
+const BUILD=2026083105;
 
 const modulePath='modules/student-home-layout-v10_10_15.js';
 const runtimePath='modules/student-home-layout-runtime-v10_10_16.js';
@@ -19,30 +19,32 @@ const sw47=read('sw_47.js');
 const boot=read('boot_v10.js');
 const version=JSON.parse(read('version.json'));
 
-for(const [name,source] of [['Home',home],['Ponte da Home',runtime],['Config',config],['Atualizador',update],['Service Worker',sw]]){
+for(const [name,source] of [['Home',home],['Ponte da Home',runtime],['Config',config],['Atualizador',update],['Service Worker',sw],['Boot',boot]]){
   try{new Function(source);}catch(error){fail.push(`${name} possui erro de sintaxe: ${error.message}`);}
 }
 
 assert(version.version==='10.10.9','Hotfix deve manter a versão compatível 10.10.9.');
-assert(Number(version.build)===BUILD,'version.json não está no build de resgate.');
-assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador não está no mesmo build de resgate.');
-assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker não está no mesmo build de resgate.');
-assert(sw47.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado não está no mesmo build de resgate.');
+assert(Number(version.build)===BUILD,'version.json não está no build fail-open.');
+assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador não está no mesmo build publicado.');
+assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker não está no mesmo build publicado.');
+assert(sw47.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado não está no mesmo build publicado.');
 assert(sw===sw47,'sw.js e sw_47.js devem permanecer idênticos.');
-assert(sw.includes("const CACHE_HOTFIX='startup-rescue4';"),'Service Worker não rotaciona o cache antigo.');
+assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Service Worker não rotaciona o cache do fail-open.');
 assert(update.includes("STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Atualizador não conhece a Home nova.');
 assert(update.includes('loadStudentHomeModules'),'Home não é carregada pelo caminho opcional pós-boot.');
 assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home não estão no refresh crítico.');
 assert(config.includes("'./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1'"),'Ponte da Home não está no loader resiliente principal.');
 assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2"),'Home nova não está no shell PWA.');
 assert(sw.includes("./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1"),'Ponte da Home não está no shell PWA.');
+assert(sw.includes("'/modules/student-home-profile-v10_10_12.js','/modules/student-home-layout-v10_10_15.js','/modules/student-home-layout-runtime-v10_10_16.js'"),'Home/perfil/ponte não são tratados como arquivos mutáveis.');
 assert(sw.includes("./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1"),'Cabeçalho atual do aluno não está preservado no shell PWA.');
-assert(!boot.includes('student-home-layout-v10_10_15'),'Layout do aluno não pode entrar no boot crítico.');
 assert(!boot.includes('student-survivor-home-v10_10_14'),'Loader antigo da PR #76 reapareceu no boot crítico.');
 
 assert(runtime.includes("const LAYOUT_SRC='./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Ponte não aponta para o layout oficial.');
-assert(runtime.includes("body.student-desktop .student-desktop-nav{display:none!important}"),'Ponte perdeu o fallback de sidebar do aluno.');
+assert(runtime.includes("const VERSION='10.10.18-runtime2'"),'Ponte não está na revisão leve/event-driven.');
+assert(runtime.includes("document.body.classList.contains('student-desktop')"),'Ponte não reconhece o contexto visual real do aluno.');
 assert(runtime.includes('window.TeamBullsStudentHomeLayout?.syncHotbar?.()'),'Ponte não sincroniza o layout canônico após carregar.');
+assert(!runtime.includes('setInterval('),'Ponte voltou a executar polling permanente.');
 
 assert(home.includes("const VERSION='10.10.17-home1'"),'Layout canônico não contém a revisão contextual v10.10.17.');
 assert(home.includes("document.body.classList.contains('student-desktop')"),'Home não usa o mesmo contexto visual de aluno que o core.');
@@ -67,4 +69,4 @@ assert(!home.includes('innerHTML=String(item.message'),'Feedback do treinador n�
 assert(home.includes("db.collection('feedback').doc(item.id).update({read:true})"),'Abrir feedback na Home não sincroniza o estado de leitura.');
 
 if(fail.length){console.error('\nStudent home/PWA rescue regression failed:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Student home/PWA rescue regression OK — contexto real do aluno, desktop e dados leves verificados.');
+console.log('Student home/PWA rescue regression OK — layout preservado no build fail-open e ponte sem polling.');
