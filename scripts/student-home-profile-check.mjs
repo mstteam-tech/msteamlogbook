@@ -5,6 +5,7 @@ const fail=[];
 const read=path=>fs.readFileSync(path,'utf8');
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const has=(text,needle,message)=>assert(text.includes(needle),message);
+const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const numberMatch=(text,re)=>Number(text.match(re)?.[1]||0);
 
 const modulePath='modules/student-home-profile-v10_10_12.js';
@@ -36,7 +37,9 @@ has(mod,"typeof createImageBitmap==='function'",'Avatar perdeu fallback compatí
 has(usability,"button.textContent='SAIR'",'Menu móvel do perfil não possui a opção SAIR.');
 has(usability,"typeof confirmLogout==='function'",'Opção SAIR não reutiliza o fluxo seguro de logout existente.');
 has(usability,'data-tb-profile-logout="1"','Logout do perfil não possui proteção contra duplicação.');
-has(usability,'MutationObserver','Logout não acompanha a criação tardia do menu de perfil.');
+has(usability,'const delays=[0,60,220,700,1800,4000]','Logout não acompanha a criação tardia do menu com tentativas limitadas.');
+lacks(usability,'new MutationObserver','Logout voltou a depender de observação permanente de toda a árvore DOM.');
+has(usability,'trainer-feedback-history-v10_10_13.js?v=10.10.13-feedbackhistory2','Ficha do treinador não recupera o histórico de feedbacks sob demanda.');
 
 has(storage,'match /studentProfiles/{uid}/profile.json','Storage Rules não protegem o apelido do aluno.');
 has(storage,'match /studentProfiles/{uid}/avatar.jpg','Storage Rules não protegem o avatar.');
@@ -44,11 +47,11 @@ has(storage,'trainerOwns(uid) || activeOwner(uid)','Perfil visual não está iso
 has(storage,'validOptimizedJpegUpload(800 * 1024)','Avatar não possui limite de armazenamento de 800 KB.');
 has(storage,"request.resource.contentType == 'application/json'",'Perfil JSON não valida Content-Type.');
 
-const asset='./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1';
-has(config,asset,'Loader não entrega a nova home.');
-has(updater,asset,'Atualizador não aquece a nova home.');
-has(sw,asset,'Service Worker não prepara a nova home.');
-has(sw47,asset,'Service Worker legado não prepara a nova home.');
+const asset='./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome2';
+has(config,asset,'Loader não entrega a revisão atual da home.');
+has(updater,asset,'Atualizador não aquece a revisão atual da home.');
+has(sw,asset,'Service Worker não prepara a revisão atual da home.');
+has(sw47,asset,'Service Worker legado não prepara a revisão atual da home.');
 assert(version.version==='10.10.9','Versão pública foi alterada.');
 const updaterBuild=numberMatch(updater,/const CURRENT_BUILD=(\d+)/),swBuild=numberMatch(sw,/const BUILD_REVISION=(\d+)/),sw47Build=numberMatch(sw47,/const BUILD_REVISION=(\d+)/);
 assert(Number(version.build)>0&&updaterBuild===Number(version.build),'Updater não acompanha o build público atual.');
