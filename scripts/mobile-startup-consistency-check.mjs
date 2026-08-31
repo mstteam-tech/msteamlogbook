@@ -14,12 +14,17 @@ const boot=read('boot_v10.js'),config=read('config_v10_7.js'),updater=read('upda
 const version=JSON.parse(read('version.json')),firebase=JSON.parse(read('firebase.json'));
 const updaterBuild=Number(updater.match(/const CURRENT_BUILD=(\d+)/)?.[1]||0),workerBuild=Number(sw.match(/const BUILD_REVISION=(\d+)/)?.[1]||0),bridgeBuild=Number(bridge.match(/const BUILD_REVISION=(\d+)/)?.[1]||0);
 const swHotfix=sw.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'',bridgeHotfix=bridge.match(/const CACHE_HOTFIX='([^']+)'/)?.[1]||'';
+const feedHeld=version.updateMode==='manual-rescue';
 
 assert(version.version==='10.10.9','version.json alterou a versão pública inesperadamente.');
 assert(Number.isInteger(version.build)&&version.build>0,'version.json não possui build válido.');
 assert(typeof version.revision==='string'&&version.revision.length>0,'version.json não identifica a revisão atual.');
-assert(updaterBuild===version.build,'Atualizador e version.json usam builds diferentes.');
-assert(workerBuild===version.build&&bridgeBuild===version.build,'Service Workers e version.json usam builds diferentes.');
+assert(updaterBuild===workerBuild&&workerBuild===bridgeBuild,'Runtime e Service Workers usam builds diferentes.');
+if(feedHeld){
+  assert(version.build<=updaterBuild,'Feed de contenção não pode anunciar build acima do runtime.');
+  assert(version.revision.includes('update-loop-kill-switch'),'Feed manual não identifica explicitamente a contenção do loop.');
+  has(updater,'const AUTO_APPLY_SAME_VERSION_HOTFIX=false;','Atualização automática não foi desligada durante a contenção.');
+}else assert(updaterBuild===version.build,'Atualizador e version.json usam builds diferentes fora do modo de resgate.');
 assert(swHotfix&&swHotfix===bridgeHotfix,'Service Workers usam revisões de cache diferentes.');
 assert(firebase?.firestore?.rules==='firebase/firestore_28_compacto.rules','firebase.json deixou de apontar para Firestore Rules 28.');
 assert(firebase?.storage?.rules==='firebase/storage_6.rules','firebase.json deixou de apontar para Storage Rules 6.');
@@ -39,8 +44,13 @@ has(updater,'function compareRelease(info)','Atualizador não compara versão + 
 has(updater,'function safeForAutomaticHotfix()','Atualização automática não possui gate de tela segura.');
 has(updater,"if(screen!=='screen-auth')return false",'Atualizador poderia reiniciar durante uso ativo.');
 has(updater,'&b=${CURRENT_BUILD}','Service Worker não é registrado com build.');
-has(updater,'heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','Atualizador não renova o módulo HEIC.');
-has(updater,'heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','Atualizador não prepara o worker HEIC same-origin.');
+has(updater,'heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','Atualizador não preserva o módulo HEIC no catálogo crítico.');
+has(updater,'heic-libheif-worker-v10_10_12.js?v=10.10.12-heicworker1','Atualizador não preserva o worker HEIC same-origin no catálogo crítico.');
+has(updater,"laterButton.disabled=false",'Atualizador pode voltar a bloquear a rota de saída do banner.');
+has(updater,'UPDATE_PREPARE_TIMEOUT_MS=4600','Atualizador não possui limite global de preparação.');
+has(updater,'AUTO_APPLY_SAME_VERSION_HOTFIX=false','Atualização automática voltou a ser habilitada.');
+lacks(updater,'await refreshCriticalShell();','Atualizador voltou a baixar o shell inteiro durante a interação.');
+
 for(const [name,text] of [['sw.js',sw],['sw_47.js',bridge]]){
   has(text,"./modules/registration-integrity-v10_10_9.js?v=10.10.9-registration2",`${name} regrediu a integridade do cadastro.`);
   has(text,"./modules/trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2",`${name} não prepara a Central/Pagamentos.`);
@@ -86,4 +96,4 @@ lacks(integrity,'doRegister=secured','registration-integrity voltou a sobrescrev
 has(integrity,"const VERSION='10.10.9-registration2'",'Camada passiva de integridade não está na revisão esperada.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'sw_47.js divergiu do Service Worker principal.');
 if(fail.length){console.error('FALHA — mobile startup consistency\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — build ${version.build}, cadastro, Central/Pagamentos, 6 fotos + HEIC worker, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);
+console.log(`APROVADO — runtime ${updaterBuild}, feed ${version.build}, cadastro, Central/Pagamentos, fotos, App Check e Service Workers coerentes.`);
