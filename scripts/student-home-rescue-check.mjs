@@ -25,7 +25,7 @@ assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador não está 
 assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker não está no mesmo build de resgate.');
 assert(sw47.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado não está no mesmo build de resgate.');
 assert(sw===sw47,'sw.js e sw_47.js devem permanecer idênticos.');
-assert(sw.includes("const CACHE_HOTFIX='homecache-rescue1';"),'Service Worker não rotaciona o cache antigo.');
+assert(sw.includes("const CACHE_HOTFIX='startup-rescue2';"),'Service Worker não rotaciona o cache antigo.');
 assert(update.includes("STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2'"),'Atualizador não conhece a Home nova.');
 assert(update.includes('loadStudentHomeModules'),'Home não é carregada pelo caminho opcional pós-boot.');
 assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home não estão no refresh crítico.');
