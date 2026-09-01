@@ -18,12 +18,12 @@ for(const file of [modulePath,configPath]){
 const source=fs.existsSync(modulePath)?read(modulePath):'';
 const home=fs.existsSync(homePath)?read(homePath):'';
 const config=fs.existsSync(configPath)?read(configPath):'';
-const src='./modules/student-workout-library-v10_10_24.js?v=10.10.24-workoutlibrary2';
+const src='./modules/student-workout-library-v10_10_24.js?v=10.10.24-workoutlibrary1';
 
 assert(config.includes(src),'Biblioteca de treinos não está no runtime prioritário do aluno.');
 assert(config.indexOf(src)>config.indexOf('student-home-layout-v10_10_15.js'),'Biblioteca precisa carregar depois da hotbar canônica para substituir somente o clique de Treino.');
 assert(config.indexOf(src)<config.indexOf('student-diet-compact-live-v10_10_23.js'),'Biblioteca de treinos deve ficar disponível antes dos recursos secundários da dieta.');
-assert(source.includes("const VERSION='10.10.24-workoutlibrary2'"),'Biblioteca de treinos não possui a revisão que remove os protocolos da Home.');
+assert(source.includes("const VERSION='10.10.24-workoutlibrary1'"),'Biblioteca de treinos não possui a revisão esperada.');
 assert(source.includes("screen.id='screen-workout-library'"),'Treino ainda não possui tela própria.');
 assert(source.includes("document.getElementById('workout-list')"),'Tela própria não reutiliza a lista canônica de protocolos.');
 assert(source.includes('node.cloneNode(true)'),'Cards canônicos não são reaproveitados sem duplicar lógica de dados.');
