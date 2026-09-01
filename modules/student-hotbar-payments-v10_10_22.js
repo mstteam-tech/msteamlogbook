@@ -4,7 +4,7 @@
   if(window.__TEAM_BULLS_STUDENT_HOTBAR_PAYMENTS_101022__)return;
   window.__TEAM_BULLS_STUDENT_HOTBAR_PAYMENTS_101022__=true;
 
-  const VERSION='10.10.22-studentpay1';
+  const VERSION='10.10.22-studentpay2';
   const COLLECTION='studentBilling';
   let cachedRecord=null;
   let loading=null;
@@ -82,6 +82,24 @@
   function paymentsIcon(){return'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h5M8 16h8"/></svg>';}
   function setPaymentsActive(){document.querySelectorAll('.tb-v17-hotbar button').forEach(button=>button.classList.toggle('is-active',button.dataset.hotbar==='payments'));}
 
+  function patchSupplyOptionsTitle(){
+    const title=document.querySelector('#screen-food-options .options-intro-title');
+    if(!title)return false;
+    if(String(title.textContent||'').trim()==='Opções de suprimentos')return true;
+    title.textContent='Opções de suprimentos';
+    return true;
+  }
+  function installSupplyOptionsTitlePatch(){
+    if(typeof renderFoodOptions!=='function')return false;
+    if(renderFoodOptions.__tbSupplyOptionsTitle)return true;
+    const base=renderFoodOptions;
+    const wrapped=function(...args){const result=base.apply(this,args);patchSupplyOptionsTitle();return result;};
+    wrapped.__tbSupplyOptionsTitle=true;
+    renderFoodOptions=wrapped;
+    patchSupplyOptionsTitle();
+    return true;
+  }
+
   function patchHotbar(){
     if(!studentContext())return false;
     const nav=document.querySelector('.tb-v17-hotbar');if(!nav)return false;
@@ -135,13 +153,14 @@
   }
 
   function patchSoon(attempt=0){
+    installSupplyOptionsTitlePatch();
     if(patchHotbar()||attempt>=20)return;
     clearTimeout(patchTimer);patchTimer=setTimeout(()=>patchSoon(attempt+1),attempt<5?80:220);
   }
-  function install(){injectStyles();ensureScreen();patchSoon();}
+  function install(){injectStyles();ensureScreen();installSupplyOptionsTitlePatch();patchSoon();}
 
-  window.TeamBullsStudentPayments=Object.freeze({version:VERSION,open:openPayments,refresh,patchHotbar});
+  window.TeamBullsStudentPayments=Object.freeze({version:VERSION,open:openPayments,refresh,patchHotbar,patchSupplyOptionsTitle});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  window.addEventListener('team-bulls-student-runtime-ready',()=>patchSoon());
-  window.addEventListener('pageshow',()=>patchSoon(),{passive:true});
+  window.addEventListener('team-bulls-student-runtime-ready',()=>{installSupplyOptionsTitlePatch();patchSoon();});
+  window.addEventListener('pageshow',()=>{installSupplyOptionsTitlePatch();patchSupplyOptionsTitle();patchSoon();},{passive:true});
 })();
