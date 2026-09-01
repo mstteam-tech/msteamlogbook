@@ -3,28 +3,30 @@ window.__teamBullsBootErrors=[];
 try{if(window.top!==window.self)window.top.location=window.self.location.href;}catch(error){document.documentElement.style.display='none';}
 
 /*
- * Team Bulls — estabilização móvel do runtime.
+ * Team Bulls — boot de recuperação de autenticação e interação.
  *
- * A Home do aluno é montada por extensões carregadas depois do core. Esta camada
- * entra antes da fila tardia, nunca bloqueia o boot e garante três propriedades:
- * 1) estados antigos de refresh não podem desabilitar a interação;
- * 2) um backdrop órfão sem painel visível não pode cobrir a aplicação;
- * 3) perfil/Home/layout essenciais são preparados logo após o v107 ficar pronto,
- *    com URLs de revisão únicas para não depender de uma entrada antiga de cache.
+ * Regra principal: o boot NÃO carrega módulos de Home/perfil/usabilidade.
+ * Esses módulos pertencem ao runtime normal e só podem assumir a interface
+ * depois que o core decidir a sessão. O boot apenas garante que:
+ * 1) o pull-to-refresh legado não deixe o app sem cliques;
+ * 2) um backdrop realmente órfão não cubra toda a interface;
+ * 3) loading/autenticação sempre tenham uma saída utilizável.
  */
 (function(){
-  if(window.__TEAM_BULLS_RUNTIME_STABILITY_BOOT_1__)return;
-  window.__TEAM_BULLS_RUNTIME_STABILITY_BOOT_1__=true;
+  if(window.__TEAM_BULLS_BOOT_SAFETY_2__)return;
+  window.__TEAM_BULLS_BOOT_SAFETY_2__=true;
 
   const MOBILE_QUERY='(max-width: 899px), (pointer: coarse)';
-  const STABLE_REVISION='runtime-stable-20260831-1';
+  const REVISION='auth-interaction-20260901-1';
   const orphanState=new WeakMap();
-  let essentialPromise=null;
 
   function mobileLike(){
     try{return window.matchMedia?.(MOBILE_QUERY)?.matches===true||window.innerWidth<900;}
     catch(error){return window.innerWidth<900;}
   }
+
+  /* O IIFE legado de interaction_v10_10_9.js contém o pull-to-refresh que pode
+     aplicar pull-refresh-running. No mobile/coarse ele permanece desativado. */
   if(mobileLike())window.__TEAM_BULLS_INTERACTION_V10101__=true;
 
   function rendered(element){
@@ -36,32 +38,32 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
   }
   function modalPanels(modal){
     if(!(modal instanceof Element))return[];
-    return [...modal.querySelectorAll('.modal-sheet,.modal-dialog,[role="dialog"]')].filter(rendered);
+    return [...modal.querySelectorAll('.modal-sheet,.modal-dialog,[role="dialog"],[role="alertdialog"]')].filter(rendered);
   }
-  function hasOpenModal(){
+  function visibleOpenModal(){
     return [...document.querySelectorAll('.modal-backdrop.open')].some(modal=>rendered(modal)&&modalPanels(modal).length>0);
   }
-  function physicalPortrait(){
-    try{
-      const type=String(screen?.orientation?.type||'').toLowerCase();
-      if(type.startsWith('portrait'))return true;
-      if(type.startsWith('landscape'))return false;
-      const width=Number(screen?.width||innerWidth||0),height=Number(screen?.height||innerHeight||0);
-      return height>=width;
-    }catch(error){return innerHeight>=innerWidth;}
-  }
-  function injectSafetyStyle(){
-    if(document.getElementById('tb-runtime-stability-style'))return;
+  function loadingActive(){return !!document.getElementById('screen-loading')?.classList.contains('active');}
+  function authActive(){return !!document.getElementById('screen-auth')?.classList.contains('active');}
+
+  function injectStyle(){
+    if(document.getElementById('tb-boot-safety-style'))return;
     const style=document.createElement('style');
-    style.id='tb-runtime-stability-style';
+    style.id='tb-boot-safety-style';
     style.textContent=`
       @media(max-width:899px),(pointer:coarse){
         html.pull-refresh-running #app{pointer-events:auto!important}
       }
       .modal-backdrop[data-tb-orphan-backdrop="1"]{display:none!important;pointer-events:none!important;visibility:hidden!important}
+      body.tb-auth-failopen #portrait-lock-overlay{display:none!important;pointer-events:none!important}
+      body.tb-auth-failopen .modal-backdrop.open{display:none!important;pointer-events:none!important}
+      body.tb-auth-failopen #app,
+      body.tb-auth-failopen #screen-auth,
+      body.tb-auth-failopen #screen-auth *{pointer-events:auto!important}
     `;
     document.head.appendChild(style);
   }
+
   function resetRefreshIndicator(){
     const indicator=document.getElementById('pull-refresh-indicator');
     if(indicator){
@@ -72,7 +74,8 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     const label=document.getElementById('pull-refresh-label');
     if(label)label.textContent='Puxe para atualizar';
   }
-  function releaseInteraction(){
+
+  function releaseInteraction({forceAuth=false}={}){
     const html=document.documentElement,body=document.body,app=document.getElementById('app');
     html?.classList.remove('pull-refresh-running');
     window.__TEAM_BULLS_REFRESHING__=false;
@@ -83,25 +86,20 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
       if(node.style.pointerEvents==='none')node.style.removeProperty('pointer-events');
     });
 
-    const openModal=hasOpenModal();
-    if(app&&!openModal){
+    if(app&&(forceAuth||!visibleOpenModal())){
       app.removeAttribute('inert');
       if(app.getAttribute('aria-hidden')==='true')app.removeAttribute('aria-hidden');
     }
-    if(!openModal){
-      [html,body].forEach(node=>{
-        if(!node)return;
-        node.classList.remove('modal-open','no-scroll','scroll-locked');
-        if(node.style.overflow==='hidden')node.style.removeProperty('overflow');
-      });
-    }
-    [html,body].forEach(node=>node?.classList.remove('update-blocked','app-update-blocked'));
 
-    if(mobileLike()&&physicalPortrait())html?.classList.remove('mobile-landscape-blocked');
+    if(forceAuth){
+      html?.classList.remove('mobile-landscape-blocked','tb-student-home-v17');
+      body?.classList.remove('student-desktop','trainer-desktop');
+    }
   }
-  function directCloseOrphan(modal){
+
+  function directCloseOrphan(modal,marker='1'){
     if(!(modal instanceof HTMLElement))return;
-    modal.dataset.tbOrphanBackdrop='1';
+    modal.dataset.tbOrphanBackdrop=marker;
     modal.classList.remove('open');
     modal.removeAttribute('aria-modal');
     modal.style.removeProperty('z-index');
@@ -109,133 +107,123 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     try{modal.inert=false;}catch(error){}
     orphanState.delete(modal);
   }
+
   function scanOrphanModals(){
     const modals=[...document.querySelectorAll('.modal-backdrop.open')];
     for(const modal of modals){
       if(!rendered(modal)){orphanState.delete(modal);continue;}
-      const panels=modalPanels(modal);
-      if(panels.length){
-        orphanState.delete(modal);
-        continue;
-      }
-      /*
-       * Um backdrop aberto sem sheet/dialog visível não oferece nenhuma ação ao
-       * usuário; ele apenas captura os toques. Exigimos duas varreduras E pelo
-       * menos 700 ms de persistência para não confundir a animação de abertura
-       * de um modal legítimo com um backdrop órfão.
-       */
-      const now=Date.now(),previous=orphanState.get(modal)||{misses:0,firstSeen:now};
+      if(modalPanels(modal).length){orphanState.delete(modal);continue;}
+      const now=Date.now();
+      const previous=orphanState.get(modal)||{misses:0,firstSeen:now};
       const next={misses:previous.misses+1,firstSeen:previous.firstSeen};
       orphanState.set(modal,next);
       if(next.misses>=2&&now-next.firstSeen>=700)directCloseOrphan(modal);
     }
     releaseInteraction();
   }
+
+  function suppressAuthBlockers(){
+    if(!authActive())return false;
+    document.body?.classList.add('tb-auth-failopen');
+    releaseInteraction({forceAuth:true});
+
+    /* Nenhum fluxo de login/cadastro do app depende de modal-backdrop. Se um
+       backdrop sobreviveu ao retorno para auth, ele é necessariamente resíduo
+       de uma tela anterior e não pode continuar capturando mouse/toque. */
+    document.querySelectorAll('.modal-backdrop.open').forEach(modal=>directCloseOrphan(modal,'auth'));
+
+    const auth=document.getElementById('screen-auth');
+    if(auth){
+      auth.removeAttribute('inert');
+      auth.removeAttribute('aria-hidden');
+      if(auth.style.pointerEvents==='none')auth.style.removeProperty('pointer-events');
+    }
+    return true;
+  }
+
+  function leaveAuthFailOpen(){
+    if(authActive())return;
+    document.body?.classList.remove('tb-auth-failopen');
+  }
+
+  function activateAuth(message='A verificação da sessão demorou. Você já pode entrar novamente sem apagar seus dados.'){
+    const auth=document.getElementById('screen-auth');
+    if(!auth)return false;
+    document.querySelectorAll('.screen.active').forEach(screen=>screen.classList.remove('active'));
+    auth.classList.add('active');
+    suppressAuthBlockers();
+    const error=document.getElementById('login-error');
+    if(error&&!error.classList.contains('show')){
+      error.textContent=message;
+      error.classList.add('show');
+    }
+    try{window.dispatchEvent(new CustomEvent('team-bulls-auth-failopen'));}catch(error){}
+    return true;
+  }
+
   function diagnostic(){
     const points=[
       [Math.round(innerWidth/2),Math.round(innerHeight/2)],
       [Math.round(innerWidth/2),Math.max(1,Math.round(innerHeight-72))]
     ];
     return{
-      revision:STABLE_REVISION,
+      revision:REVISION,
+      loading:loadingActive(),
+      auth:authActive(),
       refreshing:!!window.__TEAM_BULLS_REFRESHING__,
       htmlClasses:document.documentElement.className,
       bodyClasses:document.body?.className||'',
+      appInert:document.getElementById('app')?.hasAttribute('inert')||false,
       appPointer:document.getElementById('app')?getComputedStyle(document.getElementById('app')).pointerEvents:'',
       openModals:[...document.querySelectorAll('.modal-backdrop.open')].map(modal=>({id:modal.id||'',panels:modalPanels(modal).length,pointer:getComputedStyle(modal).pointerEvents})),
       hitTargets:points.map(([x,y])=>{const el=document.elementFromPoint(x,y);return el?{tag:el.tagName,id:el.id||'',class:String(el.className||'').slice(0,140)}:null;})
     };
   }
 
-  const ESSENTIALS=[
-    {
-      src:'./modules/modal-stack-stability-v10_10_9.js?v=10.10.9-modal2&fix=runtime-stable1',
-      ready:()=>!!window.TeamBullsModalStackStability
-    },
-    {
-      src:'./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome2&fix=runtime-stable1',
-      ready:()=>!!window.TeamBullsStudentHome
-    },
-    {
-      src:'./modules/student-home-layout-v10_10_15.js?v=10.10.17-home1&fix=runtime-stable1',
-      ready:()=>!!window.TeamBullsStudentHomeLayout
-    },
-    {
-      src:'./modules/usability-checkup-v10_10_9.js?v=10.10.9-usability2&fix=runtime-stable1',
-      ready:()=>!!window.TeamBullsUsability
-    }
-  ];
-  function loadEssential(item){
-    if(item.ready())return Promise.resolve(true);
-    return new Promise(resolve=>{
-      let settled=false;
-      const finish=value=>{
-        if(settled)return;
-        settled=true;
-        clearTimeout(timer);
-        resolve(!!value);
-      };
-      const script=document.createElement('script');
-      script.src=item.src;
-      script.async=false;
-      script.dataset.tbRuntimeStable='1';
-      script.onload=()=>finish(item.ready());
-      script.onerror=()=>finish(false);
-      const timer=setTimeout(()=>finish(item.ready()),5000);
-      document.head.appendChild(script);
-    });
-  }
-  async function loadEssentialStudentRuntime(){
-    if(essentialPromise)return essentialPromise;
-    essentialPromise=(async()=>{
-      for(const item of ESSENTIALS){
-        try{await loadEssential(item);}catch(error){}
-      }
-      try{window.TeamBullsStudentHomeLayout?.syncHotbar?.();}catch(error){}
-      scanOrphanModals();
-      return true;
-    })().finally(()=>{essentialPromise=null;});
-    return essentialPromise;
-  }
-  function scheduleBurst(){
-    [0,120,380,900,1800,3500,6500,11000].forEach(delay=>setTimeout(scanOrphanModals,delay));
-  }
   function install(){
-    injectSafetyStyle();
+    injectStyle();
     releaseInteraction();
-    scheduleBurst();
-    window.addEventListener('pageshow',()=>{releaseInteraction();scheduleBurst();},{passive:true});
-    window.addEventListener('team-bulls-runtime-ready',()=>{releaseInteraction();scanOrphanModals();});
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){releaseInteraction();scanOrphanModals();}},{passive:true});
+
+    const auth=document.getElementById('screen-auth');
+    const loading=document.getElementById('screen-loading');
+    const observer=typeof MutationObserver==='function'?new MutationObserver(()=>{
+      if(authActive())suppressAuthBlockers();
+      else leaveAuthFailOpen();
+    }):null;
+    if(observer){
+      if(auth)observer.observe(auth,{attributes:true,attributeFilter:['class']});
+      if(loading)observer.observe(loading,{attributes:true,attributeFilter:['class']});
+    }
+
+    [0,180,650,1500,3200,6500,11000].forEach(delay=>setTimeout(()=>{
+      releaseInteraction();
+      if(authActive())suppressAuthBlockers();
+      scanOrphanModals();
+    },delay));
+
+    window.addEventListener('pageshow',()=>{releaseInteraction();if(authActive())suppressAuthBlockers();scanOrphanModals();},{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){releaseInteraction();if(authActive())suppressAuthBlockers();scanOrphanModals();}},{passive:true});
     document.addEventListener('pointerdown',event=>{
       releaseInteraction();
+      if(authActive())suppressAuthBlockers();
       if(event.target instanceof Element&&event.target.closest('.modal-backdrop.open'))setTimeout(scanOrphanModals,0);
     },{capture:true,passive:true});
   }
 
-  /*
-   * Este listener é registrado no boot, antes de config_v10_7.js. Assim, quando
-   * v107 anuncia que o core está pronto, as quatro extensões essenciais começam
-   * a carregar antes da fila grande de módulos opcionais.
-   */
-  window.addEventListener('team-bulls-v107-ready',()=>loadEssentialStudentRuntime().catch(()=>{}),{once:true});
-  if(window.TeamBulls107)setTimeout(()=>loadEssentialStudentRuntime().catch(()=>{}),0);
-
   window.TeamBullsRuntimeStabilityBoot=Object.freeze({
-    revision:STABLE_REVISION,
+    revision:REVISION,
     release:releaseInteraction,
     scan:scanOrphanModals,
     diagnostic,
-    loadEssentialStudentRuntime
+    activateAuth
   });
+  window.TeamBullsBootSafety=window.TeamBullsRuntimeStabilityBoot;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 
 /*
  * Compatibilidade de emergência para builds antigos que ainda podem criar um
- * diálogo de atualização em tela cheia. A atualização nunca deve impedir o
- * usuário de usar o app. O guard é específico para o texto legado e não fecha
- * modais normais do Team Bulls.
+ * diálogo de atualização em tela cheia. O guard é específico para esse diálogo.
  */
 (function(){
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
@@ -245,9 +233,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 
   function legacyControl(){
     const controls=document.querySelectorAll('button,a,[role="button"]');
-    for(const control of controls){
-      if(normalize(control.textContent).includes(LEGACY_ACTION))return control;
-    }
+    for(const control of controls){if(normalize(control.textContent).includes(LEGACY_ACTION))return control;}
     return null;
   }
   function blockerRoot(control){
@@ -258,16 +244,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     while(node?.parentElement&&node.parentElement!==document.body)node=node.parentElement;
     return node&&node!==document.body?node:null;
   }
-  function releaseInteraction(){
-    if(window.TeamBullsRuntimeStabilityBoot?.release){
-      window.TeamBullsRuntimeStabilityBoot.release();
-      return;
-    }
-    const html=document.documentElement,app=document.getElementById('app');
-    html?.classList.remove('pull-refresh-running');
-    window.__TEAM_BULLS_REFRESHING__=false;
-    if(app?.style.pointerEvents==='none')app.style.removeProperty('pointer-events');
-  }
+  function releaseInteraction(){window.TeamBullsRuntimeStabilityBoot?.release?.();}
   function scan(){
     const control=legacyControl();
     if(!control)return false;
@@ -295,16 +272,19 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
       style.textContent='[data-tb-legacy-update-blocked="1"]{display:none!important;pointer-events:none!important;visibility:hidden!important}';
       document.head.appendChild(style);
     }
-    const schedule=[0,120,450,1200,2600,5000,9000,15000,30000,60000];
-    schedule.forEach(delay=>setTimeout(scan,delay));
+    [0,120,450,1200,2600,5000,9000,15000,30000,60000].forEach(delay=>setTimeout(scan,delay));
     window.addEventListener('pageshow',()=>{releaseInteraction();scan();},{passive:true});
-    window.addEventListener('team-bulls-runtime-ready',()=>{releaseInteraction();scan();});
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){releaseInteraction();scan();}},{passive:true});
   }
   window.TeamBullsUpdateFailOpen=Object.freeze({scan,releaseInteraction});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 
+/*
+ * Recuperação da sessão: é independente do Firebase e do runtime tardio.
+ * Se o loading não sair, o login é liberado diretamente; a restauração da
+ * sessão pode continuar em segundo plano e, se concluir, o core navega normalmente.
+ */
 (function(){
   let revealTimer=null;
   function loadingActive(){return !!document.getElementById('screen-loading')?.classList.contains('active');}
@@ -336,24 +316,32 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     try{localStorage.setItem('teamms_offline_mode','guest');localStorage.setItem('teamms_offline_pref','1');}catch(error){}
     location.replace('./index.html?local='+Date.now());
   }
+  function forceAuth(message){
+    if(!loadingActive()&&document.getElementById('screen-auth')?.classList.contains('active')){
+      window.TeamBullsRuntimeStabilityBoot?.activateAuth?.(message);
+      return true;
+    }
+    if(!loadingActive())return false;
+    return !!window.TeamBullsRuntimeStabilityBoot?.activateAuth?.(message);
+  }
+
   window.TeamBullsRecovery={reveal,hide,retry:()=>location.reload(),clearCachesAndReload,localMode};
 
   const restoring=returningCloudSession();
   revealTimer=setTimeout(()=>{
-    if(loadingActive())reveal(restoring?'Restaurando sua sessão e conferindo os arquivos do app. Você pode aguardar mais alguns segundos ou usar as opções abaixo.':'A inicialização está demorando. Você já pode entrar ou usar o modo local.');
-  },restoring?3200:2200);
+    if(loadingActive())reveal(restoring?'Restaurando sua sessão. Se a conexão demorar, a tela de acesso será liberada automaticamente.':'A inicialização está demorando. A tela de acesso será liberada automaticamente.');
+  },restoring?2200:1400);
 
-  // Em aparelhos que já possuem uma sessão válida, não trocamos a tela de
-  // carregamento pelo login cedo demais. Isso evita duas autenticações concorrentes
-  // e a sensação de que o app abriu pela metade enquanto o Firebase ainda restaura.
   setTimeout(()=>{
-    if(!loadingActive())return;
-    const loading=document.getElementById('screen-loading');
-    const auth=document.getElementById('screen-auth');
-    loading?.classList.remove('active');
-    auth?.classList.add('active');
-    reveal(restoring?'A restauração da sessão demorou além do esperado. A tela de acesso foi liberada sem apagar seus dados; a conexão continuará sendo conferida.':'A verificação demorou, mas a tela de acesso foi liberada.');
-  },restoring?6500:1800);
+    forceAuth(restoring?'A restauração da sessão demorou. Você já pode entrar novamente; seus dados continuam preservados.':'A verificação demorou. Você já pode entrar ou usar o modo local.');
+  },restoring?3800:1800);
+
+  /* Última barreira independente: nenhuma sessão pode ficar eternamente em loading. */
+  setTimeout(()=>{
+    if(loadingActive()||document.getElementById('screen-auth')?.classList.contains('active')){
+      forceAuth('A conexão continua sendo verificada em segundo plano. A tela de acesso foi mantida liberada.');
+    }
+  },8000);
 
   window.addEventListener('error',event=>{
     window.__teamBullsBootErrors.push(String(event?.message||'erro de inicialização'));
