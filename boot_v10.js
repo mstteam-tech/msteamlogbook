@@ -18,7 +18,7 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
 
   const MOBILE_QUERY='(max-width: 899px), (pointer: coarse)';
   const STABLE_REVISION='runtime-stable-20260831-1';
-  const orphanMisses=new WeakMap();
+  const orphanState=new WeakMap();
   let essentialPromise=null;
 
   function mobileLike(){
@@ -107,25 +107,27 @@ try{if(window.top!==window.self)window.top.location=window.self.location.href;}c
     modal.style.removeProperty('z-index');
     modal.style.removeProperty('pointer-events');
     try{modal.inert=false;}catch(error){}
-    orphanMisses.delete(modal);
+    orphanState.delete(modal);
   }
   function scanOrphanModals(){
     const modals=[...document.querySelectorAll('.modal-backdrop.open')];
     for(const modal of modals){
-      if(!rendered(modal)){orphanMisses.delete(modal);continue;}
+      if(!rendered(modal)){orphanState.delete(modal);continue;}
       const panels=modalPanels(modal);
       if(panels.length){
-        orphanMisses.delete(modal);
+        orphanState.delete(modal);
         continue;
       }
       /*
        * Um backdrop aberto sem sheet/dialog visível não oferece nenhuma ação ao
-       * usuário; ele apenas captura os toques. Confirmamos em duas varreduras
-       * consecutivas para não interferir na animação normal de abertura.
+       * usuário; ele apenas captura os toques. Exigimos duas varreduras E pelo
+       * menos 700 ms de persistência para não confundir a animação de abertura
+       * de um modal legítimo com um backdrop órfão.
        */
-      const misses=(orphanMisses.get(modal)||0)+1;
-      orphanMisses.set(modal,misses);
-      if(misses>=2)directCloseOrphan(modal);
+      const now=Date.now(),previous=orphanState.get(modal)||{misses:0,firstSeen:now};
+      const next={misses:previous.misses+1,firstSeen:previous.firstSeen};
+      orphanState.set(modal,next);
+      if(next.misses>=2&&now-next.firstSeen>=700)directCloseOrphan(modal);
     }
     releaseInteraction();
   }
