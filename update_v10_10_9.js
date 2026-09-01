@@ -2,12 +2,12 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026090101;
+  const CURRENT_BUILD=2026090102;
   const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const TECHNIQUE_COMPOSITION_MODULE='./modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1';
   const STUDENT_HOME_MODULE='./modules/student-home-profile-v10_10_12.js?v=10.10.20-studenthome3';
-  const STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.20-home3';
+  const STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.21-home4';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
   const UPDATE_FLUSH_BUDGET_MS=700;
   const UPDATE_WORKER_WAIT_MS=900;
@@ -25,6 +25,28 @@
   function releaseKey(info={}){return `${String(info.version||CURRENT_VERSION)}@${buildNumber(info.build)||CURRENT_BUILD}`;}
   function isSameVersionHotfix(info){return compareVersions(String(info?.version||''),CURRENT_VERSION)===0&&buildNumber(info?.build)>CURRENT_BUILD;}
   function isOnline(){return navigator.onLine!==false;}
+  function activeScreen(){return document.querySelector('.screen.active')?.id||'';}
+  function currentRuntimeRole(){
+    try{const role=String(typeof CURRENT_USER!=='undefined'&&CURRENT_USER?.role||'');if(role==='student'||role==='trainer')return role;}catch(error){}
+    const screen=activeScreen();
+    if(document.body?.classList.contains('trainer-desktop')||screen==='screen-trainer'||screen.startsWith('screen-ts-'))return'trainer';
+    if(document.body?.classList.contains('student-desktop'))return'student';
+    return'';
+  }
+  function localLikeRuntime(){
+    try{if(typeof MODE!=='undefined'&&MODE==='local')return true;}catch(error){}
+    try{const access=String(typeof ACCESS_MODE!=='undefined'?ACCESS_MODE:'');return access==='offline-registered'||access==='local-inactive';}catch(error){return false;}
+  }
+  function studentHomeRelevant(){
+    if(localLikeRuntime())return true;
+    const role=currentRuntimeRole();if(role==='trainer')return false;if(role==='student')return true;
+    return activeScreen()==='screen-home'&&!document.body?.classList.contains('trainer-desktop');
+  }
+  function techniqueCompositionRelevant(){
+    if(localLikeRuntime())return true;
+    const role=currentRuntimeRole();if(role==='student')return false;if(role==='trainer')return true;
+    const screen=activeScreen();return document.body?.classList.contains('trainer-desktop')||screen==='screen-trainer'||screen.startsWith('screen-ts-');
+  }
   function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
   function waitForState(worker,desired,timeout=7000){if(!worker)return Promise.resolve(false);if(worker.state===desired)return Promise.resolve(true);return new Promise(resolve=>{let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);worker.removeEventListener('statechange',onState);resolve(value);};const onState=()=>{if(worker.state===desired)finish(true);else if(worker.state==='redundant')finish(false);};const timer=setTimeout(()=>finish(false),timeout);worker.addEventListener('statechange',onState);});}
   function waitForControllerChange(timeout=UPDATE_CONTROLLER_WAIT_MS){return new Promise(resolve=>{let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);navigator.serviceWorker.removeEventListener('controllerchange',changed);resolve(value);};const changed=()=>finish(true),timer=setTimeout(()=>finish(false),timeout);navigator.serviceWorker.addEventListener('controllerchange',changed,{once:true});});}
@@ -37,6 +59,7 @@
   async function refreshCriticalShell(){if(!('caches' in window)||!isOnline())return false;const cacheNames=(await caches.keys()).filter(name=>name.startsWith('team-bulls-shell-'));if(!cacheNames.length)return false;const stamp=String(Date.now());const fetched=await mapWithLimit(CRITICAL_ASSETS,CRITICAL_REFRESH_CONCURRENCY,async asset=>{const original=new URL(asset,location.href),fresh=new URL(original.href);fresh.searchParams.set('tb-refresh',stamp);const response=await fetch(fresh.href,{cache:'reload'});if(!response.ok)throw new Error(`Falha ao renovar ${original.pathname} (${response.status}).`);return{original:original.href,fresh:fresh.href,response};});for(const cacheName of cacheNames){const cache=await caches.open(cacheName);for(const item of fetched){await cache.put(item.original,item.response.clone());await cache.delete(item.fresh).catch(()=>false);}}return true;}
 
   function loadTechniqueCompositionIntegrity(){
+    if(!techniqueCompositionRelevant())return Promise.resolve(false);
     if(window.TeamBullsTechniqueCompositionIntegrity)return Promise.resolve(true);
     if(techniqueModulePromise)return techniqueModulePromise;
     techniqueModulePromise=new Promise(resolve=>{
@@ -47,7 +70,7 @@
     });
     return techniqueModulePromise;
   }
-  function scheduleTechniqueComposition(delay=120){setTimeout(()=>loadTechniqueCompositionIntegrity().then(ok=>{if(!ok&&navigator.onLine!==false)setTimeout(()=>loadTechniqueCompositionIntegrity(),1800);}).catch(()=>{}),Math.max(0,delay));}
+  function scheduleTechniqueComposition(delay=120){setTimeout(()=>{if(!techniqueCompositionRelevant())return;loadTechniqueCompositionIntegrity().then(ok=>{if(!ok&&navigator.onLine!==false&&techniqueCompositionRelevant())setTimeout(()=>loadTechniqueCompositionIntegrity(),1800);}).catch(()=>{});},Math.max(0,delay));}
 
   function loadOptionalModule({src,pathSuffix,readyFlag,dataKey,promiseKey}){
     if(readyFlag())return Promise.resolve(true);
@@ -65,8 +88,8 @@
   }
   function loadStudentHomeProfile(){return loadOptionalModule({src:STUDENT_HOME_MODULE,pathSuffix:'/modules/student-home-profile-v10_10_12.js',readyFlag:()=>!!window.TeamBullsStudentHome,dataKey:'teamBullsStudentHomeProfile',promiseKey:'profile'});}
   function loadStudentHomeLayout(){return loadOptionalModule({src:STUDENT_HOME_LAYOUT_MODULE,pathSuffix:'/modules/student-home-layout-v10_10_15.js',readyFlag:()=>!!window.TeamBullsStudentHomeLayout,dataKey:'teamBullsStudentHomeLayout',promiseKey:'layout'});}
-  async function loadStudentHomeModules(){await loadStudentHomeProfile().catch(()=>false);return loadStudentHomeLayout().catch(()=>false);}
-  function scheduleStudentHome(delay=180){setTimeout(()=>loadStudentHomeModules().then(ok=>{if(!ok&&navigator.onLine!==false)setTimeout(()=>loadStudentHomeModules(),1800);}).catch(()=>{}),Math.max(0,delay));}
+  async function loadStudentHomeModules(){if(!studentHomeRelevant())return false;await loadStudentHomeProfile().catch(()=>false);return loadStudentHomeLayout().catch(()=>false);}
+  function scheduleStudentHome(delay=180){setTimeout(()=>{if(!studentHomeRelevant())return;loadStudentHomeModules().then(ok=>{if(!ok&&navigator.onLine!==false&&studentHomeRelevant())setTimeout(()=>loadStudentHomeModules(),1800);}).catch(()=>{});},Math.max(0,delay));}
 
   async function prepareLatest({forceCheck=true}={}){if(!('serviceWorker' in navigator))return {version:CURRENT_VERSION,build:CURRENT_BUILD,reloadNeeded:false};const info=forceCheck?await fetchLatestVersion().catch(()=>latestInfo):latestInfo;if(info)latestInfo=info;const targetVersion=latestInfo?.version||CURRENT_VERSION,targetBuild=buildNumber(latestInfo?.build)||CURRENT_BUILD;const reg=await registerWorker(),workerUpdate=reg.update().catch(()=>null);let warmed=false;try{warmed=await refreshCriticalShell();}catch(error){console.warn('[Team Bulls] Renovação crítica incompleta:',error);}await Promise.race([workerUpdate,sleep(UPDATE_WORKER_WAIT_MS)]);let controllerChanged=false;if(reg.waiting){const change=waitForControllerChange();reg.waiting.postMessage({type:'SKIP_WAITING'});controllerChanged=await change;}else if(reg.installing)waitForState(reg.installing,'installed').catch(()=>false);if(!warmed){const active=reg.active||navigator.serviceWorker.controller;warmed=await requestShellRefresh(active).catch(()=>false);}if(!warmed)throw new Error('Não foi possível preparar os arquivos principais da atualização.');return{version:targetVersion,build:targetBuild,reloadNeeded:compareRelease(latestInfo)>0||controllerChanged||warmed};}
   async function flushBeforeReload(){try{window.dispatchEvent(new CustomEvent('team-bulls:before-refresh'));}catch(error){}const TB=window.TeamBulls107,pending=Promise.allSettled([Promise.resolve(TB?.flushDrafts?.()),Promise.resolve(TB?.flushPendingMutationSync?.()),Promise.resolve(window.TeamBullsSessionPerformance?.flush?.())]);await Promise.race([pending,sleep(UPDATE_FLUSH_BUDGET_MS)]);}

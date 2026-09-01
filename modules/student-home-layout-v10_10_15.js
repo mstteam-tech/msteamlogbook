@@ -1,15 +1,16 @@
-/* Team Bulls v10.10.20 — Home/hotbar do aluno orientadas pelo contexto real do app. */
+/* Team Bulls v10.10.21 — Home/hotbar do aluno orientadas pelo contexto real do app. */
 'use strict';
 (()=>{
-  if(window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_20__)return;
-  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_20__=true;
+  if(window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_21__)return;
+  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_21__=true;
 
   /* Impede que cópias antigas desta camada sejam executadas depois. */
+  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_20__=true;
   window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_19__=true;
   window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_17__=true;
   window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_15__=true;
 
-  const VERSION='10.10.20-home3';
+  const VERSION='10.10.21-home4';
   const REFRESH_TTL=30000;
   const MAX_FEEDBACKS=5;
   const MAX_WEIGHT_POINTS=10;
@@ -18,6 +19,7 @@
   let lastRefreshUid='';
   let hotbarIntent='home';
   let feedbackOrderedQueryState='unknown';
+  let weightOrderedQueryState='unknown';
   let observer=null;
   let syncFrame=0;
 
@@ -232,7 +234,7 @@
     slots.forEach((slot,index)=>{if(!slot)return;slot.dataset.state=pending?'pending':'scheduled';const label=slot.querySelector('span'),strong=slot.querySelector('strong');if(label)label.textContent=pending?'ATUALIZAÇÃO PENDENTE DESDE':index===0?'PRÓXIMA ATUALIZAÇÃO':'PRÓXIMO PROTOCOLO';if(strong)strong.textContent=date;});
   }
 
-  function feedbackQueryNeedsFallback(error){
+  function orderedQueryNeedsFallback(error){
     const code=String(error?.code||'').toLowerCase(),message=String(error?.message||'').toLowerCase();
     return code.includes('failed-precondition')||code.includes('unimplemented')||code.includes('invalid-argument')||message.includes('index');
   }
@@ -247,7 +249,7 @@
           feedbackOrderedQueryState='supported';
           return snap.docs.map(doc=>({...doc.data(),id:doc.id}));
         }catch(error){
-          if(!feedbackQueryNeedsFallback(error))throw error;
+          if(!orderedQueryNeedsFallback(error))throw error;
           feedbackOrderedQueryState='unsupported';
           console.info('[Team Bulls] Índice de feedback indisponível; usando leitura compatível.');
         }
@@ -282,9 +284,21 @@
 
   async function fetchWeights(uid){
     if(!uid||!cloudReady())return[];
+    const base=db.collection('weeklyCheckins').where('studentId','==',uid);
+    const normalize=snap=>snap.docs.map(doc=>({...doc.data(),id:doc.id})).filter(item=>Number(item.weight)>0).sort((a,b)=>String(a.submittedDate||a.dueDate||'').localeCompare(String(b.submittedDate||b.dueDate||''))||createdMillis(a.createdAt)-createdMillis(b.createdAt)).slice(-MAX_WEIGHT_POINTS);
     try{
-      const snap=await db.collection('weeklyCheckins').where('studentId','==',uid).get();
-      return snap.docs.map(doc=>({...doc.data(),id:doc.id})).filter(item=>Number(item.weight)>0).sort((a,b)=>String(a.submittedDate||a.dueDate||'').localeCompare(String(b.submittedDate||b.dueDate||''))||createdMillis(a.createdAt)-createdMillis(b.createdAt)).slice(-MAX_WEIGHT_POINTS);
+      if(weightOrderedQueryState!=='unsupported'){
+        try{
+          const snap=await base.orderBy('submittedDate','desc').limit(MAX_WEIGHT_POINTS).get();
+          weightOrderedQueryState='supported';
+          return normalize(snap);
+        }catch(error){
+          if(!orderedQueryNeedsFallback(error))throw error;
+          weightOrderedQueryState='unsupported';
+          console.info('[Team Bulls] Índice do histórico de peso indisponível; usando leitura compatível.');
+        }
+      }
+      return normalize(await base.get());
     }catch(error){console.warn('[Team Bulls] Histórico de peso indisponível',error);return[];}
   }
 
