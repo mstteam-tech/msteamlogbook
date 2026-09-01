@@ -25,7 +25,15 @@ assert(firebase?.firestore?.rules==='firebase/firestore_28_compacto.rules','fire
 assert(firebase?.storage?.rules==='firebase/storage_6.rules','firebase.json deixou de apontar para Storage Rules 6.');
 
 has(boot,'function returningCloudSession()','Boot não diferencia uma sessão já conhecida.');
-has(boot,'restoring?6500:1800','Boot voltou a liberar o login cedo durante restauração.');
+/* Incidente 2026-09-01: a espera longa podia deixar o usuário preso em
+   "verificando sessão". A sessão conhecida ainda ganha mais tempo que uma sessão
+   nova, mas deve falhar aberta para um login utilizável em prazo finito. */
+has(boot,'restoring?3800:1800','Boot não possui o fail-open finito esperado para restauração de sessão.');
+has(boot,'},8000);','Boot não possui a barreira absoluta contra loading infinito.');
+has(boot,'tb-auth-failopen','Boot não protege a tela de autenticação contra bloqueios residuais.');
+has(boot,"document.querySelectorAll('.modal-backdrop.open').forEach(modal=>directCloseOrphan(modal,'auth'))",'Tela de autenticação não limpa backdrops residuais que capturam cliques.');
+lacks(boot,'const ESSENTIALS','Boot voltou a carregar módulos de Home/perfil antes da autenticação.');
+lacks(boot,'loadEssentialStudentRuntime','Boot voltou a iniciar o runtime visual antes da sessão.');
 lacks(boot,'},1600);','Fallback antigo de 1,6 s reapareceu.');
 has(config,'startBootWatchdog.__tbMobileSessionRestore','Watchdog móvel não está reforçado.');
 has(config,'const loadedModules=new Set(),failedModules=new Set()','Loader não rastreia módulos temporariamente falhos.');
@@ -86,4 +94,4 @@ lacks(integrity,'doRegister=secured','registration-integrity voltou a sobrescrev
 has(integrity,"const VERSION='10.10.9-registration2'",'Camada passiva de integridade não está na revisão esperada.');
 assert(bridge.replace('ponte de migração para instalações controladas pelo antigo sw_47.js','Service Worker estável e atualização sem reinstalação')===sw,'sw_47.js divergiu do Service Worker principal.');
 if(fail.length){console.error('FALHA — mobile startup consistency\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — build ${version.build}, cadastro, Central/Pagamentos, 6 fotos + HEIC worker, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);
+console.log(`APROVADO — build ${version.build}, auth fail-open, cadastro, Central/Pagamentos, 6 fotos + HEIC worker, App Check, Rules 28, Storage 6 e Service Workers coerentes.`);
