@@ -34,6 +34,13 @@ assert(update.includes("STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layou
 assert(update.includes('loadStudentHomeModules'),'Home não é carregada pelo caminho opcional pós-boot.');
 assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home não estão no refresh crítico.');
 assert(config.includes("'./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1'"),'Ponte da Home não está no loader resiliente principal.');
+assert(config.includes('const studentPriorityModules=['),'Loader não possui prioridade de runtime para a Home do aluno.');
+assert(config.includes("'./modules/student-home-layout-v10_10_15.js?v=10.10.19-home2'"),'Layout canônico não é carregado diretamente como prioridade após autenticação.');
+assert(config.includes("activeScreen()!=='screen-home'"),'Prioridade do aluno não está condicionada à Home realmente ativa.');
+assert(config.includes("screen!=='screen-loading'&&screen!=='screen-auth'"),'Fila pesada pode voltar a iniciar durante loading/auth.');
+assert(config.includes('if(deferredStarted||!sessionUiReady())return;'),'Fila diferida não possui gate de sessão resolvida.');
+assert(config.includes("observer.observe(node,{attributes:true,attributeFilter:['class']})"),'Gate de contexto não observa apenas classes das telas essenciais.');
+assert(config.includes('await yieldUi();'),'Fila diferida não devolve o thread principal entre módulos.');
 assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2"),'Home nova não está no shell PWA.');
 assert(sw.includes("./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1"),'Ponte da Home não está no shell PWA.');
 assert(sw.includes("'/modules/student-home-profile-v10_10_12.js','/modules/student-home-layout-v10_10_15.js','/modules/student-home-layout-runtime-v10_10_16.js'"),'Home/perfil/ponte não são tratados como arquivos mutáveis.');
@@ -46,7 +53,7 @@ assert(runtime.includes("document.body.classList.contains('student-desktop')"),'
 assert(runtime.includes('window.TeamBullsStudentHomeLayout?.syncHotbar?.()'),'Ponte não sincroniza o layout canônico após carregar.');
 assert(!runtime.includes('setInterval('),'Ponte voltou a executar polling permanente.');
 
-assert(home.includes("const VERSION='10.10.17-home1'"),'Layout canônico não contém a revisão contextual v10.10.17.');
+assert(home.includes("const VERSION='10.10.19-home2'"),'Layout canônico não contém a revisão event-driven v10.10.19.');
 assert(home.includes("document.body.classList.contains('student-desktop')"),'Home não usa o mesmo contexto visual de aluno que o core.');
 assert(home.includes("coreMode()==='local'||access==='offline-registered'||access==='local-inactive'"),'Home não reconhece os modos locais/offline aceitos pelo core.');
 assert(home.includes("currentUser()?.role==='trainer'||document.body.classList.contains('trainer-desktop')"),'Home não bloqueia explicitamente o contexto de treinador.');
@@ -59,6 +66,10 @@ assert(home.includes("['workout','TREINO'"),'Hotbar não contém Treino.');
 assert(home.includes("['meals','SUPRIMENTOS'"),'Hotbar não contém Suprimentos.');
 assert(home.includes("['instructions','INSTRUÇÕES'"),'Hotbar não contém Instruções.');
 assert(home.includes("['reports','RELATÓRIOS'"),'Hotbar não contém Relatórios.');
+assert(home.includes("observer.observe(document.body,{attributes:true,attributeFilter:['class']})"),'Home não observa de forma restrita a mudança de contexto do body.');
+assert(home.includes("document.querySelectorAll('.screen').forEach(screen=>observer.observe(screen,{attributes:true,attributeFilter:['class']}))"),'Home não observa apenas as classes das telas.');
+assert(!home.includes('subtree:true'),'Home voltou a observar toda a árvore do DOM e pode degradar interação.');
+assert(!home.includes('setInterval('),'Home voltou a executar polling permanente e pode causar lag.');
 assert(home.includes("loadProtocolReviewSchedule(uid,true)"),'Data da próxima atualização não reutiliza o cronograma oficial.');
 assert(home.includes("db.collection('feedback').where('studentId','==',uid)"),'Feedbacks não são filtrados pelo aluno autenticado.');
 assert(home.includes("db.collection('weeklyCheckins').where('studentId','==',uid)"),'Gráfico não usa o histórico leve de weeklyCheckins do próprio aluno.');
@@ -69,4 +80,4 @@ assert(!home.includes('innerHTML=String(item.message'),'Feedback do treinador n�
 assert(home.includes("db.collection('feedback').doc(item.id).update({read:true})"),'Abrir feedback na Home não sincroniza o estado de leitura.');
 
 if(fail.length){console.error('\nStudent home/PWA rescue regression failed:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Student home/PWA rescue regression OK — layout preservado no build fail-open e ponte sem polling.');
+console.log('Student home/PWA rescue regression OK — Home prioritária após autenticação, sem polling e sem observer global.');
