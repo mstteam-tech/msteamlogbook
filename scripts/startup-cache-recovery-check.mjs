@@ -4,7 +4,7 @@ import {spawnSync} from 'node:child_process';
 const fail=[];
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026083105;
+const BUILD=2026090101;
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
 const boot=read('boot_v10.js');
@@ -17,12 +17,12 @@ for(const file of ['sw.js','sw_47.js','boot_v10.js','update_v10_10_9.js','module
   assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
 }
 
-assert(Number(version.build)===BUILD,'version.json não está no build fail-open.');
+assert(Number(version.build)===BUILD,'version.json não está no build de estabilização.');
 assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador divergiu do build publicado.');
 assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker divergiu do build publicado.');
 assert(bridge.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado divergiu do build publicado.');
-assert(sw===bridge,'sw.js e sw_47.js divergiram durante o resgate de atualização.');
-assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Cache do resgate fail-open não foi rotacionado.');
+assert(sw===bridge,'sw.js e sw_47.js divergiram durante a estabilização.');
+assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Estabilização rotacionou desnecessariamente o cache de resgate.');
 assert(sw.includes('const SHELL_ITEM_TIMEOUT_MS=3000;'),'Pré-cache continua sem timeout explícito.');
 assert(sw.includes('const ACTIVATION_SHELL=['),'Shell mínimo de ativação está ausente.');
 assert(sw.includes('async function prepareActivationShell'),'Ativação rápida não prepara o shell mínimo.');
@@ -33,7 +33,10 @@ assert(sw.includes('if(stale.length)await forceRecoveredNavigation();'),'Navega�
 assert(sw.includes("current.searchParams.get('cache-rescue')===CACHE_HOTFIX"),'Navegação de resgate pode entrar em loop.');
 assert(sw.includes("target.searchParams.set('cache-rescue',CACHE_HOTFIX)"),'Navegação de recuperação não identifica a revisão aplicada.');
 assert(sw.includes("'/viewport_v10_10_9.js','/boot_v10.js'"),'Viewport/boot não estão explicitamente mutáveis.');
-assert(sw.includes("'/modules/student-home-profile-v10_10_12.js','/modules/student-home-layout-v10_10_15.js','/modules/student-home-layout-runtime-v10_10_16.js'"),'Camadas da Home não estão no caminho network-first mutável.');
+assert(sw.includes("'/modules/usability-checkup-v10_10_9.js'"),'Usabilidade estabilizada não está no caminho mutável.');
+assert(sw.includes("'/modules/student-home-profile-v10_10_12.js'"),'Perfil do aluno não está no caminho mutável.');
+assert(sw.includes("'/modules/student-home-layout-v10_10_15.js'"),'Layout do aluno não está no caminho mutável.');
+assert(sw.includes("'/modules/student-home-layout-runtime-v10_10_16.js'"),'Ponte legada da Home não está no caminho mutável.');
 
 assert(sw.includes('async function navigationNetworkFirst'),'Navegação ainda não prioriza uma cópia fresca da rede.');
 assert(!sw.includes('navigationCacheFirst(request,event)'),'Estratégia cache-first antiga reapareceu na navegação.');
@@ -52,7 +55,7 @@ assert(boot.includes("window.TeamBullsUpdateFailOpen=Object.freeze"),'Guard fail
 assert(!update.includes("applyLatestUpdate({automatic:true})"),'Atualizador voltou a iniciar hotfix automaticamente e pode bloquear o usuário.');
 assert(update.includes("host.querySelector('#team-bulls-update-later')"),'Atualização não preserva opção não bloqueante de adiar/fechar.');
 
-assert(runtime.includes("const VERSION='10.10.18-runtime2'"),'Ponte leve da Home não está na revisão esperada.');
+assert(runtime.includes("const VERSION='10.10.18-runtime2'"),'Ponte legada da Home foi alterada sem necessidade.');
 assert(!runtime.includes('setInterval('),'Ponte da Home voltou a fazer polling permanente e pode degradar desempenho.');
 assert(runtime.includes("document.body.classList.contains('student-desktop')"),'Ponte leve não reconhece o contexto real do aluno.');
 
@@ -60,4 +63,4 @@ if(fail.length){
   console.error('FALHA — update fail-open/startup recovery\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('Update fail-open/startup recovery OK — build coerente, overlay legado não bloqueia e sem polling permanente.');
+console.log('Update fail-open/startup recovery OK — build coerente, overlay legado não bloqueia e atualização não força nova rotação de cache.');
