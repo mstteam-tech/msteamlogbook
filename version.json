@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026090102,
-  "revision": "role-weight-performance-1",
-  "publishedAt": "2026-09-01T13:35:00Z",
+  "build": 2026090103,
+  "revision": "student-diet-compact-live-1",
+  "publishedAt": "2026-09-01T18:30:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Reduz leituras do histórico de peso e evita carregar módulos exclusivos do treinador para alunos, preservando os mesmos dados, permissões e navegação."
+  "message": "Compacta calorias e água na dieta do aluno, sincroniza alterações da dieta em tempo real e reduz a demora para detectar novas revisões do aplicativo."
 }
