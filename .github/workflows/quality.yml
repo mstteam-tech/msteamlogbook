@@ -42,6 +42,7 @@ jobs:
           node scripts/trainer-inbox-payments-check.mjs
           node scripts/student-home-rescue-check.mjs
           node scripts/student-hotbar-payments-check.mjs
+          node scripts/student-supply-options-header-check.mjs
           node scripts/startup-cache-recovery-check.mjs
           node scripts/mobile-touch-freeze-check.mjs
           node scripts/runtime-stabilization-check.mjs
