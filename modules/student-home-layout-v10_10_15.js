@@ -1,13 +1,14 @@
-/* Team Bulls v10.10.17 — Home/hotbar do aluno orientadas pelo contexto real do app. */
+/* Team Bulls v10.10.19 — Home/hotbar do aluno orientadas pelo contexto real do app. */
 'use strict';
 (()=>{
-  if(window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_17__)return;
-  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_17__=true;
+  if(window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_19__)return;
+  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_19__=true;
 
-  /* Impede que uma cópia antiga desta camada seja executada depois. */
+  /* Impede que cópias antigas desta camada sejam executadas depois. */
+  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_17__=true;
   window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_15__=true;
 
-  const VERSION='10.10.17-home1';
+  const VERSION='10.10.19-home2';
   const REFRESH_TTL=30000;
   const MAX_FEEDBACKS=5;
   const MAX_WEIGHT_POINTS=10;
@@ -16,6 +17,7 @@
   let lastRefreshUid='';
   let hotbarIntent='home';
   let observer=null;
+  let syncFrame=0;
 
   const currentUser=()=>{try{return typeof CURRENT_USER!=='undefined'?CURRENT_USER:null;}catch(error){return null;}};
   const coreMode=()=>{try{return typeof MODE!=='undefined'?MODE:'';}catch(error){return'';}};
@@ -274,21 +276,27 @@
     if(activeScreen()==='screen-home')refreshHome(false);
   }
 
+  function scheduleSync(){
+    if(syncFrame)return;
+    syncFrame=requestAnimationFrame(()=>{syncFrame=0;sync();});
+  }
+
   function start(){
     ensureStyles();sync();
     if(!observer&&window.MutationObserver){
-      observer=new MutationObserver(()=>sync());
-      observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+      observer=new MutationObserver(scheduleSync);
+      observer.observe(document.body,{attributes:true,attributeFilter:['class']});
+      document.querySelectorAll('.screen').forEach(screen=>observer.observe(screen,{attributes:true,attributeFilter:['class']}));
     }
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.addEventListener('team-bulls-v107-ready',sync);
-  window.addEventListener('team-bulls-runtime-ready',sync);
-  window.addEventListener('online',()=>{lastRefreshAt=0;sync();});
-  window.addEventListener('pageshow',()=>{lastRefreshAt=0;sync();},{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){lastRefreshAt=0;sync();}});
-  setInterval(sync,2500);
+  window.addEventListener('team-bulls-v107-ready',scheduleSync);
+  window.addEventListener('team-bulls-runtime-ready',scheduleSync);
+  window.addEventListener('team-bulls-student-runtime-ready',scheduleSync);
+  window.addEventListener('online',()=>{lastRefreshAt=0;scheduleSync();});
+  window.addEventListener('pageshow',()=>{lastRefreshAt=0;scheduleSync();},{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){lastRefreshAt=0;scheduleSync();}});
 
   window.TeamBullsStudentHomeLayout=Object.freeze({version:VERSION,refresh:()=>refreshHome(true),syncHotbar:sync,isStudentContext});
 })();
