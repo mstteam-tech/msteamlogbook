@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026090101,
-  "revision": "runtime-stability-1",
-  "publishedAt": "2026-09-01T09:45:00Z",
+  "build": 2026090102,
+  "revision": "role-weight-performance-1",
+  "publishedAt": "2026-09-01T13:35:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Estabiliza o runtime após autenticação, reduz leituras em segundo plano, reforça a Home do aluno e completa a navegação sem alterar dados ou permissões."
+  "message": "Reduz leituras do histórico de peso e evita carregar módulos exclusivos do treinador para alunos, preservando os mesmos dados, permissões e navegação."
 }
