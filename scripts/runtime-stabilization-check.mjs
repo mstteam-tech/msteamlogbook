@@ -7,7 +7,7 @@ const must=[
   'html.pull-refresh-running #app{pointer-events:auto!important}',
   'scanOrphanModals',
   'modalPanels(modal)',
-  "if(misses>=2)directCloseOrphan(modal)",
+  'now-next.firstSeen>=700',
   "team-bulls-v107-ready",
   'studenthome2&fix=runtime-stable1',
   '10.10.17-home1&fix=runtime-stable1',
@@ -25,5 +25,6 @@ if(boot.includes("root.classList.remove('modal-open','no-scroll','scroll-locked'
 }
 if(!boot.includes("script.dataset.tbRuntimeStable='1'"))throw new Error('essential runtime scripts are not tagged');
 if(!boot.includes('diagnostic'))throw new Error('interaction diagnostic API missing');
+if(!boot.includes('next.misses>=2'))throw new Error('orphan backdrop recovery must require repeated confirmation');
 
 console.log('runtime stabilization check: ok');
