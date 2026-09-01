@@ -4,7 +4,7 @@ import {spawnSync} from 'node:child_process';
 const fail=[];
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026090102;
+const BUILD=2026090103;
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
 const boot=read('boot_v10.js');
@@ -17,12 +17,15 @@ for(const file of ['sw.js','sw_47.js','boot_v10.js','update_v10_10_9.js','module
   assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
 }
 
-assert(Number(version.build)===BUILD,'version.json não está no build de performance.');
+assert(Number(version.build)===BUILD,'version.json não está no build atual publicado.');
 assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador divergiu do build publicado.');
 assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker divergiu do build publicado.');
 assert(bridge.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado divergiu do build publicado.');
 assert(sw===bridge,'sw.js e sw_47.js divergiram durante a estabilização.');
-assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Performance rotacionou desnecessariamente o cache de resgate.');
+assert(update.includes('const CHECK_INTERVAL_MS=2*60*1000;'),'Atualizador voltou a esperar vinte minutos entre verificações em primeiro plano.');
+assert(update.includes("const STUDENT_DIET_COMPACT_MODULE='./modules/student-diet-compact-live-v10_10_23.js?v=10.10.23-dietcompact1';"),'Atualizador não aquece a revisão compacta da dieta do aluno.');
+assert(sw.includes("./modules/student-diet-compact-live-v10_10_23.js?v=10.10.23-dietcompact1"),'Shell offline não inclui a revisão compacta da dieta do aluno.');
+assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Build atual rotacionou desnecessariamente o cache de resgate.');
 assert(sw.includes('const SHELL_ITEM_TIMEOUT_MS=3000;'),'Pré-cache continua sem timeout explícito.');
 assert(sw.includes('const ACTIVATION_SHELL=['),'Shell mínimo de ativação está ausente.');
 assert(sw.includes('async function prepareActivationShell'),'Ativação rápida não prepara o shell mínimo.');
@@ -64,4 +67,4 @@ if(fail.length){
   console.error('FALHA — update fail-open/startup recovery\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('Update fail-open/startup recovery OK — build coerente, overlay legado não bloqueia e atualização não força nova rotação de cache.');
+console.log('Update fail-open/startup recovery OK — build coerente, atualização visível mais rápida e overlay legado sem bloqueio.');

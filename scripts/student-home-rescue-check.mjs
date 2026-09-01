@@ -3,7 +3,6 @@ import fs from 'node:fs';
 const fail=[];
 const assert=(condition,message)=>{if(!condition)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026090102;
 
 const modulePath='modules/student-home-layout-v10_10_15.js';
 const profilePath='modules/student-home-profile-v10_10_12.js';
@@ -24,17 +23,18 @@ const boot=read('boot_v10.js');
 const version=JSON.parse(read('version.json'));
 const firebase=JSON.parse(read('firebase.json'));
 const indexes=JSON.parse(read(indexesPath));
+const build=Number(version.build);
 
 for(const [name,source] of [['Home',home],['Perfil',profile],['Usabilidade',usability],['Ponte legada',runtime],['Config',config],['Atualizador',update],['Service Worker',sw],['Boot',boot]]){
   try{new Function(source);}catch(error){fail.push(`${name} possui erro de sintaxe: ${error.message}`);}
 }
 
 assert(version.version==='10.10.9','Hotfix deve manter a versão compatível 10.10.9.');
-assert(Number(version.build)===BUILD,'version.json não está no build de performance.');
-assert(version.revision==='role-weight-performance-1','version.json não identifica a revisão de performance atual.');
-assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador não está no mesmo build publicado.');
-assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker não está no mesmo build publicado.');
-assert(sw47.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado não está no mesmo build publicado.');
+assert(Number.isInteger(build)&&build>=2026090102,'Build publicado regrediu para antes da revisão de performance da Home.');
+assert(typeof version.revision==='string'&&version.revision.trim().length>0,'version.json precisa identificar a revisão publicada.');
+assert(update.includes(`const CURRENT_BUILD=${build};`),'Atualizador não está no mesmo build publicado.');
+assert(sw.includes(`const BUILD_REVISION=${build};`),'Service Worker não está no mesmo build publicado.');
+assert(sw47.includes(`const BUILD_REVISION=${build};`),'Service Worker legado não está no mesmo build publicado.');
 assert(sw===sw47,'sw.js e sw_47.js devem permanecer idênticos.');
 assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Performance não deve reativar uma navegação forçada de cache.');
 
