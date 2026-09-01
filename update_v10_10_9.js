@@ -2,12 +2,12 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026090101;
+  const CURRENT_BUILD=2026090102;
   const CHECK_INTERVAL_MS=20*60*1000;
   const VERSION_URL='./version.json';
   const TECHNIQUE_COMPOSITION_MODULE='./modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1';
   const STUDENT_HOME_MODULE='./modules/student-home-profile-v10_10_12.js?v=10.10.20-studenthome3';
-  const STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.20-home3';
+  const STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.21-home4';
   const UPDATE_RELOAD_KEY='team-bulls-update-reload-version';
   const UPDATE_FLUSH_BUDGET_MS=700;
   const UPDATE_WORKER_WAIT_MS=900;
