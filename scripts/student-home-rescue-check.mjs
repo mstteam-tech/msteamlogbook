@@ -50,15 +50,32 @@ assert(!config.includes("'./modules/student-home-layout-runtime-v10_10_16.js?v=1
 assert(config.includes('deferredComplete=false,completedRole='),'Loader não registra conclusão por papel.');
 assert(config.includes('const trainerOnlyModules=new Set(['),'Loader não separa módulos exclusivos do treinador.');
 for(const trainerModule of ['trainer-workspace-v10_10_9.js?v=10.10.9-workspace3','trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1','trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2'])assert(config.includes(trainerModule),`Módulo de treinador ausente do gate conservador: ${trainerModule}`);
-assert(config.includes("const roleAllowsModule=src=>!trainerOnlyModules.has(src)||runtimeRole()==='trainer'"),'Gate por papel não exige treinador para módulos exclusivos.');
-assert(config.includes('if(!roleAllowsModule(src))return true'),'Aluno ainda executa módulos exclusivos do treinador.');
+assert(config.includes('const studentExcludedModules=new Set(['),'Loader não possui o gate específico de aluno cloud.');
+const cloudStudentExcluded=[
+  'ger-bulk-v10_10_9.js?v=10.10.9-ger1',
+  'prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
+  'prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
+  'diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
+  'diet-calculation-math-v10_10_9.js?v=10.10.10-dietmath1',
+  'diet-calculation-evolution-v10_10_9.js?v=10.10.10-dietcalc1',
+  'diet-portion-presets-v10_10_9.js?v=10.10.10-portions1',
+  'diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2',
+  'custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2'
+];
+for(const moduleName of cloudStudentExcluded)assert(config.includes(`MODULE_ROOT+'${moduleName}'`),`Aluno cloud ainda pode carregar ferramenta de edição: ${moduleName}`);
+assert(config.includes("if(typeof MODE!=='undefined'&&MODE==='local')return false"),'Gate do aluno cloud pode bloquear ferramentas necessárias no modo local.');
+assert(config.includes("if(trainerOnlyModules.has(src))return role==='trainer'"),'Gate por papel não exige treinador para módulos estritamente exclusivos.');
+assert(config.includes('if(studentExcludedModules.has(src))return !cloudStudentRuntime()'),'Gate de performance não exclui ferramentas de edição apenas do aluno cloud.');
+assert(config.includes('if(!roleAllowsModule(src))return true'),'Aluno ainda executa módulos bloqueados pelo gate de papel.');
+const excludedStart=config.indexOf('const studentExcludedModules=new Set(['),excludedEnd=config.indexOf('const loadedModules=',excludedStart),excludedBlock=config.slice(excludedStart,excludedEnd);
+for(const requiredStudentModule of ['student-guidance-v10_10_9-v2.js','diet-personalization-v10_10_11.js','report-photo-ux-v10_10_10.js','photo-quality-download-v10_10_9.js','heic-report-conversion-v10_10_12.js'])assert(!excludedBlock.includes(requiredStudentModule),`Otimização retirou módulo necessário do aluno: ${requiredStudentModule}`);
 assert(config.includes('const runtimeComplete=()=>deferredComplete&&completedRole==='),'Conclusão do runtime não considera mudança de papel na mesma página.');
 assert(config.includes('if(deferredStarted||!sessionUiReady()||runtimeComplete())return;'),'Fila diferida pode ser reiniciada depois de concluída.');
 assert(config.includes('if(!sessionUiReady()||runtimeComplete())return;'),'Agendador pode revarrer módulos concluídos.');
 assert(config.includes("activeScreen()!=='screen-home'"),'Prioridade do aluno não está condicionada à Home realmente ativa.');
 assert(config.includes("screen!=='screen-loading'&&screen!=='screen-auth'"),'Fila pesada pode voltar a iniciar durante loading/auth.');
 assert(config.includes('await yieldUi();'),'Fila diferida não devolve o thread principal entre módulos.');
-assert(config.includes("version:'10.10.21-startup8'"),'Loader não expõe a revisão role-aware.');
+assert(config.includes("version:'10.10.21-startup9'"),'Loader não expõe a revisão de performance por contexto.');
 
 assert(sw.includes("./modules/student-home-profile-v10_10_12.js?v=10.10.20-studenthome3"),'Perfil estabilizado não está no shell PWA.');
 assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.21-home4"),'Home otimizada não está no shell PWA.');
@@ -126,4 +143,4 @@ assert(!usability.includes('subtree:true'),'Usabilidade voltou a observar toda a
 assert(usability.includes("window.addEventListener('team-bulls-student-runtime-ready',ensureStudentProfileLogout)"),'Fallback do logout não acompanha o evento relevante do aluno.');
 
 if(fail.length){console.error('\nStudent home/runtime performance regression failed:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Student home/runtime performance OK — papel conservador, leituras limitadas, fallback e índices versionados protegidos.');
+console.log('Student home/runtime performance OK — aluno cloud evita ferramentas de edição, modo local é preservado, leituras limitadas e módulos essenciais seguem protegidos.');
