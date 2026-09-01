@@ -29,12 +29,17 @@ const rules=fs.existsSync(rulesPath)?read(rulesPath):'';
 has(layout,"['diet','DIETA','DIETA'",'Layout base deixou de fornecer o destino oficial da dieta/suprimentos.');
 has(layout,"if(typeof openMeals==='function')openMeals()",'Destino oficial de suprimentos não usa mais openMeals().');
 
-has(student,"const VERSION='10.10.22-studentpay1'",'Patch da hotbar não possui revisão própria.');
+has(student,"const VERSION='10.10.22-studentpay2'",'Patch da hotbar não possui a revisão atual.');
 has(student,"const COLLECTION='studentBilling'",'Tela de pagamentos do aluno não usa a projeção segura.');
 has(student,"nav.querySelector('[data-hotbar=\"supplements\"]')?.remove()",'Aba duplicada de suplementos não é removida.');
 has(student,"diet.setAttribute('aria-label','SUPRIMENTOS')",'Aba Dieta não é renomeada para Suprimentos.');
 has(student,"payments.dataset.hotbar='payments'",'Aba Pagamentos não é criada na hotbar.');
 has(student,"payments.setAttribute('aria-label','PAGAMENTOS')",'Aba Pagamentos não possui rótulo acessível.');
+has(student,"document.querySelector('#screen-food-options .options-intro-title')",'Correção do título não está limitada à tela de opções de suprimentos.');
+has(student,"title.textContent='Opções de suprimentos'",'Tela de opções ainda não normaliza o título para Opções de suprimentos.');
+has(student,'const base=renderFoodOptions','Correção do título não acompanha novas renderizações da tabela.');
+has(student,'renderFoodOptions=wrapped','Correção do título não é reaplicada após renderizar as opções.');
+lacks(student,'observer.observe(document.body','Correção do título introduziu observer global desnecessário.');
 has(student,"db.collection(COLLECTION).doc(uid())",'Aluno não lê exclusivamente o próprio documento financeiro.');
 has(student,"showScreen('screen-student-payments')",'Aba Pagamentos não abre uma tela própria.');
 lacks(student,"db.collection('trainerBilling')",'Tela do aluno tenta acessar a coleção financeira privada do treinador.');
@@ -47,12 +52,12 @@ has(projection,"db.collection('trainerBilling').doc(uid).collection('payments')"
 has(projection,"const TARGET_COLLECTION='studentBilling'",'Projeção não escreve no domínio seguro do aluno.');
 has(projection,"schemaVersion:1,studentId:row.studentId,trainerId:uid,paymentId:row.paymentId,planType:row.planType,amountCents:row.amountCents,validFrom:row.validFrom,nextDueDate:row.nextDueDate,updatedAt:stamp()",'Payload da projeção não está fechado aos campos mínimos esperados.');
 lacks(projection,'receiptPath','Projeção copia caminho de comprovante privado.');
-lacks(projection,'receiptName','Projeção copia nome do comprovante privado.');
+lacks(projection,'receiptName','Projeção copia nome de comprovante privado.');
 lacks(projection,'note:', 'Projeção copia observação privada do treinador.');
 has(projection,"CURRENT_USER?.role==='trainer'",'Projeção não possui gate explícito de treinador.');
 has(projection,"MODE!=='undefined'&&MODE==='cloud'",'Projeção não está limitada ao modo cloud.');
 
-has(config,"'./modules/student-hotbar-payments-v10_10_22.js?v=10.10.22-studentpay1'",'Loader prioritário do aluno não entrega a nova hotbar/pagamentos.');
+has(config,"'./modules/student-hotbar-payments-v10_10_22.js?v=10.10.22-studentpay2'",'Loader prioritário do aluno não entrega a revisão corrigida da hotbar/pagamentos.');
 has(config,"MODULE_ROOT+'trainer-billing-student-projection-v10_10_22.js?v=10.10.22-billingprojection1'",'Projeção financeira não está protegida pelo gate de treinador.');
 assert(config.indexOf('student-hotbar-payments-v10_10_22.js')>config.indexOf('student-home-layout-v10_10_15.js'),'Patch da hotbar precisa carregar depois do layout canônico.');
 assert(config.indexOf('trainer-billing-student-projection-v10_10_22.js')>config.indexOf('trainer-inbox-payments-v10_10_12.js'),'Projeção precisa carregar depois do módulo financeiro oficial do treinador.');
@@ -74,4 +79,4 @@ lacks(projectionRule,'receiptName','Regra da projeção permite nome do comprova
 lacks(projectionRule,"'note'",'Regra da projeção permite observação privada.');
 
 if(failures.length){console.error('\nFALHA — hotbar/pagamentos do aluno\n- '+failures.join('\n- '));process.exit(1);}
-console.log('APROVADO — Dieta→Suprimentos, aba duplicada removida e Pagamentos seguro/read-only protegidos.');
+console.log('APROVADO — Dieta→Suprimentos, título Opções de suprimentos, aba duplicada removida e Pagamentos seguro/read-only protegidos.');
