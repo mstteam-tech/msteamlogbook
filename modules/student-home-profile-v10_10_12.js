@@ -1,15 +1,20 @@
-/* Team Bulls v10.10.12 — perfil visual do aluno, central de notificações e home enxuta. */
+/* Team Bulls v10.10.20 — perfil visual do aluno, central de notificações e Home resiliente. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_STUDENT_HOME_PROFILE_1__)return;
   window.__TEAM_BULLS_STUDENT_HOME_PROFILE_1__=true;
 
-  const VERSION='10.10.12-studenthome2';
+  const VERSION='10.10.20-studenthome3';
   const PROFILE_PREFIX='studentProfiles';
   const NICK_MAX=24;
+  const BADGE_REFRESH_TTL=120000;
+  const BADGE_POLL_MS=300000;
   let notifications=[];
   let profileCache=new Map();
   let refreshTimer=0;
+  let badgeRefreshAt=0;
+  let badgeRefreshUid='';
+  let badgeRefreshPromise=null;
 
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const student=()=>CURRENT_USER?.role==='student'?CURRENT_USER:null;
@@ -22,6 +27,7 @@
   const timestamp=value=>{try{if(value?.toMillis)return value.toMillis();if(value?.toDate)return value.toDate().getTime();return new Date(value||0).getTime()||0;}catch(error){return 0;}};
   const fmt=value=>{const ms=timestamp(value);return ms?new Date(ms).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'';};
   const todayIso=()=>new Date().toLocaleDateString('sv-SE');
+  const activeScreen=()=>document.querySelector('.screen.active')?.id||'';
 
   function profileError(error,action='atualizar o perfil'){
     const code=String(error?.code||'').toLowerCase(),message=String(error?.message||'');
@@ -118,6 +124,9 @@
     const style=document.createElement('style');
     style.id='tb-student-home-profile-style';
     style.textContent=`
+      body.student-desktop .student-desktop-nav{display:none!important}
+      body.student-desktop #app{margin-left:0!important;width:100%!important;max-width:none!important}
+      #screen-home.tb-home-v2 .quick-nav{display:none!important}
       #screen-home.tb-home-v2 .header{min-height:92px;align-items:center;padding:12px 16px;gap:10px;border-bottom:1px solid rgba(225,29,72,.28)}
       #screen-home.tb-home-v2 .settings-gear-btn,#screen-home.tb-home-v2 #user-chip{display:none!important}
       #screen-home.tb-home-v2 .home-hero::after{content:none!important;display:none!important}
@@ -131,6 +140,7 @@
       .tb-profile-name{margin-top:4px;max-width:112px;text-align:center;font:500 10px/1.15 'DM Mono',monospace;color:#d8c9c2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .tb-profile-menu{position:absolute;z-index:50;right:0;top:76px;width:190px;padding:8px;background:#111;border:1px solid #4b2028;box-shadow:0 16px 40px rgba(0,0,0,.55);border-radius:8px}
       .tb-profile-menu[hidden]{display:none}.tb-profile-menu button{width:100%;text-align:left;padding:10px;border:0;background:transparent;color:#eee;font:600 11px 'DM Mono',monospace}.tb-profile-menu button:hover{background:#211316}
+      .tb-profile-menu .tb-profile-logout{margin-top:6px;border-top:1px solid #4b2028;color:#ff9aa8;background:rgba(225,29,72,.06)}
       #screen-home.tb-home-v2 #feedback-banner,#screen-home.tb-home-v2 #quest-banner,#screen-home.tb-home-v2 #weekly-checkin-home-banner,#screen-home.tb-home-v2 #protocol-review-home-banner{display:none!important}
       #screen-home.tb-home-v2 #home-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}.tb-home-v2 #home-stats .stat-cell{min-height:92px}.tb-home-v2 #home-stats .lbl{font-size:10px}
       .tb-hero-status{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}.tb-confidential-badge{position:static!important;display:inline-flex!important;align-items:center;height:24px;padding:0 9px;border:1px solid rgba(225,29,72,.55);color:#c65b6f;font:600 8px 'DM Mono',monospace;letter-spacing:1px;vertical-align:middle;margin-left:8px}
@@ -149,7 +159,7 @@
     if(header.querySelector('.tb-home-actions'))return;
     const actions=document.createElement('div');
     actions.className='tb-home-actions';
-    actions.innerHTML=`<button class="tb-notice-button" type="button" onclick="TeamBullsStudentHome.openNotifications()" aria-label="Abrir notificações" title="Notificações">🔔<span class="tb-notice-badge" id="tb-home-notice-count"></span></button><div class="tb-profile-head"><button class="tb-avatar-button" id="tb-avatar-button" type="button" onclick="TeamBullsStudentHome.toggleProfileMenu()" aria-label="Abrir perfil"><span id="tb-avatar-fallback">AL</span></button><div class="tb-profile-name" id="tb-profile-name">ALUNO</div><div class="tb-profile-menu" id="tb-profile-menu" hidden><button type="button" onclick="TeamBullsStudentHome.pickAvatar()">MUDAR FOTO</button><button type="button" onclick="TeamBullsStudentHome.changeNickname()">MUDAR NOME / APELIDO</button><button type="button" onclick="openSettings();TeamBullsStudentHome.closeProfileMenu()">CONFIGURAÇÕES</button></div><input id="tb-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" hidden></div>`;
+    actions.innerHTML=`<button class="tb-notice-button" type="button" onclick="TeamBullsStudentHome.openNotifications()" aria-label="Abrir notificações" title="Notificações">🔔<span class="tb-notice-badge" id="tb-home-notice-count"></span></button><div class="tb-profile-head"><button class="tb-avatar-button" id="tb-avatar-button" type="button" onclick="TeamBullsStudentHome.toggleProfileMenu()" aria-label="Abrir perfil"><span id="tb-avatar-fallback">AL</span></button><div class="tb-profile-name" id="tb-profile-name">ALUNO</div><div class="tb-profile-menu" id="tb-profile-menu" hidden><button type="button" onclick="TeamBullsStudentHome.pickAvatar()">MUDAR FOTO</button><button type="button" onclick="TeamBullsStudentHome.changeNickname()">MUDAR NOME / APELIDO</button><button type="button" onclick="openSettings();TeamBullsStudentHome.closeProfileMenu()">CONFIGURAÇÕES</button><button type="button" class="tb-profile-logout" data-tb-profile-logout="1" onclick="TeamBullsStudentHome.logout()">SAIR</button></div><input id="tb-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" hidden></div>`;
     header.appendChild(actions);
     actions.querySelector('#tb-avatar-input').addEventListener('change',async event=>{
       const file=event.target.files?.[0];event.target.value='';if(!file)return;
@@ -163,12 +173,13 @@
     const profile=await readProfile(uid,{fresh}),display=profile.nickname||user.name||'Aluno',button=document.getElementById('tb-avatar-button'),name=document.getElementById('tb-profile-name');
     if(name)name.textContent=display;
     if(button)button.innerHTML=profile.avatarUrl?`<img alt="Foto de ${esc(display)}" src="${esc(profile.avatarUrl)}">`:`<span>${esc((display.match(/\p{L}/u)?.[0]||'A').toUpperCase())}</span>`;
-    await refreshNoticeBadge();
+    refreshNoticeBadge().catch(()=>{});
   }
 
   function toggleProfileMenu(){const menu=document.getElementById('tb-profile-menu');if(menu)menu.hidden=!menu.hidden;}
   function closeProfileMenu(){const menu=document.getElementById('tb-profile-menu');if(menu)menu.hidden=true;}
   function pickAvatar(){closeProfileMenu();document.getElementById('tb-avatar-input')?.click();}
+  function logout(){closeProfileMenu();if(typeof confirmLogout==='function'){confirmLogout();return;}if(typeof handleChipTap==='function'){handleChipTap();return;}alert('Não foi possível abrir a saída da conta. Atualize o aplicativo e tente novamente.');}
   async function changeNickname(){
     closeProfileMenu();const user=student(),uid=uidOf(user);if(!user||!uid)return alert('Perfil do aluno indisponível. Entre novamente no app.');
     const current=(await readProfile(uid)).nickname||'',raw=prompt(`Nome/apelido exibido no app (até ${NICK_MAX} caracteres):`,current);if(raw===null)return;
@@ -184,7 +195,7 @@
     document.getElementById('app')?.appendChild(screen);
   }
 
-  async function loadNotifications(){
+  async function loadNotifications({includeProtocol=true}={}){
     const user=student(),uid=uidOf(user);if(!user||!uid||MODE!=='cloud'||!db)return[];
     const items=[];
     try{
@@ -203,10 +214,12 @@
       const doc=await cloudGet(db.collection('checkinSchedules').doc(uid),'relatório semanal');
       if(doc.exists){const data=doc.data(),extra=String(data.extraRequestId||''),due=String(data.nextDueDate||'');if(extra||(due&&due<=todayIso()))items.push({id:'weekly-checkin',source:'virtual',title:extra?'Relatório extra solicitado':'Relatório semanal pendente',body:extra?'Seu treinador solicitou um relatório extra com as fotos obrigatórias.':`Seu relatório semanal de ${due} está pendente.`,createdAt:data.updatedAt||data.extraRequestedAt||0,read:false,type:'relatório semanal',action:'weekly'});}
     }catch(error){}
-    try{
-      const doc=await cloudGet(db.collection('protocolReviewSchedules').doc(uid),'cronograma de protocolos');
-      if(doc.exists){const data=doc.data();items.push({id:'protocol-review',source:'virtual',title:'Cronograma dos protocolos',body:`Próxima atualização programada: ${data.nextReviewDate||data.startDate||'consulte o cronograma'}.`,createdAt:data.updatedAt||data.createdAt||0,read:true,type:'protocolo',action:'protocol'});}
-    }catch(error){}
+    if(includeProtocol){
+      try{
+        const doc=await cloudGet(db.collection('protocolReviewSchedules').doc(uid),'cronograma de protocolos');
+        if(doc.exists){const data=doc.data();items.push({id:'protocol-review',source:'virtual',title:'Cronograma dos protocolos',body:`Próxima atualização programada: ${data.nextReviewDate||data.startDate||'consulte o cronograma'}.`,createdAt:data.updatedAt||data.createdAt||0,read:true,type:'protocolo',action:'protocol'});}
+      }catch(error){}
+    }
     notifications=items.sort((a,b)=>timestamp(b.createdAt)-timestamp(a.createdAt));
     return notifications;
   }
@@ -217,18 +230,37 @@
     host.innerHTML=notifications.map((item,index)=>`<article class="tb-notice-card ${item.read?'':'unread'}"><div class="tb-notice-meta">${esc(item.type)}${fmt(item.createdAt)?' · '+esc(fmt(item.createdAt)):''}</div><strong>${esc(item.title)}</strong><p>${esc(item.body)}</p><div class="tb-notice-actions">${item.action==='questionnaire'?`<button onclick="TeamBullsStudentHome.openNotice(${index})">RESPONDER</button>`:item.action==='weekly'?`<button onclick="TeamBullsStudentHome.openNotice(${index})">ENVIAR RELATÓRIO</button>`:item.action==='protocol'?`<button onclick="TeamBullsStudentHome.openNotice(${index})">VER CRONOGRAMA</button>`:!item.read&&(item.source==='notification'||item.source==='feedback')?`<button onclick="TeamBullsStudentHome.markRead(${index})">MARCAR COMO LIDA</button>`:''}</div></article>`).join('');
   }
 
-  async function refreshNoticeBadge(){
-    const uid=studentUid();if(!uid)return;
-    await loadNotifications();const count=notifications.filter(item=>!item.read).length,badge=document.getElementById('tb-home-notice-count');if(badge)badge.textContent=count?String(Math.min(count,99)):'';
+  function applyNoticeBadge(){
+    const count=notifications.filter(item=>!item.read).length,badge=document.getElementById('tb-home-notice-count');
+    if(badge)badge.textContent=count?String(Math.min(count,99)):'';
+    return count;
   }
-  async function openNotifications(){ensureNotificationScreen();closeProfileMenu();showScreen('screen-student-notifications');await loadNotifications();renderNotifications();}
+
+  async function refreshNoticeBadge({force=false}={}){
+    const uid=studentUid();if(!uid)return 0;
+    const now=Date.now();
+    if(!force&&uid===badgeRefreshUid&&now-badgeRefreshAt<BADGE_REFRESH_TTL)return applyNoticeBadge();
+    if(badgeRefreshPromise)return badgeRefreshPromise;
+    badgeRefreshPromise=(async()=>{
+      await loadNotifications({includeProtocol:false});
+      badgeRefreshUid=uid;badgeRefreshAt=Date.now();
+      return applyNoticeBadge();
+    })().finally(()=>{badgeRefreshPromise=null;});
+    return badgeRefreshPromise;
+  }
+
+  async function openNotifications(){
+    ensureNotificationScreen();closeProfileMenu();showScreen('screen-student-notifications');
+    await loadNotifications({includeProtocol:true});renderNotifications();
+    badgeRefreshUid=studentUid();badgeRefreshAt=Date.now();applyNoticeBadge();
+  }
   async function markRead(index){
     const item=notifications[index];if(!item||item.read)return;
     try{
       if(item.source==='notification')await cloudWrite(db.collection('notifications').doc(item.id).update({readAt:firebase.firestore.FieldValue.serverTimestamp()}),'marcar notificação como lida');
       else if(item.source==='feedback')await cloudWrite(db.collection('feedback').doc(item.id).update({read:true}),'marcar mensagem como lida');
       else return;
-      item.read=true;renderNotifications();await refreshNoticeBadge();
+      item.read=true;renderNotifications();applyNoticeBadge();
     }catch(error){showToast?.('Não foi possível marcar como lida.',true);}
   }
   async function openNotice(index){
@@ -298,12 +330,12 @@
   function init(){
     ensureStyle();ensureNotificationScreen();wrapUi();
     if(student()){ensureHomeHeader();refreshStudentHeader().catch(()=>{});refreshStats().catch(()=>{});fixConfidential();}
-    clearInterval(refreshTimer);refreshTimer=setInterval(()=>{if(student()&&document.visibilityState==='visible')refreshNoticeBadge().catch(()=>{});},60000);
+    clearInterval(refreshTimer);refreshTimer=setInterval(()=>{if(student()&&document.visibilityState==='visible'&&activeScreen()==='screen-home')refreshNoticeBadge().catch(()=>{});},BADGE_POLL_MS);
   }
 
   document.addEventListener('click',event=>{if(!event.target.closest?.('.tb-profile-head'))closeProfileMenu();},true);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&student())refreshStudentHeader(true).catch(()=>{});});
   window.addEventListener('team-bulls-v107-ready',()=>setTimeout(init,0));
-  window.TeamBullsStudentHome=Object.freeze({version:VERSION,init,openNotifications,toggleProfileMenu,closeProfileMenu,pickAvatar,changeNickname,markRead,openNotice,moderatePhoto,moderateNickname,refresh:()=>refreshStudentHeader(true)});
+  window.TeamBullsStudentHome=Object.freeze({version:VERSION,init,openNotifications,toggleProfileMenu,closeProfileMenu,pickAvatar,changeNickname,logout,markRead,openNotice,moderatePhoto,moderateNickname,refresh:()=>refreshStudentHeader(true)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});else setTimeout(init,0);
 })();
