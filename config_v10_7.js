@@ -57,6 +57,17 @@ if('caches' in window){
     MODULE_ROOT+'trainer-diet-workspace-v10_10_11.js?v=10.10.11-dietworkspace1',
     MODULE_ROOT+'trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2'
   ]);
+  const studentExcludedModules=new Set([
+    MODULE_ROOT+'ger-bulk-v10_10_9.js?v=10.10.9-ger1',
+    MODULE_ROOT+'prescription-actions-layout-v10_10_9.js?v=10.10.9-actions2',
+    MODULE_ROOT+'prescription-propagation-v10_10_9.js?v=10.10.9-propagation1',
+    MODULE_ROOT+'diet-delete-fix-v10_10_9.js?v=10.10.9-dietdelete1',
+    MODULE_ROOT+'diet-calculation-math-v10_10_9.js?v=10.10.10-dietmath1',
+    MODULE_ROOT+'diet-calculation-evolution-v10_10_9.js?v=10.10.10-dietcalc1',
+    MODULE_ROOT+'diet-portion-presets-v10_10_9.js?v=10.10.10-portions1',
+    MODULE_ROOT+'diet-live-calories-v10_10_11.js?v=10.10.11-dietcalories2',
+    MODULE_ROOT+'custom-food-calorie-bridge-v10_10_12.js?v=10.10.12-customfood2'
+  ]);
   const loadedModules=new Set(),failedModules=new Set();let readyResolve=null;const ready=new Promise(resolve=>{readyResolve=resolve;});
   const activeScreen=()=>document.querySelector('.screen.active')?.id||'';
   const runtimeRole=()=>{
@@ -66,7 +77,17 @@ if('caches' in window){
     if(document.body?.classList.contains('student-desktop'))return'student';
     return'';
   };
-  const roleAllowsModule=src=>!trainerOnlyModules.has(src)||runtimeRole()==='trainer';
+  const cloudStudentRuntime=()=>{
+    if(runtimeRole()!=='student')return false;
+    try{if(typeof MODE!=='undefined'&&MODE==='local')return false;}catch(error){}
+    return true;
+  };
+  const roleAllowsModule=src=>{
+    const role=runtimeRole();
+    if(trainerOnlyModules.has(src))return role==='trainer';
+    if(studentExcludedModules.has(src))return !cloudStudentRuntime();
+    return true;
+  };
   const activeFailures=()=>[...failedModules].filter(roleAllowsModule);
   const runtimeComplete=()=>deferredComplete&&completedRole===(runtimeRole()||'shared')&&activeFailures().length===0;
   const sessionUiReady=()=>{const screen=activeScreen();return !!screen&&screen!=='screen-loading'&&screen!=='screen-auth';};
@@ -127,6 +148,6 @@ if('caches' in window){
   };
   const load=async()=>{if(requested)return;requested=true;for(const src of criticalModules)await loadScript(src,6500);installSessionGate();contextChanged();};
   preloadModules(criticalModules);
-  window.TeamBullsRuntimeLoader=Object.freeze({version:'10.10.21-startup8',ready,state:runtimeDetail,retry:healFailedModules,student:loadStudentPriority});
+  window.TeamBullsRuntimeLoader=Object.freeze({version:'10.10.21-startup9',ready,state:runtimeDetail,retry:healFailedModules,student:loadStudentPriority});
   window.addEventListener('online',()=>{scheduleHeal(500);contextChanged();});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')scheduleHeal(700);});window.addEventListener('pageshow',()=>scheduleHeal(900));if(window.TeamBulls107)load();else window.addEventListener('team-bulls-v107-ready',load,{once:true});
 })();
