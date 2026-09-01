@@ -1,13 +1,13 @@
-/* Team Bulls v10.10.9 — check-up de usabilidade, navegação e responsividade. */
+/* Team Bulls v10.10.20 — check-up de usabilidade, navegação e responsividade. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_USABILITY_CHECKUP_V10109__)return;
   window.__TEAM_BULLS_USABILITY_CHECKUP_V10109__=true;
 
-  const VERSION='10.10.9-usability2';
+  const VERSION='10.10.20-usability3';
   const scrollByHistoryKey=new Map();
   let scrollFrame=0;
-  let profileMenuObserver=null;
+  let profileLogoutHooks=false;
 
   function appScroller(){return document.getElementById('app');}
   function historyKey(state=history.state){return state?.teamBulls&&state?.key?String(state.key):'';}
@@ -141,11 +141,10 @@
 
   function installStudentProfileLogout(){
     ensureStudentProfileLogout();
-    if(profileMenuObserver||typeof MutationObserver!=='function')return;
-    profileMenuObserver=new MutationObserver(()=>ensureStudentProfileLogout());
-    profileMenuObserver.observe(document.documentElement,{childList:true,subtree:true});
+    if(profileLogoutHooks)return;
+    profileLogoutHooks=true;
+    window.addEventListener('team-bulls-student-runtime-ready',ensureStudentProfileLogout);
     window.addEventListener('team-bulls-runtime-ready',ensureStudentProfileLogout);
-    window.addEventListener('pageshow',ensureStudentProfileLogout,{passive:true});
   }
 
   function installStyles(){
