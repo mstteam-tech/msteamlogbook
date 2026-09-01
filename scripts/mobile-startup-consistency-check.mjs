@@ -38,7 +38,7 @@ lacks(boot,'},1600);','Fallback antigo de 1,6 s reapareceu.');
 has(config,'startBootWatchdog.__tbMobileSessionRestore','Watchdog móvel não está reforçado.');
 has(config,'const loadedModules=new Set(),failedModules=new Set()','Loader não rastreia módulos temporariamente falhos.');
 has(config,'const healFailedModules=async()=>','Loader não possui autorreparo.');
-has(config,"window.addEventListener('online',()=>scheduleHeal(500))",'Loader não retenta ao recuperar conexão.');
+has(config,"window.addEventListener('online',()=>{scheduleHeal(500);contextChanged();})",'Ao recuperar conexão, o loader deve retentar módulos falhos e reavaliar o contexto atual.');
 has(config,'trainer-inbox-payments-v10_10_12.js?v=10.10.12-inboxpayments2','Loader não entrega a Central/Pagamentos atual.');
 has(config,'photo-quality-download-v10_10_9.js?v=10.10.9-photoquality2','Loader não entrega a correção móvel de fotos.');
 has(config,'heic-report-conversion-v10_10_12.js?v=10.10.12-heic1','Loader não entrega o fallback HEIC/HEIF.');
