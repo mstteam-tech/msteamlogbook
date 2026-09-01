@@ -5,6 +5,7 @@ const fail=[];
 const read=path=>fs.readFileSync(path,'utf8');
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const has=(text,needle,message)=>assert(text.includes(needle),message);
+const lacks=(text,needle,message)=>assert(!text.includes(needle),message);
 const numberMatch=(text,re)=>Number(text.match(re)?.[1]||0);
 
 const modulePath='modules/student-home-profile-v10_10_12.js';
@@ -32,11 +33,17 @@ has(mod,'REMOVER APELIDO','Treinador não consegue moderar o apelido.');
 has(mod,"'image/jpeg',0.9",'Avatar não é normalizado/comprimido para JPEG.');
 has(mod,'file.size>12*1024*1024','Upload de avatar perdeu limite de entrada.');
 has(mod,"typeof createImageBitmap==='function'",'Avatar perdeu fallback compatível para navegadores sem createImageBitmap.');
+has(mod,'data-tb-profile-logout="1"','Perfil não cria a opção SAIR diretamente.');
+has(mod,'TeamBullsStudentHome.logout()','Opção SAIR do perfil não usa o fluxo canônico do módulo.');
+has(mod,"typeof confirmLogout==='function'",'Logout direto não reutiliza o fluxo seguro existente.');
 
-has(usability,"button.textContent='SAIR'",'Menu móvel do perfil não possui a opção SAIR.');
-has(usability,"typeof confirmLogout==='function'",'Opção SAIR não reutiliza o fluxo seguro de logout existente.');
+has(usability,"button.textContent='SAIR'",'Fallback de usabilidade do perfil não possui a opção SAIR.');
+has(usability,"typeof confirmLogout==='function'",'Fallback SAIR não reutiliza o fluxo seguro de logout existente.');
 has(usability,'data-tb-profile-logout="1"','Logout do perfil não possui proteção contra duplicação.');
-has(usability,'MutationObserver','Logout não acompanha a criação tardia do menu de perfil.');
+has(usability,"window.addEventListener('team-bulls-student-runtime-ready',ensureStudentProfileLogout)",'Fallback do logout não acompanha a criação tardia do perfil por evento.');
+has(usability,"window.addEventListener('team-bulls-runtime-ready',ensureStudentProfileLogout)",'Fallback do logout não acompanha a conclusão do runtime.');
+lacks(usability,'profileMenuObserver','Logout voltou a depender de observer global do DOM.');
+lacks(usability,'subtree:true','Camada de usabilidade voltou a observar toda a árvore do DOM.');
 
 has(storage,'match /studentProfiles/{uid}/profile.json','Storage Rules não protegem o apelido do aluno.');
 has(storage,'match /studentProfiles/{uid}/avatar.jpg','Storage Rules não protegem o avatar.');
@@ -44,11 +51,15 @@ has(storage,'trainerOwns(uid) || activeOwner(uid)','Perfil visual não está iso
 has(storage,'validOptimizedJpegUpload(800 * 1024)','Avatar não possui limite de armazenamento de 800 KB.');
 has(storage,"request.resource.contentType == 'application/json'",'Perfil JSON não valida Content-Type.');
 
-const asset='./modules/student-home-profile-v10_10_12.js?v=10.10.12-studenthome1';
-has(config,asset,'Loader não entrega a nova home.');
-has(updater,asset,'Atualizador não aquece a nova home.');
-has(sw,asset,'Service Worker não prepara a nova home.');
-has(sw47,asset,'Service Worker legado não prepara a nova home.');
+const asset='./modules/student-home-profile-v10_10_12.js?v=10.10.20-studenthome3';
+has(config,asset,'Loader não entrega o perfil/home estabilizado.');
+has(updater,asset,'Atualizador não aquece o perfil/home estabilizado.');
+has(sw,asset,'Service Worker não prepara o perfil/home estabilizado.');
+has(sw47,asset,'Service Worker legado não prepara o perfil/home estabilizado.');
+has(mod,"const BADGE_POLL_MS=300000;",'Badge de notificações voltou a consultar com frequência excessiva.');
+has(mod,"const BADGE_REFRESH_TTL=120000;",'Badge de notificações não possui janela de coalescência.');
+has(mod,'loadNotifications({includeProtocol:false})','Contador de notificações voltou a consultar o cronograma sem necessidade.');
+has(mod,'if(badgeRefreshPromise)return badgeRefreshPromise;','Contador não coalesce consultas concorrentes.');
 assert(version.version==='10.10.9','Versão pública foi alterada.');
 const updaterBuild=numberMatch(updater,/const CURRENT_BUILD=(\d+)/),swBuild=numberMatch(sw,/const BUILD_REVISION=(\d+)/),sw47Build=numberMatch(sw47,/const BUILD_REVISION=(\d+)/);
 assert(Number(version.build)>0&&updaterBuild===Number(version.build),'Updater não acompanha o build público atual.');
@@ -58,4 +69,4 @@ assert(hotfix.length>0&&hotfix===hotfix47,'Service Workers não compartilham uma
 assert(sw===sw47,'sw.js e sw_47.js divergiram.');
 
 if(fail.length){console.error('FALHA — student home/profile\n- '+fail.join('\n- '));process.exit(1);}
-console.log(`APROVADO — home do aluno preservada no build ${version.build}; notificações, avatar/apelido, logout, protocolos e cache coerentes.`);
+console.log(`APROVADO — home do aluno preservada no build ${version.build}; notificações otimizadas, avatar/apelido, logout event-driven, protocolos e cache coerentes.`);

@@ -1,14 +1,15 @@
-/* Team Bulls v10.10.19 — Home/hotbar do aluno orientadas pelo contexto real do app. */
+/* Team Bulls v10.10.20 — Home/hotbar do aluno orientadas pelo contexto real do app. */
 'use strict';
 (()=>{
-  if(window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_19__)return;
-  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_19__=true;
+  if(window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_20__)return;
+  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_20__=true;
 
   /* Impede que cópias antigas desta camada sejam executadas depois. */
+  window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_19__=true;
   window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_17__=true;
   window.__TEAM_BULLS_STUDENT_HOME_LAYOUT_10_10_15__=true;
 
-  const VERSION='10.10.19-home2';
+  const VERSION='10.10.20-home3';
   const REFRESH_TTL=30000;
   const MAX_FEEDBACKS=5;
   const MAX_WEIGHT_POINTS=10;
@@ -16,6 +17,7 @@
   let lastRefreshAt=0;
   let lastRefreshUid='';
   let hotbarIntent='home';
+  let feedbackOrderedQueryState='unknown';
   let observer=null;
   let syncFrame=0;
 
@@ -90,22 +92,23 @@
       .tb-v17-weight-current small{font:500 9px 'DM Mono',monospace;color:#776b63;margin-left:3px}
       .tb-v17-weight-delta{margin-left:auto;font:500 8px 'DM Mono',monospace;color:#a09288;letter-spacing:.4px}
       .tb-v17-weight-chart{width:100%;height:150px;display:block;background:#0c0b0a;border:1px solid #302722}
-      .tb-v17-hotbar-shell{position:fixed;z-index:98;left:50%;transform:translateX(-50%);bottom:0;width:min(620px,calc(100% - 18px));padding:8px 9px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(8,8,8,0),rgba(8,8,8,.98) 22%);pointer-events:none}
+      .tb-v17-hotbar-shell{position:fixed;z-index:98;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,calc(100% - 18px));padding:8px 9px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(8,8,8,0),rgba(8,8,8,.98) 22%);pointer-events:none}
       .tb-v17-hotbar-shell[hidden]{display:none!important}
-      .tb-v17-hotbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:5px;border:1px solid #4d3c32;background:#0c0b0a;border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.58);pointer-events:auto}
-      .tb-v17-hotbar button{min-width:0;height:54px;border:1px solid transparent;border-radius:7px;background:transparent;color:#80736a;padding:5px 2px;font:500 7px/1.15 'DM Mono',monospace;letter-spacing:.35px;text-transform:uppercase;cursor:pointer}
-      .tb-v17-hotbar button svg{display:block;width:19px;height:19px;margin:0 auto 5px;fill:none;stroke:#b2a297;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+      .tb-v17-hotbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;padding:5px;border:1px solid #4d3c32;background:#0c0b0a;border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.58);pointer-events:auto}
+      .tb-v17-hotbar button{min-width:0;height:58px;border:1px solid transparent;border-radius:7px;background:transparent;color:#80736a;padding:5px 2px;font:500 6.5px/1.1 'DM Mono',monospace;letter-spacing:.2px;text-transform:uppercase;cursor:pointer}
+      .tb-v17-hotbar button span{display:block;white-space:normal;overflow-wrap:anywhere}
+      .tb-v17-hotbar button svg{display:block;width:18px;height:18px;margin:0 auto 5px;fill:none;stroke:#b2a297;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
       .tb-v17-hotbar button.is-active{border-color:#60463b;background:#181210;color:#ded0c5}
       .tb-v17-hotbar button.is-active svg{stroke:#eadcd1}
-      html.tb-student-home-v17 #app{padding-bottom:max(90px,calc(78px + env(safe-area-inset-bottom)))}
-      html.tb-student-home-v17 .screen{padding-bottom:max(110px,calc(98px + env(safe-area-inset-bottom)))}
+      html.tb-student-home-v17 #app{padding-bottom:max(94px,calc(82px + env(safe-area-inset-bottom)))}
+      html.tb-student-home-v17 .screen{padding-bottom:max(114px,calc(102px + env(safe-area-inset-bottom)))}
       @media(min-width:900px) and (pointer:fine){
         html.tb-student-home-v17 body.student-desktop .content,
         html.tb-student-home-v17 body.student-desktop .home-hero,
         html.tb-student-home-v17 body.student-desktop .stats-grid,
         html.tb-student-home-v17 body.student-desktop .tb-v17-intelligence{max-width:1420px;margin-left:auto;margin-right:auto}
       }
-      @media(max-width:420px){.tb-v17-hotbar-shell{width:100%;padding-left:6px;padding-right:6px}.tb-v17-hotbar button{font-size:6.1px;letter-spacing:.15px}}
+      @media(max-width:420px){.tb-v17-hotbar-shell{width:100%;padding-left:4px;padding-right:4px}.tb-v17-hotbar{gap:1px;padding:4px}.tb-v17-hotbar button{font-size:5.7px;letter-spacing:0;padding-left:1px;padding-right:1px}.tb-v17-hotbar button svg{width:17px;height:17px}}
     `;
     document.head.appendChild(style);
   }
@@ -114,11 +117,30 @@
     const paths={
       home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13V10.5"/>',
       workout:'<path d="M4 9v6M7 7v10M10 10v4M14 10v4M17 7v10M20 9v6M10 12h4"/>',
-      meals:'<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 2 4 5 4 8h-4"/>',
+      diet:'<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 2 4 5 4 8h-4"/>',
+      supplements:'<path d="M9 3h6M10 3v4l-4 5v7h12v-7l-4-5V3"/><path d="M7 14h10"/>',
+      options:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
       instructions:'<path d="M2.5 5.5A4 4 0 0 1 6.5 4H11v15H6.5a4 4 0 0 0-4 2z"/><path d="M21.5 5.5A4 4 0 0 0 17.5 4H13v15h4.5a4 4 0 0 1 4 2z"/>',
       reports:'<path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5M9 12h6M9 16h6"/>'
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]||''}</svg>`;
+  }
+
+  async function openStudentSupplements(){
+    hotbarIntent='supplements';
+    if(typeof openMeals!=='function')return;
+    await Promise.resolve(openMeals());
+    let plan=null;
+    try{
+      const plans=typeof DIET_DOCUMENT!=='undefined'&&Array.isArray(DIET_DOCUMENT?.plans)?DIET_DOCUMENT.plans:[];
+      plan=plans.find(item=>item?.isActive)||plans[0]||null;
+    }catch(error){}
+    if(!plan||typeof openDietDetail!=='function')return;
+    await Promise.resolve(openDietDetail(plan.id,false));
+    requestAnimationFrame(()=>setTimeout(()=>{
+      document.querySelector('#screen-diet-detail .diet-support-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+      setHotbarActive('supplements');
+    },60));
   }
 
   function ensureHotbar(){
@@ -132,15 +154,17 @@
     const nav=document.createElement('nav');
     nav.className='tb-v17-hotbar';
     const items=[
-      ['home','INÍCIO',()=>{hotbarIntent='home';if(typeof goHome==='function')goHome();}],
-      ['workout','TREINO',()=>{hotbarIntent='workout';if(typeof goHome==='function')goHome();setTimeout(()=>{(document.getElementById('workout-list')||document.getElementById('home-workouts'))?.scrollIntoView({behavior:'smooth',block:'start'});setHotbarActive('workout');},100);}],
-      ['meals','SUPRIMENTOS',()=>{hotbarIntent='meals';if(typeof openMeals==='function')openMeals();}],
-      ['instructions','INSTRUÇÕES',()=>{hotbarIntent='instructions';if(typeof openInstructions==='function')openInstructions();}],
-      ['reports','RELATÓRIOS',()=>{hotbarIntent='reports';if(typeof openMyQuestionnaires==='function')openMyQuestionnaires();}]
+      ['home','INÍCIO','INÍCIO',()=>{hotbarIntent='home';if(typeof goHome==='function')goHome();}],
+      ['workout','TREINO','TREINO',()=>{hotbarIntent='workout';if(typeof goHome==='function')goHome();setTimeout(()=>{(document.getElementById('workout-list')||document.getElementById('home-workouts'))?.scrollIntoView({behavior:'smooth',block:'start'});setHotbarActive('workout');},100);}],
+      ['diet','DIETA','DIETA',()=>{hotbarIntent='diet';if(typeof openMeals==='function')openMeals();}],
+      ['instructions','INSTRUÇÕES','INSTRUÇ.',()=>{hotbarIntent='instructions';if(typeof openInstructions==='function')openInstructions();}],
+      ['supplements','SUPRIMENTOS','SUPLEM.',()=>openStudentSupplements()],
+      ['options','OPÇÕES DE SUPRIMENTOS','OPÇÕES',()=>{hotbarIntent='options';if(typeof openFoodOptions==='function')openFoodOptions();}],
+      ['reports','RELATÓRIOS','RELATÓR.',()=>{hotbarIntent='reports';if(typeof openMyQuestionnaires==='function')openMyQuestionnaires();}]
     ];
-    items.forEach(([key,label,action])=>{
+    items.forEach(([key,label,shortLabel,action])=>{
       const button=document.createElement('button');
-      button.type='button';button.dataset.hotbar=key;button.innerHTML=svgIcon(key)+`<span>${label}</span>`;button.addEventListener('click',action);nav.appendChild(button);
+      button.type='button';button.dataset.hotbar=key;button.setAttribute('aria-label',label);button.title=label;button.innerHTML=svgIcon(key)+`<span>${shortLabel}</span>`;button.addEventListener('click',action);nav.appendChild(button);
     });
     shell.appendChild(nav);document.body.appendChild(shell);return shell;
   }
@@ -149,11 +173,19 @@
   function hotbarKeyForScreen(id){
     const screen=String(id||'');
     if(screen==='screen-home')return hotbarIntent==='workout'?'workout':'home';
-    if(screen==='screen-meals'||screen.includes('diet'))return'meals';
+    if(screen==='screen-meals')return'diet';
+    if(screen==='screen-diet-detail')return hotbarIntent==='supplements'?'supplements':'diet';
+    if(screen==='screen-food-options')return'options';
+    if(screen.includes('diet'))return hotbarIntent==='supplements'?'supplements':'diet';
     if(screen==='screen-instructions')return'instructions';
     if(screen==='screen-my-quest'||screen.includes('questionnaire')||screen.includes('weekly-checkin'))return'reports';
     if(/(?:workout|exercise|screen-day$|screen-day-)/.test(screen)&&!screen.includes('trainer')&&!screen.includes('ts-'))return'workout';
     return'';
+  }
+
+  function ensureStudentDietLabel(){
+    const title=document.querySelector('#screen-meals .header-title');
+    if(title&&String(title.textContent||'').trim().toUpperCase()==='SUPRIMENTOS')title.textContent='DIETAS';
   }
 
   function ensureNextDateSlots(){
@@ -200,10 +232,27 @@
     slots.forEach((slot,index)=>{if(!slot)return;slot.dataset.state=pending?'pending':'scheduled';const label=slot.querySelector('span'),strong=slot.querySelector('strong');if(label)label.textContent=pending?'ATUALIZAÇÃO PENDENTE DESDE':index===0?'PRÓXIMA ATUALIZAÇÃO':'PRÓXIMO PROTOCOLO';if(strong)strong.textContent=date;});
   }
 
+  function feedbackQueryNeedsFallback(error){
+    const code=String(error?.code||'').toLowerCase(),message=String(error?.message||'').toLowerCase();
+    return code.includes('failed-precondition')||code.includes('unimplemented')||code.includes('invalid-argument')||message.includes('index');
+  }
+
   async function fetchFeedbacks(uid){
     if(!uid||!cloudReady())return[];
+    const base=db.collection('feedback').where('studentId','==',uid);
     try{
-      const snap=await db.collection('feedback').where('studentId','==',uid).get();
+      if(feedbackOrderedQueryState!=='unsupported'){
+        try{
+          const snap=await base.orderBy('createdAt','desc').limit(MAX_FEEDBACKS).get();
+          feedbackOrderedQueryState='supported';
+          return snap.docs.map(doc=>({...doc.data(),id:doc.id}));
+        }catch(error){
+          if(!feedbackQueryNeedsFallback(error))throw error;
+          feedbackOrderedQueryState='unsupported';
+          console.info('[Team Bulls] Índice de feedback indisponível; usando leitura compatível.');
+        }
+      }
+      const snap=await base.get();
       return snap.docs.map(doc=>({...doc.data(),id:doc.id})).sort((a,b)=>createdMillis(b.createdAt)-createdMillis(a.createdAt)||String(b.id).localeCompare(String(a.id))).slice(0,MAX_FEEDBACKS);
     }catch(error){console.warn('[Team Bulls] Feedbacks da home indisponíveis',error);return[];}
   }
@@ -266,7 +315,7 @@
   }
 
   function sync(){
-    ensureStyles();ensureHotbar();
+    ensureStyles();ensureHotbar();ensureStudentDietLabel();
     const active=isStudentContext();
     document.documentElement.classList.toggle('tb-student-home-v17',active);
     const shell=document.getElementById('tb-v17-hotbar-shell');if(shell)shell.hidden=!active;
@@ -298,5 +347,5 @@
   window.addEventListener('pageshow',()=>{lastRefreshAt=0;scheduleSync();},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){lastRefreshAt=0;scheduleSync();}});
 
-  window.TeamBullsStudentHomeLayout=Object.freeze({version:VERSION,refresh:()=>refreshHome(true),syncHotbar:sync,isStudentContext});
+  window.TeamBullsStudentHomeLayout=Object.freeze({version:VERSION,refresh:()=>refreshHome(true),syncHotbar:sync,isStudentContext,openSupplements:openStudentSupplements});
 })();

@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026083105,
-  "revision": "update-overlay-failopen-1",
-  "publishedAt": "2026-08-31T22:20:00Z",
+  "build": 2026090101,
+  "revision": "runtime-stability-1",
+  "publishedAt": "2026-09-01T09:45:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Libera a interface quando um diálogo legado de atualização estiver preso, reduz trabalho de cache em segundo plano e preserva a nova Home do aluno com hotbar survivor horror."
+  "message": "Estabiliza o runtime após autenticação, reduz leituras em segundo plano, reforça a Home do aluno e completa a navegação sem alterar dados ou permissões."
 }
