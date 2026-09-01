@@ -39,7 +39,7 @@ assert(config.includes("'./modules/student-home-layout-v10_10_15.js?v=10.10.19-h
 assert(config.includes("activeScreen()!=='screen-home'"),'Prioridade do aluno não está condicionada à Home realmente ativa.');
 assert(config.includes("screen!=='screen-loading'&&screen!=='screen-auth'"),'Fila pesada pode voltar a iniciar durante loading/auth.');
 assert(config.includes('if(deferredStarted||!sessionUiReady())return;'),'Fila diferida não possui gate de sessão resolvida.');
-assert(config.includes("observer.observe(node,{attributes:true,attributeFilter:['class']})"),'Gate de contexto não observa apenas classes das telas essenciais.');
+assert(config.includes("screenObserver.observe(node,{attributes:true,attributeFilter:['class']})"),'Gate de contexto não observa apenas classes das telas essenciais.');
 assert(config.includes('await yieldUi();'),'Fila diferida não devolve o thread principal entre módulos.');
 assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.15-home2"),'Home nova não está no shell PWA.');
 assert(sw.includes("./modules/student-home-layout-runtime-v10_10_16.js?v=10.10.16-runtime1"),'Ponte da Home não está no shell PWA.');
