@@ -42,6 +42,15 @@ assert(update.includes("STUDENT_HOME_MODULE='./modules/student-home-profile-v10_
 assert(update.includes("STUDENT_HOME_LAYOUT_MODULE='./modules/student-home-layout-v10_10_15.js?v=10.10.21-home4'"),'Atualizador não conhece a Home otimizada.');
 assert(update.includes('loadStudentHomeModules'),'Home não é preservada pelo caminho opcional pós-boot.');
 assert(update.includes('STUDENT_HOME_MODULE,STUDENT_HOME_LAYOUT_MODULE'),'Módulos da Home não estão no refresh crítico.');
+assert(update.includes('function localLikeRuntime()'),'Atualizador não diferencia o modo local ao decidir fallbacks opcionais.');
+assert(update.includes("if(typeof MODE!=='undefined'&&MODE==='local')return true"),'Atualizador pode bloquear ferramentas opcionais necessárias no modo local.');
+assert(update.includes('function studentHomeRelevant()'),'Atualizador não filtra o fallback da Home por contexto.');
+assert(update.includes('function techniqueCompositionRelevant()'),'Atualizador não filtra a composição de técnicas por contexto.');
+assert(update.includes("if(role==='student')return false;if(role==='trainer')return true"),'Composição de técnicas pode voltar a ser injetada no aluno cloud.');
+assert(update.includes('if(!techniqueCompositionRelevant())return Promise.resolve(false)'),'Loader opcional de técnicas ignora o gate de papel.');
+assert(update.includes('if(!studentHomeRelevant())return false'),'Loader opcional da Home pode executar em sessão de treinador.');
+assert(update.includes('if(!techniqueCompositionRelevant())return;loadTechniqueCompositionIntegrity()'),'Agendamento de técnicas não evita trabalho redundante fora do contexto.');
+assert(update.includes('if(!studentHomeRelevant())return;loadStudentHomeModules()'),'Agendamento da Home não evita trabalho redundante fora do contexto.');
 
 assert(config.includes('const studentPriorityModules=['),'Loader não possui prioridade de runtime para a Home do aluno.');
 assert(config.includes("'./modules/student-home-profile-v10_10_12.js?v=10.10.20-studenthome3'"),'Perfil estabilizado não é prioridade do runtime.');
@@ -143,4 +152,4 @@ assert(!usability.includes('subtree:true'),'Usabilidade voltou a observar toda a
 assert(usability.includes("window.addEventListener('team-bulls-student-runtime-ready',ensureStudentProfileLogout)"),'Fallback do logout não acompanha o evento relevante do aluno.');
 
 if(fail.length){console.error('\nStudent home/runtime performance regression failed:\n- '+fail.join('\n- '));process.exit(1);}
-console.log('Student home/runtime performance OK — aluno cloud evita ferramentas de edição, modo local é preservado, leituras limitadas e módulos essenciais seguem protegidos.');
+console.log('Student home/runtime performance OK — aluno cloud evita ferramentas de edição, fallbacks respeitam o papel, modo local é preservado e módulos essenciais seguem protegidos.');
