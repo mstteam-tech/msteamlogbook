@@ -102,6 +102,10 @@
       .tb-v17-hotbar button svg{display:block;width:18px;height:18px;margin:0 auto 5px;fill:none;stroke:#b2a297;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
       .tb-v17-hotbar button.is-active{border-color:#60463b;background:#181210;color:#ded0c5}
       .tb-v17-hotbar button.is-active svg{stroke:#eadcd1}
+      #screen-diet-detail .tb-supply-options-header-btn{width:auto;max-width:min(190px,48vw);height:36px;padding:0 8px;gap:6px;display:inline-flex;align-items:center;justify-content:flex-start;color:#b7a89d;border:1px solid transparent;border-radius:8px;font:500 8px/1.15 'DM Mono',monospace;letter-spacing:.25px;white-space:nowrap}
+      #screen-diet-detail .tb-supply-options-header-btn svg{width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+      #screen-diet-detail .tb-supply-options-header-btn span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+      #screen-diet-detail .tb-supply-options-header-btn:hover,#screen-diet-detail .tb-supply-options-header-btn:focus-visible{color:#eadcd1;border-color:#4a3931;background:#171210}
       html.tb-student-home-v17 #app{padding-bottom:max(94px,calc(82px + env(safe-area-inset-bottom)))}
       html.tb-student-home-v17 .screen{padding-bottom:max(114px,calc(102px + env(safe-area-inset-bottom)))}
       @media(min-width:900px) and (pointer:fine){
@@ -110,7 +114,7 @@
         html.tb-student-home-v17 body.student-desktop .stats-grid,
         html.tb-student-home-v17 body.student-desktop .tb-v17-intelligence{max-width:1420px;margin-left:auto;margin-right:auto}
       }
-      @media(max-width:420px){.tb-v17-hotbar-shell{width:100%;padding-left:4px;padding-right:4px}.tb-v17-hotbar{gap:1px;padding:4px}.tb-v17-hotbar button{font-size:5.7px;letter-spacing:0;padding-left:1px;padding-right:1px}.tb-v17-hotbar button svg{width:17px;height:17px}}
+      @media(max-width:420px){.tb-v17-hotbar-shell{width:100%;padding-left:4px;padding-right:4px}.tb-v17-hotbar{gap:1px;padding:4px}.tb-v17-hotbar button{font-size:5.7px;letter-spacing:0;padding-left:1px;padding-right:1px}.tb-v17-hotbar button svg{width:17px;height:17px}#screen-diet-detail .tb-supply-options-header-btn{max-width:145px;padding:0 5px;gap:4px;font-size:6.6px;letter-spacing:0}#screen-diet-detail .tb-supply-options-header-btn svg{width:16px;height:16px;flex-basis:16px}}
     `;
     document.head.appendChild(style);
   }
@@ -126,6 +130,24 @@
       reports:'<path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5M9 12h6M9 16h6"/>'
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]||''}</svg>`;
+  }
+
+  function supplyOptionsIcon(){
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-4.1-2.7-8 .6-7.4 5.5C5.2 18.5 8.2 21 12 21s6.8-2.5 7.4-7.5C20 8.6 16.1 5.3 12 8Z"/><path d="M12 8c-.1-2.7 1.1-4.6 3.7-5.7"/><path d="M14.1 4.2c1.8-.8 3.6-.5 4.7.4-1 1.8-2.9 2.7-5 2.3"/></svg>';
+  }
+
+  function patchSupplyOptionsHeader(){
+    if(!isStudentContext())return false;
+    const button=document.querySelector('#screen-diet-detail .header button[onclick*="openFoodOptionsFromDiet"]');
+    if(!button)return false;
+    button.classList.add('tb-supply-options-header-btn');
+    button.title='Opções de suprimentos';
+    button.setAttribute('aria-label','Opções de suprimentos');
+    if(button.dataset.tbSupplyOptionsHeader!=='1'){
+      button.innerHTML=supplyOptionsIcon()+'<span>Opções de suprimentos</span>';
+      button.dataset.tbSupplyOptionsHeader='1';
+    }
+    return true;
   }
 
   async function openStudentSupplements(){
@@ -329,7 +351,7 @@
   }
 
   function sync(){
-    ensureStyles();ensureHotbar();ensureStudentDietLabel();
+    ensureStyles();ensureHotbar();ensureStudentDietLabel();patchSupplyOptionsHeader();
     const active=isStudentContext();
     document.documentElement.classList.toggle('tb-student-home-v17',active);
     const shell=document.getElementById('tb-v17-hotbar-shell');if(shell)shell.hidden=!active;
@@ -361,5 +383,5 @@
   window.addEventListener('pageshow',()=>{lastRefreshAt=0;scheduleSync();},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){lastRefreshAt=0;scheduleSync();}});
 
-  window.TeamBullsStudentHomeLayout=Object.freeze({version:VERSION,refresh:()=>refreshHome(true),syncHotbar:sync,isStudentContext,openSupplements:openStudentSupplements});
+  window.TeamBullsStudentHomeLayout=Object.freeze({version:VERSION,refresh:()=>refreshHome(true),syncHotbar:sync,isStudentContext,openSupplements:openStudentSupplements,patchSupplyOptionsHeader});
 })();
