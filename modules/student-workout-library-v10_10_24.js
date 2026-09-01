@@ -20,6 +20,9 @@
     const style=document.createElement('style');
     style.id='tb-student-workout-library-style';
     style.textContent=`
+      #screen-home #workout-list,
+      #screen-home #workout-empty,
+      #screen-home .tb-home-workout-source-hidden{display:none!important}
       #screen-workout-library .content{max-width:1420px;margin:0 auto;padding-top:14px}
       .tb-workout-library-hero{border:1px solid #43352d;border-left:3px solid #9d2832;background:linear-gradient(150deg,#171311,#0e0d0c 76%);padding:14px 15px;margin-bottom:12px}
       .tb-workout-library-hero span{display:block;color:#9c313b;font:600 8px 'DM Mono',monospace;letter-spacing:1.1px;text-transform:uppercase}
@@ -32,17 +35,29 @@
     document.head.appendChild(style);
   }
 
+  function hideHomeWorkoutSource(){
+    if(!studentContext())return false;
+    const list=document.querySelector('#screen-home #workout-list');
+    const empty=document.querySelector('#screen-home #workout-empty');
+    const header=list?.previousElementSibling?.classList?.contains('section-header')?list.previousElementSibling:null;
+    [header,list,empty].filter(Boolean).forEach(element=>{
+      element.classList.add('tb-home-workout-source-hidden');
+      element.setAttribute('aria-hidden','true');
+    });
+    return !!list;
+  }
+
   function ensureScreen(){
     let screen=document.getElementById('screen-workout-library');
     if(screen)return screen;
     const app=document.getElementById('app');if(!app)return null;
     screen=document.createElement('div');screen.className='screen';screen.id='screen-workout-library';
-    screen.innerHTML=`<div class="header"><button class="btn-icon" type="button" onclick="goHome()" aria-label="Voltar ao início">←</button><div class="header-title">TREINOS</div><button class="btn-icon ghost" type="button" onclick="TeamBullsStudentWorkoutLibrary.refresh()" aria-label="Atualizar lista de treinos" title="Atualizar">↻</button></div><div class="content"><section class="tb-workout-library-hero"><span>SEUS PROTOCOLOS</span><strong id="tb-workout-library-count">Treinos disponíveis</strong><p>Acesse aqui todos os seus treinos sem precisar voltar ou rolar a tela inicial.</p></section><div id="tb-student-workout-list"></div><div class="empty-state" id="tb-student-workout-empty" style="display:none"><div class="empty-icon">🏋️</div><div class="empty-label">Nenhum treino disponível</div><div class="empty-hint">Seu treinador ainda não cadastrou um protocolo.</div></div></div>`;
+    screen.innerHTML=`<div class="header"><button class="btn-icon" type="button" onclick="goHome()" aria-label="Voltar ao início">←</button><div class="header-title">TREINOS</div><button class="btn-icon ghost" type="button" onclick="TeamBullsStudentWorkoutLibrary.refresh()" aria-label="Atualizar lista de treinos" title="Atualizar">↻</button></div><div class="content"><section class="tb-workout-library-hero"><span>SEUS PROTOCOLOS</span><strong id="tb-workout-library-count">Treinos disponíveis</strong><p>Acesse aqui todos os seus treinos pela aba Treino da navegação principal.</p></section><div id="tb-student-workout-list"></div><div class="empty-state" id="tb-student-workout-empty" style="display:none"><div class="empty-icon">🏋️</div><div class="empty-label">Nenhum treino disponível</div><div class="empty-hint">Seu treinador ainda não cadastrou um protocolo.</div></div></div>`;
     app.appendChild(screen);return screen;
   }
 
   function syncList(){
-    ensureScreen();
+    ensureScreen();hideHomeWorkoutSource();
     const source=document.getElementById('workout-list');
     const target=document.getElementById('tb-student-workout-list');
     const empty=document.getElementById('tb-student-workout-empty');
@@ -64,7 +79,7 @@
 
   function openLibrary(){
     if(!studentContext())return false;
-    injectStyles();ensureScreen();syncList();
+    injectStyles();ensureScreen();hideHomeWorkoutSource();syncList();
     if(typeof showScreen==='function')showScreen('screen-workout-library');
     else document.getElementById('screen-workout-library')?.classList.add('active');
     requestAnimationFrame(()=>{syncList();setWorkoutActive();window.scrollTo({top:0,behavior:'auto'});});
@@ -90,7 +105,7 @@
   }
 
   function sync(){
-    injectStyles();ensureScreen();patchSoon();
+    injectStyles();ensureScreen();hideHomeWorkoutSource();patchSoon();
     if(document.getElementById('screen-workout-library')?.classList.contains('active')){syncList();setWorkoutActive();}
   }
 
@@ -100,5 +115,5 @@
   window.addEventListener('team-bulls-runtime-ready',sync);
   window.addEventListener('pageshow',sync,{passive:true});
 
-  window.TeamBullsStudentWorkoutLibrary=Object.freeze({version:VERSION,open:openLibrary,refresh:syncList,patchHotbar});
+  window.TeamBullsStudentWorkoutLibrary=Object.freeze({version:VERSION,open:openLibrary,refresh:syncList,patchHotbar,hideHomeWorkoutSource});
 })();
