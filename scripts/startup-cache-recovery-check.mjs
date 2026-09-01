@@ -4,7 +4,7 @@ import {spawnSync} from 'node:child_process';
 const fail=[];
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026090101;
+const BUILD=2026090102;
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
 const boot=read('boot_v10.js');
@@ -17,12 +17,12 @@ for(const file of ['sw.js','sw_47.js','boot_v10.js','update_v10_10_9.js','module
   assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
 }
 
-assert(Number(version.build)===BUILD,'version.json não está no build de estabilização.');
+assert(Number(version.build)===BUILD,'version.json não está no build de performance.');
 assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador divergiu do build publicado.');
 assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker divergiu do build publicado.');
 assert(bridge.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado divergiu do build publicado.');
 assert(sw===bridge,'sw.js e sw_47.js divergiram durante a estabilização.');
-assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Estabilização rotacionou desnecessariamente o cache de resgate.');
+assert(sw.includes("const CACHE_HOTFIX='update-unblock1';"),'Performance rotacionou desnecessariamente o cache de resgate.');
 assert(sw.includes('const SHELL_ITEM_TIMEOUT_MS=3000;'),'Pré-cache continua sem timeout explícito.');
 assert(sw.includes('const ACTIVATION_SHELL=['),'Shell mínimo de ativação está ausente.');
 assert(sw.includes('async function prepareActivationShell'),'Ativação rápida não prepara o shell mínimo.');
@@ -37,6 +37,7 @@ assert(sw.includes("'/modules/usability-checkup-v10_10_9.js'"),'Usabilidade esta
 assert(sw.includes("'/modules/student-home-profile-v10_10_12.js'"),'Perfil do aluno não está no caminho mutável.');
 assert(sw.includes("'/modules/student-home-layout-v10_10_15.js'"),'Layout do aluno não está no caminho mutável.');
 assert(sw.includes("'/modules/student-home-layout-runtime-v10_10_16.js'"),'Ponte legada da Home não está no caminho mutável.');
+assert(sw.includes("./modules/student-home-layout-v10_10_15.js?v=10.10.21-home4"),'Shell não prepara a Home otimizada atual.');
 
 assert(sw.includes('async function navigationNetworkFirst'),'Navegação ainda não prioriza uma cópia fresca da rede.');
 assert(!sw.includes('navigationCacheFirst(request,event)'),'Estratégia cache-first antiga reapareceu na navegação.');
