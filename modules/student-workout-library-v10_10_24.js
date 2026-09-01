@@ -4,7 +4,7 @@
   if(window.__TEAM_BULLS_STUDENT_WORKOUT_LIBRARY_101024__)return;
   window.__TEAM_BULLS_STUDENT_WORKOUT_LIBRARY_101024__=true;
 
-  const VERSION='10.10.24-workoutlibrary2';
+  const VERSION='10.10.24-workoutlibrary1';
   let patchTimer=null;
 
   const currentUser=()=>{try{return typeof CURRENT_USER!=='undefined'?CURRENT_USER:null;}catch(error){return null;}};
