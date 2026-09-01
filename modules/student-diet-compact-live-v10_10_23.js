@@ -1,20 +1,16 @@
-/* Team Bulls v10.10.23 — dieta do aluno compacta, sincronizada e com atualização mais responsiva. */
+/* Team Bulls v10.10.23 — dieta do aluno compacta e sincronizada em tempo real. */
 'use strict';
 (()=>{
   if(window.__TEAM_BULLS_STUDENT_DIET_COMPACT_LIVE_101023__)return;
   window.__TEAM_BULLS_STUDENT_DIET_COMPACT_LIVE_101023__=true;
 
   const VERSION='10.10.23-dietcompact1';
-  const UPDATE_CHECK_INTERVAL_MS=2*60*1000;
-  const MIN_UPDATE_CHECK_GAP_MS=15000;
   let observer=null;
   let patchFrame=0;
   let dietUnsubscribe=null;
   let dietUid='';
   let dietFingerprint='';
   let renderSequence=0;
-  let lastUpdateCheckAt=0;
-  let updateTimer=0;
 
   const currentUser=()=>{try{return typeof CURRENT_USER!=='undefined'?CURRENT_USER:null;}catch(error){return null;}};
   const coreMode=()=>{try{return typeof MODE!=='undefined'?MODE:'';}catch(error){return'';}};
@@ -107,14 +103,21 @@
     document.head.appendChild(style);
   }
 
+  function setTextIfChanged(element,value){
+    if(!element)return false;
+    const next=String(value??'');
+    if(String(element.textContent||'')===next)return false;
+    element.textContent=next;
+    return true;
+  }
+
   function compactEnergyLabels(){
     const metrics=[...document.querySelectorAll('#screen-diet-detail #diet-energy-summary .diet-energy-metric')];
     const labels=['GET','DIA DE TREINO','DIA SEM TREINO'];
     metrics.slice(0,3).forEach((metric,index)=>{
-      const label=metric.querySelector(':scope > span');
-      if(label)label.textContent=labels[index];
+      setTextIfChanged(metric.querySelector(':scope > span'),labels[index]);
       const value=metric.querySelector(':scope > strong');
-      if(value)value.textContent=String(value.textContent||'').replace(/\s*kcal\s*\/\s*dia\s*$/i,' kcal').trim();
+      if(value)setTextIfChanged(value,String(value.textContent||'').replace(/\s*kcal\s*\/\s*dia\s*$/i,' kcal').trim());
     });
   }
 
@@ -123,9 +126,9 @@
     const card=document.querySelector('#screen-diet-detail [data-tb-diet-guidance="1"]');
     if(!energy||!card)return false;
     if(energy.nextElementSibling!==card)energy.insertAdjacentElement('afterend',card);
-    const title=card.querySelector('.tb-guidance-head strong');if(title)title.textContent='ÁGUA';
+    setTextIfChanged(card.querySelector('.tb-guidance-head strong'),'ÁGUA');
     const value=card.querySelector('.tb-hydration-value');
-    if(value)value.textContent=String(value.textContent||'').replace(/\s+por\s+dia\s*·\s*/i,' · ').trim();
+    if(value)setTextIfChanged(value,String(value.textContent||'').replace(/\s+por\s+dia\s*·\s*/i,' · ').trim());
     return true;
   }
 
@@ -203,31 +206,15 @@
     }catch(error){console.warn('[Team Bulls] Não foi possível iniciar a sincronização em tempo real da dieta.',error);stopDietLiveSync();return false;}
   }
 
-  function requestUpdateCheck(force=false){
-    if(navigator.onLine===false||document.visibilityState==='hidden'||!studentContext())return false;
-    const now=Date.now();if(!force&&now-lastUpdateCheckAt<MIN_UPDATE_CHECK_GAP_MS)return false;
-    const check=window.TeamBullsUpdater?.check;if(typeof check!=='function')return false;
-    lastUpdateCheckAt=now;
-    Promise.resolve(check()).catch(()=>null);
-    return true;
-  }
-
-  function startFastUpdateChecks(){
-    if(updateTimer)return;
-    updateTimer=setInterval(()=>{if(document.visibilityState==='visible')requestUpdateCheck(false);},UPDATE_CHECK_INTERVAL_MS);
-    setTimeout(()=>requestUpdateCheck(false),900);
-  }
-
-  function sync(){injectStyles();installDietObserver();patchDietSummary();ensureDietLiveSync();requestUpdateCheck(false);}
-  function install(){sync();startFastUpdateChecks();}
+  function sync(){injectStyles();installDietObserver();patchDietSummary();ensureDietLiveSync();}
+  function install(){sync();}
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
   window.addEventListener('team-bulls-runtime-ready',sync);
   window.addEventListener('team-bulls-student-runtime-ready',sync);
-  window.addEventListener('online',()=>{ensureDietLiveSync();requestUpdateCheck(true);});
-  window.addEventListener('pageshow',()=>{sync();requestUpdateCheck(true);},{passive:true});
-  window.addEventListener('focus',()=>requestUpdateCheck(false),{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){sync();requestUpdateCheck(true);}},{passive:true});
+  window.addEventListener('online',ensureDietLiveSync);
+  window.addEventListener('pageshow',sync,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sync();},{passive:true});
 
-  window.TeamBullsStudentDietCompact=Object.freeze({version:VERSION,patch:patchDietSummary,sync:ensureDietLiveSync,checkUpdate:()=>requestUpdateCheck(true)});
+  window.TeamBullsStudentDietCompact=Object.freeze({version:VERSION,patch:patchDietSummary,sync:ensureDietLiveSync});
 })();
