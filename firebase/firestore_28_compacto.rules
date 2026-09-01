@@ -691,6 +691,34 @@ service cloud.firestore {
       }
     }
 
+    // Projeção financeira mínima para o próprio aluno. O domínio privado do
+    // treinador continua fechado; comprovantes e observações não são copiados.
+    match /studentBilling/{studentUid} {
+      allow read: if (
+          trainerOwns(studentUid)
+          || activeOwner(studentUid)
+        )
+        && resource.data.studentId == studentUid
+        && resource.data.trainerId == userData(studentUid).trainerId;
+      allow create, update: if trainerOwns(studentUid)
+        && request.resource.data.keys().hasOnly([
+          'schemaVersion','studentId','trainerId','paymentId','planType',
+          'amountCents','validFrom','nextDueDate','updatedAt'
+        ])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.studentId == studentUid
+        && request.resource.data.trainerId == request.auth.uid
+        && requiredText(request.resource.data.paymentId, 190)
+        && request.resource.data.planType in ['quarterly','semiannual']
+        && request.resource.data.amountCents is int
+        && request.resource.data.amountCents >= 0
+        && request.resource.data.amountCents <= 100000000
+        && isoDate(request.resource.data.validFrom)
+        && isoDate(request.resource.data.nextDueDate)
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }
