@@ -54,7 +54,7 @@ assert(viewport.includes("window.addEventListener('team-bulls-student-runtime-re
 assert(viewport.includes("window.TeamBullsRuntimeLoader?.student?.()"),'Home não antecipa a carga do runtime prioritário depois do login.');
 assert(!viewport.includes('new MutationObserver'),'Correção de sessão não deve adicionar observer global.');
 
-assert(core.includes("function canUseCatalogVideos(){return MODE==='cloud'&&CURRENT_USER?.role==='student'&&CURRENT_USER.status!=='inactive';}"),'Gate de vídeos mudou sem atualizar a regressão de sessão.');
+assert(core.includes("function canUseCatalogVideos(){return MODE==='cloud'&&CURRENT_USER?.role==='student'&&CURRENT_USER?.status!=='inactive';}"),'Gate de vídeos mudou sem atualizar a regressão de sessão.');
 assert(viewport.includes("currentUser()?.role==='student'&&coreMode()==='cloud'&&accessMode()==='cloud-active'"),'Runtime do aluno pode ser iniciado num contexto offline transitório e manter vídeos bloqueados.');
 assert(sw.includes("'/viewport_v10_10_9.js','/boot_v10.js'"),'Service Worker deixou de tratar a camada de sessão/viewport como mutável network-first.');
 
