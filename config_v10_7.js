@@ -43,7 +43,7 @@ if('caches' in window){
   let requested=false,deferredStarted=false,deferredComplete=false,completedRole='',deferredBatchCount=0,studentPriorityStarted=false,healing=false,healTimer=null,readyResolved=false,hadFailures=false,screenObserver=null;
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const yieldUi=()=>new Promise(resolve=>{if('requestIdleCallback'in window)requestIdleCallback(()=>resolve(),{timeout:350});else requestAnimationFrame(()=>setTimeout(resolve,0));});
-  const criticalModules=['./modules/security-hardening-v10_10_9.js?v=10.10.10-security8'];
+  const criticalModules=['./modules/security-hardening-v10_10_9.js?v=10.10.10-security8','./modules/destructive-actions-supply-fix-v10_10_29.js?v=10.10.29-destructive-supply1'];
   const studentPriorityModules=[
     './modules/student-home-profile-v10_10_12.js?v=10.10.20-studenthome3',
     './modules/student-home-layout-v10_10_15.js?v=10.10.21-home4',
@@ -80,7 +80,7 @@ if('caches' in window){
     try{const role=String(typeof CURRENT_USER!=='undefined'&&CURRENT_USER?.role||'');if(role==='student'||role==='trainer')return role;}catch(error){}
     const screen=activeScreen();
     if(document.body?.classList.contains('trainer-desktop')||screen==='screen-trainer'||screen.startsWith('screen-ts-'))return'trainer';
-    if(document.body?.classList.contains('student-desktop'))return'student';
+    if(document.body.classList.contains('student-desktop'))return'student';
     return'';
   };
   const cloudStudentRuntime=()=>{
