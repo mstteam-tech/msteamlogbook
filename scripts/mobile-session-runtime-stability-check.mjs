@@ -9,8 +9,21 @@ const core=read('app_v10_10_9_core.js');
 const boot=read('boot_v10.js');
 const sw=read('sw.js');
 
-const syntax=spawnSync(process.execPath,['--check','viewport_v10_10_9.js'],{encoding:'utf8'});
-assert(syntax.status===0,`viewport_v10_10_9.js possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
+for(const file of ['viewport_v10_10_9.js','boot_v10.js']){
+  const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+  assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
+}
+
+const earlyBoot=boot.slice(0,boot.indexOf('window.__fbLoadErrors=0;'));
+assert(boot.includes('__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__'),'Cold start não instala o guard antecipado de autofill.');
+assert(boot.indexOf('__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__')<boot.indexOf('__TEAM_BULLS_BOOT_SAFETY_2__'),'Guard de autofill precisa existir antes do boot normal.');
+assert(earlyBoot.includes("form.setAttribute('autocomplete','on')"),'Formulário não nasce corrigido para autofill no cold start.');
+assert(earlyBoot.includes("email.setAttribute('autocomplete','username')"),'E-mail não é convertido cedo para username.');
+assert(earlyBoot.includes("password.setAttribute('autocomplete','current-password')"),'Senha não é convertida cedo para current-password.');
+assert(earlyBoot.includes("['data-1p-ignore','data-lpignore','data-form-type','aria-autocomplete'].forEach"),'Marcadores que bloqueiam gerenciador de senhas não são removidos cedo.');
+assert(earlyBoot.includes("observer.observe(document.documentElement,{childList:true,subtree:true})"),'Guard não acompanha a criação do formulário durante o parse inicial.');
+assert(earlyBoot.includes("document.addEventListener('focusin'"),'Cold start não reforça a semântica antes do foco nos campos.');
+assert(!earlyBoot.includes('localStorage')&&!earlyBoot.includes('sessionStorage'),'Guard antecipado não pode armazenar credenciais.');
 
 assert(viewport.includes("const REVISION='10.10.25-session1';"),'Camada de estabilidade móvel não possui revisão própria.');
 assert(viewport.includes("email.setAttribute('autocomplete','username')"),'Login não devolve semântica username ao gerenciador de senhas.');
@@ -62,4 +75,4 @@ if(fail.length){
   console.error('FALHA — estabilidade de login/sessão/runtime móvel\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('APROVADO — login preserva autofill e senha até o commit; restauração online não cai em offline provisório; runtime/cache crítico se recupera sem limpar dados.');
+console.log('APROVADO — cold start prepara o gerenciador de senhas antes do DOMContentLoaded; login preserva autofill e senha até o commit; restauração online não cai em offline provisório.');
