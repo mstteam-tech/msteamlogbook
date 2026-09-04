@@ -8,15 +8,17 @@ const viewport=read('viewport_v10_10_9.js');
 const core=read('app_v10_10_9_core.js');
 const boot=read('boot_v10.js');
 const sw=read('sw.js');
+const updater=read('update_v10_10_9.js');
+const version=JSON.parse(read('version.json'));
 
-for(const file of ['viewport_v10_10_9.js','boot_v10.js']){
+for(const file of ['viewport_v10_10_9.js','boot_v10.js','update_v10_10_9.js']){
   const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
   assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
 }
 
 const earlyBoot=boot.slice(0,boot.indexOf('window.__fbLoadErrors=0;'));
-assert(boot.includes('__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__'),'Cold start não instala o guard antecipado de autofill.');
-assert(boot.indexOf('__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__')<boot.indexOf('__TEAM_BULLS_BOOT_SAFETY_2__'),'Guard de autofill precisa existir antes do boot normal.');
+assert(boot.includes('__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101027__'),'Cold start não instala o guard antecipado de autofill atual.');
+assert(boot.indexOf('__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101027__')<boot.indexOf('__TEAM_BULLS_BOOT_SAFETY_2__'),'Guard de autofill precisa existir antes do boot normal.');
 assert(earlyBoot.includes("form.setAttribute('autocomplete','on')"),'Formulário não nasce corrigido para autofill no cold start.');
 assert(earlyBoot.includes("email.setAttribute('autocomplete','username')"),'E-mail não é convertido cedo para username.');
 assert(earlyBoot.includes("password.setAttribute('autocomplete','current-password')"),'Senha não é convertida cedo para current-password.');
@@ -25,13 +27,25 @@ assert(earlyBoot.includes("observer.observe(document.documentElement,{childList:
 assert(earlyBoot.includes("document.addEventListener('focusin'"),'Cold start não reforça a semântica antes do foco nos campos.');
 
 assert(core.includes("const persistence=role==='trainer'?firebase.auth.Auth.Persistence.SESSION:firebase.auth.Auth.Persistence.LOCAL"),'A regressão precisa reconhecer a política legada SESSION do treinador que o hotfix neutraliza.');
-assert(earlyBoot.includes('__TEAM_BULLS_PERSISTENT_AUTH_101026__'),'Cold start não instala a política persistente do PWA.');
-assert(earlyBoot.includes('auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)'),'Sessão do PWA não é fixada explicitamente em persistência LOCAL.');
-assert(earlyBoot.includes('configureAuthPersistence.__tbPersistentPwaSession'),'Política legada por função ainda pode rebaixar o treinador para SESSION depois do login.');
+assert(earlyBoot.includes('__TEAM_BULLS_PERSISTENT_AUTH_101027__'),'Cold start não instala a política persistente atual do PWA.');
+assert(earlyBoot.includes("firebase.auth?.Auth?.Persistence?.LOCAL"),'Sessão do PWA não resolve explicitamente Persistence.LOCAL do Firebase.');
+assert(earlyBoot.includes('authInstance.setPersistence(persistence)'),'Persistência LOCAL não é aplicada ao Auth real quando ele fica disponível.');
+assert(earlyBoot.includes('configureAuthPersistence.__tbPersistentPwaSession101027'),'Política legada por função ainda pode rebaixar o treinador para SESSION depois do login.');
 assert(earlyBoot.includes('configureAuthPersistence=wrapped'),'Guard não substitui a política legada após o core ficar disponível.');
+assert(earlyBoot.includes('startAuthListener.__tbPersistentBeforeListener101027'),'Listener do Firebase pode iniciar sem tentativa prévia de persistência LOCAL.');
+assert(earlyBoot.includes('boundedPersistence(450).finally(()=>base.apply(context,args))'),'Listener não possui fail-open limitado ao aplicar persistência antes da restauração.');
+assert(earlyBoot.includes('doLogin.__tbPersistentBeforeLogin101027'),'Login pode executar antes da política LOCAL ficar instalada.');
+assert(earlyBoot.includes('await boundedPersistence(700)'),'Sign-in não aguarda uma tentativa limitada de persistência LOCAL.');
+assert(earlyBoot.includes('if(installed&&applied)return'),'Polling ainda pode encerrar somente porque funções foram embrulhadas, sem Auth pronto.');
+assert(earlyBoot.includes("window.addEventListener('online'"),'Retorno da conexão não reaplica a política de persistência.');
 assert(core.includes("auth.signOut(),4000,'saída da conta'"),'Logout explícito precisa continuar encerrando a sessão persistente.');
 assert(!/localStorage[^\n]*(?:password|login-pass|tb_access_secret)/i.test(earlyBoot),'Guard antecipado não pode persistir senha no localStorage.');
 assert(!/sessionStorage[^\n]*(?:password|login-pass|tb_access_secret)/i.test(earlyBoot),'Guard antecipado não pode persistir senha no sessionStorage.');
+
+assert(Number(version.build)===2026090401,'version.json precisa publicar o hotfix de sessão como novo build 2026090401.');
+assert(updater.includes("const CURRENT_BUILD=2026090401;"),'Atualizador local precisa reconhecer o mesmo build publicado no version.json.');
+assert(updater.includes("fetch(`${VERSION_URL}?t=${Date.now()}`,{cache:'no-store'"),'Verificação de versão precisa continuar ignorando cache HTTP.');
+assert(updater.includes("'./boot_v10.js?v=10.10.9'"),'Atualizador precisa renovar boot_v10.js entre os arquivos críticos do PWA.');
 
 assert(viewport.includes("const REVISION='10.10.25-session1';"),'Camada de estabilidade móvel não possui revisão própria.');
 assert(viewport.includes("email.setAttribute('autocomplete','username')"),'Login não devolve semântica username ao gerenciador de senhas.');
@@ -83,4 +97,4 @@ if(fail.length){
   console.error('FALHA — estabilidade de login/sessão/runtime móvel\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('APROVADO — cold start prepara contas salvas e mantém autenticação Firebase LOCAL até logout explícito; restauração online não cai em offline provisório.');
+console.log('APROVADO — cold start publica build novo, prepara contas salvas, força Firebase LOCAL antes do listener/login e mantém logout explícito; restauração online não cai em offline provisório.');
