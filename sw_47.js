@@ -2,9 +2,9 @@
 'use strict';
 
 const APP_VERSION='10.10.9';
-const BUILD_REVISION=2026090103;
+const BUILD_REVISION=2026090401;
 const CACHE_REVISION='guidance2';
-const CACHE_HOTFIX='update-unblock1';
+const CACHE_HOTFIX='cold-start-session2';
 const CACHE_TAG=`${APP_VERSION.replace(/\./g,'-')}-${CACHE_REVISION}-${CACHE_HOTFIX}`;
 const SHELL_CACHE=`team-bulls-shell-${CACHE_TAG}`;
 const RUNTIME_CACHE=`team-bulls-runtime-${CACHE_TAG}`;
