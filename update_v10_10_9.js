@@ -82,7 +82,7 @@
       const done=ok=>{if(settled)return;settled=true;if(!ok){if(promiseKey==='profile')studentHomePromise=null;else studentLayoutPromise=null;}resolve(!!ok);};
       const existing=[...document.scripts].find(script=>{try{return new URL(script.src,location.href).pathname.endsWith(pathSuffix);}catch(error){return false;}});
       if(existing){if(readyFlag()){done(true);return;}const timer=setTimeout(()=>done(readyFlag()),7000);existing.addEventListener('load',()=>{clearTimeout(timer);done(readyFlag());},{once:true});existing.addEventListener('error',()=>{clearTimeout(timer);done(false);},{once:true});return;}
-      const script=document.createElement('script');script.src=src;script.async=false;script.dataset[dataKey]='1';script.onload=()=>done(!!window.TeamBullsTechniqueCompositionIntegrity);script.onerror=()=>done(false);document.head.appendChild(script);
+      const script=document.createElement('script');script.src=src;script.async=false;script.dataset[dataKey]='1';script.onload=()=>done(readyFlag());script.onerror=()=>done(false);document.head.appendChild(script);
     });
     if(promiseKey==='profile')studentHomePromise=promise;else studentLayoutPromise=promise;
     return promise;
