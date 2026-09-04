@@ -1,9 +1,9 @@
 {
   "version": "10.10.9",
-  "build": 2026090103,
-  "revision": "student-diet-compact-live-1",
-  "publishedAt": "2026-09-01T18:30:00Z",
+  "build": 2026090401,
+  "revision": "cold-start-session-persistence-2",
+  "publishedAt": "2026-09-04T14:05:00Z",
   "minimumCompatibleVersion": "10.10.5",
   "updateMode": "in-app",
-  "message": "Compacta calorias e água na dieta do aluno, sincroniza alterações da dieta em tempo real e reduz a demora para detectar novas revisões do aplicativo."
+  "message": "Corrige a restauração de sessão após fechar completamente o PWA, reforça o preenchimento de contas salvas no cold start e publica a revisão como hotfix detectável pelo atualizador."
 }
