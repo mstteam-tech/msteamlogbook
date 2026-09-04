@@ -1,4 +1,4 @@
-/* Team Bulls v10.10.26 — autofill de login disponível já no cold start.
+/* Team Bulls v10.10.27 — autofill de login disponível já no cold start.
  *
  * Este guard roda no <head>, antes do DOMContentLoaded. O HTML legado ainda
  * nasce com marcadores que alguns gerenciadores de senha interpretam como
@@ -6,8 +6,8 @@
  * somente a semântica de autofill. Nenhuma senha é lida ou persistida aqui.
  */
 (function(){
-  if(window.__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__)return;
-  window.__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__=true;
+  if(window.__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101027__)return;
+  window.__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101027__=true;
 
   function patchAuthAutocomplete(){
     const form=document.getElementById('panel-login');
@@ -45,50 +45,133 @@
   window.TeamBullsEarlyAuthAutofill=Object.freeze({patch:patchAuthAutocomplete});
 })();
 
-/* Team Bulls v10.10.26 — persistência explícita da sessão no PWA.
+/* Team Bulls v10.10.27 — persistência determinística da autenticação no PWA.
  *
- * Fechar o aplicativo não é logout. A sessão autenticada permanece no próprio
- * armazenamento seguro do Firebase e só é encerrada por auth.signOut(). Isso
- * evita que contas de treinador sejam convertidas para SESSION após validar o
- * perfil e desapareçam quando o Android encerra completamente o PWA.
+ * A revisão anterior neutralizava SESSION depois que o core já existia, mas o
+ * polling podia encerrar assim que configureAuthPersistence fosse embrulhada,
+ * mesmo se Firebase Auth ainda não estivesse pronto. Este guard mantém a
+ * tentativa até auth existir e protege também o início do listener e o login.
+ * Fechar o aplicativo não é logout; SAIR DA CONTA continua usando auth.signOut().
  */
 (function(){
-  if(window.__TEAM_BULLS_PERSISTENT_AUTH_101026__)return;
-  window.__TEAM_BULLS_PERSISTENT_AUTH_101026__=true;
-  let installed=false;
-  let applying=null;
+  if(window.__TEAM_BULLS_PERSISTENT_AUTH_101027__)return;
+  window.__TEAM_BULLS_PERSISTENT_AUTH_101027__=true;
 
+  const state={attempts:0,applied:false,lastAppliedAt:0,lastError:''};
+  let applying=null;
+  let configureWrapped=false;
+  let listenerWrapped=false;
+  let loginWrapped=false;
+
+  function localPersistenceValue(){
+    try{return typeof firebase!=='undefined'&&firebase.auth?.Auth?.Persistence?.LOCAL||null;}
+    catch(error){return null;}
+  }
+  function currentAuth(){
+    try{return typeof auth!=='undefined'&&auth?.setPersistence?auth:null;}
+    catch(error){return null;}
+  }
   function applyLocalPersistence(){
+    const authInstance=currentAuth();
+    const persistence=localPersistenceValue();
+    if(!authInstance||!persistence)return Promise.resolve(false);
+    if(applying)return applying;
+    state.attempts++;
+    applying=Promise.resolve(authInstance.setPersistence(persistence)).then(()=>{
+      state.applied=true;state.lastAppliedAt=Date.now();state.lastError='';return true;
+    }).catch(error=>{
+      state.applied=false;state.lastError=String(error?.code||error?.message||'persistence-error').slice(0,180);
+      console.warn('[Team Bulls] Persistência LOCAL do Firebase será tentada novamente.',error);
+      return false;
+    }).finally(()=>{applying=null;});
+    return applying;
+  }
+  function boundedPersistence(timeout=450){
+    return Promise.race([
+      applyLocalPersistence(),
+      new Promise(resolve=>setTimeout(()=>resolve(false),Math.max(100,timeout)))
+    ]);
+  }
+  function copyFunctionFlags(target,source){
+    try{Object.keys(source||{}).forEach(key=>{try{target[key]=source[key];}catch(error){}});}catch(error){}
+    return target;
+  }
+
+  function wrapConfigurePersistence(){
     try{
-      if(typeof firebase==='undefined'||typeof auth==='undefined'||!auth?.setPersistence||!firebase.auth?.Auth?.Persistence?.LOCAL)return Promise.resolve(false);
-      if(applying)return applying;
-      applying=Promise.resolve(auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)).then(()=>true).catch(error=>{console.warn('[Team Bulls] Persistência local do Firebase será tentada novamente.',error);return false;}).finally(()=>{applying=null;});
-      return applying;
-    }catch(error){return Promise.resolve(false);}
+      if(typeof configureAuthPersistence!=='function')return false;
+      if(configureAuthPersistence.__tbPersistentPwaSession101027){configureWrapped=true;return true;}
+      const wrapped=function(){return applyLocalPersistence();};
+      copyFunctionFlags(wrapped,configureAuthPersistence);
+      wrapped.__tbPersistentPwaSession=true;
+      wrapped.__tbPersistentPwaSession101027=true;
+      configureAuthPersistence=wrapped;
+      configureWrapped=true;
+      return true;
+    }catch(error){return false;}
+  }
+
+  function wrapStartAuthListener(){
+    try{
+      if(typeof startAuthListener!=='function')return false;
+      if(startAuthListener.__tbPersistentBeforeListener101027){listenerWrapped=true;return true;}
+      const base=startAuthListener;
+      const wrapped=function(){
+        const context=this,args=arguments;
+        boundedPersistence(450).finally(()=>base.apply(context,args));
+      };
+      copyFunctionFlags(wrapped,base);
+      wrapped.__tbPersistentBeforeListener101027=true;
+      startAuthListener=wrapped;
+      listenerWrapped=true;
+      return true;
+    }catch(error){return false;}
+  }
+
+  function wrapLogin(){
+    try{
+      if(typeof doLogin!=='function')return false;
+      if(doLogin.__tbPersistentBeforeLogin101027){loginWrapped=true;return true;}
+      const base=doLogin;
+      const wrapped=async function(){
+        await boundedPersistence(700);
+        return base.apply(this,arguments);
+      };
+      copyFunctionFlags(wrapped,base);
+      wrapped.__tbPersistentBeforeLogin101027=true;
+      doLogin=wrapped;
+      loginWrapped=true;
+      return true;
+    }catch(error){return false;}
   }
 
   function installPolicy(){
-    let patched=false;
-    try{
-      if(typeof configureAuthPersistence==='function'&&!configureAuthPersistence.__tbPersistentPwaSession){
-        const wrapped=function(){return applyLocalPersistence();};
-        wrapped.__tbPersistentPwaSession=true;
-        configureAuthPersistence=wrapped;
-        installed=true;patched=true;
-      }else if(typeof configureAuthPersistence==='function'&&configureAuthPersistence.__tbPersistentPwaSession){installed=true;patched=true;}
-    }catch(error){}
+    wrapConfigurePersistence();
+    wrapStartAuthListener();
+    wrapLogin();
     applyLocalPersistence().catch(()=>{});
-    return patched;
+    return configureWrapped&&listenerWrapped&&loginWrapped;
   }
 
-  function poll(attempt=0){
-    if(installPolicy()&&installed)return;
-    if(attempt<240)setTimeout(()=>poll(attempt+1),attempt<40?20:80);
+  async function poll(attempt=0){
+    const installed=installPolicy();
+    const applied=await boundedPersistence(260);
+    if(installed&&applied)return;
+    if(attempt<300)setTimeout(()=>poll(attempt+1),attempt<50?20:80);
   }
+
   setTimeout(()=>poll(0),0);
   document.addEventListener('DOMContentLoaded',()=>{installPolicy();applyLocalPersistence().catch(()=>{});},{once:true});
   window.addEventListener('pageshow',()=>{installPolicy();applyLocalPersistence().catch(()=>{});},{passive:true});
-  window.TeamBullsAuthPersistence=Object.freeze({apply:applyLocalPersistence,install:installPolicy});
+  window.addEventListener('online',()=>{installPolicy();applyLocalPersistence().catch(()=>{});},{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){installPolicy();applyLocalPersistence().catch(()=>{});}},{passive:true});
+
+  window.TeamBullsAuthPersistence=Object.freeze({
+    revision:'10.10.27-auth-persistence2',
+    apply:applyLocalPersistence,
+    install:installPolicy,
+    state:()=>({...state,configureWrapped,listenerWrapped,loginWrapped,authReady:!!currentAuth()})
+  });
 })();
 
 window.__fbLoadErrors=0;
