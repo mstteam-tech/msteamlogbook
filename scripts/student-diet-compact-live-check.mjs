@@ -47,7 +47,7 @@ assert(!moduleCode.includes('setInterval('),'Módulo da dieta não deve duplicar
 
 assert(update.includes('const CHECK_INTERVAL_MS=2*60*1000;'),'Atualizador principal voltou a uma janela maior que dois minutos.');
 assert(!update.includes("applyLatestUpdate({automatic:true})"),'Atualizador não pode forçar hotfix/reload automático.');
-assert(Number(version.build)===2026090103,'version.json não publica a build da dieta compacta.');
+assert(Number(version.build)>=2026090103,'version.json regrediu para antes da build que publicou a dieta compacta.');
 
 if(fail.length){
   console.error('FALHA — dieta compacta/live do aluno\n- '+fail.join('\n- '));

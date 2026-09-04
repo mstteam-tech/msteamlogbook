@@ -4,20 +4,21 @@ import {spawnSync} from 'node:child_process';
 const fail=[];
 const assert=(ok,message)=>{if(!ok)fail.push(message);};
 const read=file=>fs.readFileSync(file,'utf8');
-const BUILD=2026090103;
+const BASELINE_BUILD=2026090103;
 const sw=read('sw.js');
 const bridge=read('sw_47.js');
 const boot=read('boot_v10.js');
 const update=read('update_v10_10_9.js');
 const runtime=read('modules/student-home-layout-runtime-v10_10_16.js');
 const version=JSON.parse(read('version.json'));
+const BUILD=Number(version.build);
 
 for(const file of ['sw.js','sw_47.js','boot_v10.js','update_v10_10_9.js','modules/student-home-layout-runtime-v10_10_16.js']){
   const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
   assert(syntax.status===0,`${file} possui JavaScript inválido: ${String(syntax.stderr||'').trim()}`);
 }
 
-assert(Number(version.build)===BUILD,'version.json não está no build atual publicado.');
+assert(Number.isInteger(BUILD)&&BUILD>=BASELINE_BUILD,'version.json regrediu para antes do build de recuperação publicado.');
 assert(update.includes(`const CURRENT_BUILD=${BUILD};`),'Atualizador divergiu do build publicado.');
 assert(sw.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker divergiu do build publicado.');
 assert(bridge.includes(`const BUILD_REVISION=${BUILD};`),'Service Worker legado divergiu do build publicado.');
@@ -67,4 +68,4 @@ if(fail.length){
   console.error('FALHA — update fail-open/startup recovery\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('Update fail-open/startup recovery OK — build coerente, atualização visível mais rápida e overlay legado sem bloqueio.');
+console.log(`Update fail-open/startup recovery OK — build ${BUILD} coerente, atualização visível mais rápida e overlay legado sem bloqueio.`);
