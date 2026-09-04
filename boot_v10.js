@@ -1,3 +1,50 @@
+/* Team Bulls v10.10.26 — autofill de login disponível já no cold start.
+ *
+ * Este guard roda no <head>, antes do DOMContentLoaded. O HTML legado ainda
+ * nasce com marcadores que alguns gerenciadores de senha interpretam como
+ * "não preencher". Assim que o parser cria o formulário de login, corrigimos
+ * somente a semântica de autofill. Nenhuma senha é lida ou persistida aqui.
+ */
+(function(){
+  if(window.__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__)return;
+  window.__TEAM_BULLS_EARLY_AUTH_AUTOFILL_101026__=true;
+
+  function patchAuthAutocomplete(){
+    const form=document.getElementById('panel-login');
+    const email=document.getElementById('login-email');
+    const password=document.getElementById('login-pass');
+    if(form){
+      form.setAttribute('autocomplete','on');
+      form.removeAttribute('data-form-type');
+    }
+    if(email){
+      email.setAttribute('autocomplete','username');
+      email.setAttribute('name','username');
+      ['data-1p-ignore','data-lpignore','data-form-type','aria-autocomplete'].forEach(attribute=>email.removeAttribute(attribute));
+    }
+    if(password){
+      password.setAttribute('autocomplete','current-password');
+      password.setAttribute('name','password');
+      ['data-1p-ignore','data-lpignore','data-form-type','aria-autocomplete'].forEach(attribute=>password.removeAttribute(attribute));
+    }
+    return !!(form&&email&&password);
+  }
+
+  let observer=null;
+  if(!patchAuthAutocomplete()&&typeof MutationObserver==='function'){
+    observer=new MutationObserver(()=>{
+      if(!patchAuthAutocomplete())return;
+      observer?.disconnect();observer=null;
+    });
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+    setTimeout(()=>{patchAuthAutocomplete();observer?.disconnect();observer=null;},6000);
+  }
+  document.addEventListener('focusin',event=>{
+    if(event.target?.id==='login-email'||event.target?.id==='login-pass')patchAuthAutocomplete();
+  },true);
+  window.TeamBullsEarlyAuthAutofill=Object.freeze({patch:patchAuthAutocomplete});
+})();
+
 window.__fbLoadErrors=0;
 window.__teamBullsBootErrors=[];
 try{if(window.top!==window.self)window.top.location=window.self.location.href;}catch(error){document.documentElement.style.display='none';}
