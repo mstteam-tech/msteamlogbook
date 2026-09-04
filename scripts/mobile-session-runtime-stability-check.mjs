@@ -25,13 +25,21 @@ assert(earlyBoot.includes("observer.observe(document.documentElement,{childList:
 assert(earlyBoot.includes("document.addEventListener('focusin'"),'Cold start não reforça a semântica antes do foco nos campos.');
 
 assert(core.includes("const persistence=role==='trainer'?firebase.auth.Auth.Persistence.SESSION:firebase.auth.Auth.Persistence.LOCAL"),'A regressão precisa reconhecer a política legada SESSION do treinador que o hotfix neutraliza.');
-assert(earlyBoot.includes('__TEAM_BULLS_PERSISTENT_AUTH_101026__'),'Cold start não instala a política persistente do PWA.');
-assert(earlyBoot.includes('auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)'),'Sessão do PWA não é fixada explicitamente em persistência LOCAL.');
+assert(earlyBoot.includes('__TEAM_BULLS_PERSISTENT_AUTH_101027__'),'Cold start não instala a revisão 2 da persistência autenticada.');
+assert(earlyBoot.includes("const REVISION='10.10.27-auth-persistence2'"),'Persistência de sessão não possui revisão própria rastreável.');
+assert(earlyBoot.includes("const candidate=firebase.auth()"),'Guard não consegue alcançar a instância canônica do Firebase quando a variável auth do core ainda não está disponível.');
+assert(earlyBoot.includes('instance.setPersistence(local)'),'Sessão do PWA não é fixada explicitamente em persistência LOCAL.');
+assert(earlyBoot.includes('persistenceConfirmed=true'),'Poll pode encerrar antes de LOCAL ser realmente confirmado pelo Firebase.');
 assert(earlyBoot.includes('configureAuthPersistence.__tbPersistentPwaSession'),'Política legada por função ainda pode rebaixar o treinador para SESSION depois do login.');
 assert(earlyBoot.includes('configureAuthPersistence=wrapped'),'Guard não substitui a política legada após o core ficar disponível.');
+assert(earlyBoot.includes('doLogin.__tbPersistentBeforeSignIn'),'Login não é mediado antes de signInWithEmailAndPassword.');
+assert(earlyBoot.includes('await applyLocalPersistence().catch(()=>false)'),'Login pode começar antes de LOCAL ser solicitado ao Firebase.');
+assert(earlyBoot.includes('startAuthListener.__tbPersistentBeforeListener'),'onAuthStateChanged pode começar antes da política LOCAL.');
+assert(earlyBoot.includes('listenerStarting=Promise.resolve(applyLocalPersistence())'),'Listener não aguarda a tentativa de persistência antes de ser instalado.');
+assert(earlyBoot.includes('initFirebase.__tbPersistentAfterInit'),'Inicialização do Firebase não reforça LOCAL assim que a instância fica disponível.');
 assert(core.includes("auth.signOut(),4000,'saída da conta'"),'Logout explícito precisa continuar encerrando a sessão persistente.');
-assert(!/localStorage[^\n]*(?:password|login-pass|tb_access_secret)/i.test(earlyBoot),'Guard antecipado não pode persistir senha no localStorage.');
-assert(!/sessionStorage[^\n]*(?:password|login-pass|tb_access_secret)/i.test(earlyBoot),'Guard antecipado não pode persistir senha no sessionStorage.');
+assert(!/localStorage[^\n]*(?:password|login-pass|tb_access_secret|token)/i.test(earlyBoot),'Guard antecipado não pode persistir senha ou token no localStorage.');
+assert(!/sessionStorage[^\n]*(?:password|login-pass|tb_access_secret|token)/i.test(earlyBoot),'Guard antecipado não pode persistir senha ou token no sessionStorage.');
 
 assert(viewport.includes("const REVISION='10.10.25-session1';"),'Camada de estabilidade móvel não possui revisão própria.');
 assert(viewport.includes("email.setAttribute('autocomplete','username')"),'Login não devolve semântica username ao gerenciador de senhas.');
@@ -83,4 +91,4 @@ if(fail.length){
   console.error('FALHA — estabilidade de login/sessão/runtime móvel\n- '+fail.join('\n- '));
   process.exit(1);
 }
-console.log('APROVADO — cold start prepara contas salvas e mantém autenticação Firebase LOCAL até logout explícito; restauração online não cai em offline provisório.');
+console.log('APROVADO — cold start prepara autofill, confirma Firebase LOCAL antes do listener e antes do login, mantém logout explícito e preserva a restauração online.');
