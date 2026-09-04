@@ -2,7 +2,7 @@
 'use strict';
 (()=>{
   const CURRENT_VERSION='10.10.9';
-  const CURRENT_BUILD=2026090103;
+  const CURRENT_BUILD=2026090401;
   const CHECK_INTERVAL_MS=2*60*1000;
   const VERSION_URL='./version.json';
   const TECHNIQUE_COMPOSITION_MODULE='./modules/technique-composition-integrity-v10_10_12.js?v=10.10.12-techcombo1';
@@ -82,7 +82,7 @@
       const done=ok=>{if(settled)return;settled=true;if(!ok){if(promiseKey==='profile')studentHomePromise=null;else studentLayoutPromise=null;}resolve(!!ok);};
       const existing=[...document.scripts].find(script=>{try{return new URL(script.src,location.href).pathname.endsWith(pathSuffix);}catch(error){return false;}});
       if(existing){if(readyFlag()){done(true);return;}const timer=setTimeout(()=>done(readyFlag()),7000);existing.addEventListener('load',()=>{clearTimeout(timer);done(readyFlag());},{once:true});existing.addEventListener('error',()=>{clearTimeout(timer);done(false);},{once:true});return;}
-      const script=document.createElement('script');script.src=src;script.async=false;script.dataset[dataKey]='1';script.onload=()=>done(readyFlag());script.onerror=()=>done(false);document.head.appendChild(script);
+      const script=document.createElement('script');script.src=src;script.async=false;script.dataset[dataKey]='1';script.onload=()=>done(!!window.TeamBullsTechniqueCompositionIntegrity);script.onerror=()=>done(false);document.head.appendChild(script);
     });
     if(promiseKey==='profile')studentHomePromise=promise;else studentLayoutPromise=promise;
     return promise;
